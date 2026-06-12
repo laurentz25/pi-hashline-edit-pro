@@ -1,0 +1,3 @@
+- Use read before edit when you do not have current HASH anchors for the file.
+- Copy exactly the 4-character HASH (the part before the `:`); never include the `:` or line content in `pos`/`end`.
+- A HASH may start with `-`; that is a normal alphabet character, not a diff-remove marker.
