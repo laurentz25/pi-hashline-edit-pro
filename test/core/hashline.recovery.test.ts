@@ -89,7 +89,7 @@ describe("applyHashlineEdits — error handling", () => {
 					op: "replace", start: makeTag(content, 3), end: makeTag(content, 3), lines: ["Y"],
 				},
 			]),
-		).toThrow(/conflicting edits.*overlap on the same original line range/i);
+		).toThrow(/E_EDIT_CONFLICT.*overlap.*same original line range/i);
 	});
 
 	it("rejects multiple inserts targeting the same boundary", () => {
@@ -99,7 +99,7 @@ describe("applyHashlineEdits — error handling", () => {
 				{ op: "append", pos: makeTag(content, 2), lines: ["X"] },
 				{ op: "prepend", pos: makeTag(content, 3), lines: ["Y"] },
 			]),
-		).toThrow(/conflicting edits.*same insertion boundary/i);
+		).toThrow(/E_EDIT_CONFLICT.*same insertion boundary/i);
 	});
 
 	it("rejects inserts inside a replaced range", () => {
@@ -112,7 +112,7 @@ describe("applyHashlineEdits — error handling", () => {
 				},
 				{ op: "append", pos: makeTag(content, 2), lines: ["Y"] },
 			]),
-		).toThrow(/conflicting edits.*inserts inside a replaced original range/i);
+		).toThrow(/E_EDIT_CONFLICT.*inserts inside a replaced/i);
 	});
 
 	it("rejects EOF append and append-after-last-line on newline-terminated files", () => {
@@ -122,7 +122,7 @@ describe("applyHashlineEdits — error handling", () => {
 				{ op: "append", lines: ["X"] },
 				{ op: "append", pos: makeTag(content, 2), lines: ["Y"] },
 			]),
-		).toThrow(/conflicting edits.*same insertion boundary/i);
+		).toThrow(/E_EDIT_CONFLICT.*same insertion boundary/i);
 	});
 
 	it("rejects EOF append and sentinel-anchored EOF append on newline-terminated files", () => {
@@ -132,7 +132,7 @@ describe("applyHashlineEdits — error handling", () => {
 				{ op: "append", lines: ["X"] },
 				{ op: "append", pos: makeTag(content, 3), lines: ["Y"] },
 			]),
-		).toThrow(/conflicting edits.*same insertion boundary/i);
+		).toThrow(/E_EDIT_CONFLICT.*same insertion boundary/i);
 	});
 });
 

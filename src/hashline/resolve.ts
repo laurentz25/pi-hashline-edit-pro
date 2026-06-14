@@ -131,13 +131,13 @@ export function formatMismatchError(
 	if (notFound.length > 0) {
 		const refList = notFound.map((m) => `"${m.ref.hash}"`).join(", ");
 		out.push(
-			`[E_STALE_ANCHOR] ${notFound.length} stale anchor${notFound.length > 1 ? "s" : ""}: ${refList}. Re-read the file to refresh.`,
+			`[E_STALE_ANCHOR] ${notFound.length} stale anchor${notFound.length > 1 ? "s" : ""}: ${refList}. Re-read the file to refresh.`
 		);
 	}
 	if (ambiguous.length > 0) {
 		if (out.length > 0) out.push("");
 		out.push(
-			`[E_AMBIGUOUS_ANCHOR] ${ambiguous.length} ambiguous anchor${ambiguous.length > 1 ? "s" : ""}. Hash matches multiple lines in the file. The wire format does not accept a content disambiguator; re-read the file to refresh the hashes.`,
+			`[E_AMBIGUOUS_ANCHOR] ${ambiguous.length} ambiguous anchor${ambiguous.length > 1 ? "s" : ""}. Re-read the file to refresh.`
 		);
 		for (const m of ambiguous) {
 			const sample = (m.candidates ?? []).slice(0, 5);
@@ -157,17 +157,14 @@ export function formatMismatchError(
 		}
 	}
 
-	// Add a small current-state block so the model can find the right hashes.
 	out.push("");
-	out.push("Current state of the file (first lines):");
-	const sampleSize = Math.min(fileLines.length, 8);
+	out.push("Current state (first lines):");
+	const sampleSize = Math.min(fileLines.length, 5);
 	for (let i = 0; i < sampleSize; i++) {
 		out.push(`>>> ${fileHashes[i]}:${fileLines[i]}`);
 	}
 	if (fileLines.length > sampleSize) {
-		out.push(
-			`... ${fileLines.length - sampleSize} more line${fileLines.length - sampleSize === 1 ? "" : "s"}.`,
-		);
+		out.push(`... ${fileLines.length - sampleSize} more.`);
 	}
 
 	return out.join("\n");
@@ -242,7 +239,7 @@ function assertEditItem(edit: Record<string, unknown>, index: number): void {
 	if (edit.op === "replace") {
 		if ("pos" in edit) {
 			throw new Error(
-				`[E_BAD_OP] Edit ${index} with op "replace" no longer accepts the "pos" field — use "start" instead. Both "start" and "end" are required.`,
+				`[E_BAD_OP] Edit ${index} op "replace" uses "pos" — use "start" instead.`
 			);
 		}
 		if (typeof edit.start !== "string") {
@@ -259,7 +256,7 @@ function assertEditItem(edit: Record<string, unknown>, index: number): void {
 
 	if ((edit.op === "append" || edit.op === "prepend") && "end" in edit) {
 		throw new Error(
-			`[E_BAD_OP] Edit ${index} with op "${edit.op}" does not support "end". Use "pos" or omit it for file boundary insertion.`,
+			`[E_BAD_OP] Edit ${index} op "${edit.op}" does not support "end". Use "pos" or omit.`
 		);
 	}
 }
@@ -356,7 +353,8 @@ export function assertNoBareHashPrefixLines(
 	edits: HashlineEdit[],
 	fileLines: string[],
 	fileHashes: string[],
-): void {
+	filePath?: string,
+): string[] {
 	if (fileHashes.length !== fileLines.length) {
 		throw new Error(
 			`assertNoBareHashPrefixLines: fileHashes.length (${fileHashes.length}) must match fileLines.length (${fileLines.length}).`,
@@ -373,32 +371,30 @@ export function assertNoBareHashPrefixLines(
 			if (match) suspects.push({ line, hash: match[1]!, editIndex, lineIndex });
 		}
 	}
-	if (suspects.length === 0) return;
+	if (suspects.length === 0) return [];
 
+	const isPython = filePath?.endsWith('.py');
 	const fileHashSet = new Set(fileHashes);
 	const matched = suspects.filter((s) => fileHashSet.has(s.hash));
 	const matchedCount = matched.length;
+	const exampleLine = `${suspects[0]!.hash}:${suspects[0]!.line}`;
 
-	const MAX_EXAMPLES = 5;
-	const exampleList = suspects
-		.slice(0, MAX_EXAMPLES)
-		.map(
-			(s) =>
-				`  - edit ${s.editIndex} line ${s.lineIndex}: prefix="${s.hash}:" content=${JSON.stringify(s.line)}${fileHashSet.has(s.hash) ? " (matches a line hash in this file)" : ""}`,
-		)
-		.join("\n");
-	const moreSuffix =
-		suspects.length > MAX_EXAMPLES
-			? ` (+${suspects.length - MAX_EXAMPLES} more)`
-			: "";
+	// For Python files, return a warning instead of throwing — Python uses
+	// `else:`, `except:`, `elif:` etc. which trigger the bare-prefix detector.
+	if (isPython) {
+		const hint = matchedCount > 0
+			? `${matchedCount} prefix(es) match file line hashes.`
+			: `None match file line hashes — likely Python syntax.`;
+		return [`[W_BARE_HASH_PREFIX] ${suspects.length} edit line(s) start with a hash-like prefix (e.g. ${JSON.stringify(exampleLine)}). ${hint}`];
+	}
 
 	const linesHint =
 		matchedCount === 0
-			? `None of the ${suspects.length} prefix(es) match an existing line hash in this file, so the model may be writing a 4-char identifier followed by ":".`
-			: `${matchedCount} of the ${suspects.length} prefix(es) match an existing line hash in this file — strong evidence the model copied a hash from the read output.`;
+			? `None match file line hashes.`
+			: `${matchedCount} match file line hashes — likely a copied hash.`;
 
 	throw new Error(
-		`[E_BARE_HASH_PREFIX] ${suspects.length} edit line(s) start with a ${HASH_LENGTH}-char hash followed by ":" (e.g. ${JSON.stringify(suspects[0]!.line)}). ${linesHint}\n${exampleList}${moreSuffix}\nThe wire format for "lines" is literal file content — never paste "HASH:content" from "read" output into a "lines" array. If the content must start with what looks like a hash, rephrase it (e.g. add a leading space, quote the line, or use a different identifier shape) and retry.`,
+		`[E_BARE_HASH_PREFIX] ${suspects.length} edit line(s) start with a hash-like prefix (e.g. ${JSON.stringify(exampleLine)}). ${linesHint} Use literal file content in "lines" — never paste HASH:content from read output.`
 	);
 }
 

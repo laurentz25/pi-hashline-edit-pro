@@ -230,7 +230,7 @@ export function assertEditRequest(
 	for (const legacyKey of ["oldText", "newText", "old_text", "new_text"]) {
 		if (hasOwn(request, legacyKey)) {
 			throw new Error(
-			`[E_LEGACY_SHAPE] Field "${legacyKey}" is no longer supported. Use a hash-anchored edit: call read on the file, then send {op:"replace", start:"<HASH>", end:"<HASH>", lines:[...]} (or "append"/"prepend" with "pos").`,
+			`[E_LEGACY_SHAPE] "${legacyKey}" is not supported. Use {op:"replace", start:"<HASH>", end:"<HASH>", lines:[...]}.`
 			);
 		}
 	}
@@ -404,6 +404,7 @@ async function executeEditPipeline(
 		resolved,
 		signal,
 		originalHashes,
+		absolutePath,
 	);
 
 	return {

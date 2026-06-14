@@ -63,7 +63,7 @@ type ResolvedEditSpan = {
 function assertDoesNotEmptyFile(originalContent: string, result: string): void {
 	if (originalContent.length > 0 && result.length === 0) {
 		throw new Error(
-			"[E_WOULD_EMPTY] Refusing to empty a non-empty file through edit. If intentional, use a manual destructive operation outside the edit API.",
+			"[E_WOULD_EMPTY] Cannot empty a non-empty file via edit."
 		);
 	}
 }
@@ -85,7 +85,7 @@ function throwEditConflict(
 	reason: string,
 ): never {
 	throw new Error(
-		`[E_EDIT_CONFLICT] Conflicting edits in a single request: edit ${left.index} (${left.label}) and edit ${right.index} (${right.label}) ${reason}. Merge them into one non-overlapping change or split the request.`,
+		`[E_EDIT_CONFLICT] Edit ${left.index} (${left.label}) and edit ${right.index} (${right.label}) ${reason}.`
 	);
 }
 
@@ -430,6 +430,7 @@ export function applyHashlineEdits(
 	edits: import("./resolve").HashlineEdit[],
 	signal?: AbortSignal,
 	precomputedHashes?: string[],
+	filePath?: string,
 ): {
 	content: string;
 	firstChangedLine: number | undefined;
@@ -479,7 +480,8 @@ export function applyHashlineEdits(
 		);
 	}
 
-	assertNoBareHashPrefixLines(edits, lineIndex.fileLines, fileHashes);
+	const barePrefixWarnings = assertNoBareHashPrefixLines(edits, lineIndex.fileLines, fileHashes, filePath);
+	warnings.push(...barePrefixWarnings);
 	maybeWarnSuspiciousUnicodeEscapePlaceholder(edits, warnings);
 
 	// Phase 2: resolve edits to ordered spans

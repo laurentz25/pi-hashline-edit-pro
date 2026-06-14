@@ -64,7 +64,7 @@ describe("resolveEditAnchors", () => {
 			{ op: "replace", pos: "MQXV", end: "MQXV", lines: ["new"] } as any,
 		];
 		expect(() => resolveEditAnchors(edits)).toThrow(
-			/no longer accepts the "pos" field/i,
+			/uses "pos".*use "start"/i,
 		);
 	});
 

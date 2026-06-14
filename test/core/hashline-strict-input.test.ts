@@ -32,7 +32,7 @@ describe("strict edit input (no autocorrection)", () => {
 		expect(caught!.message).toContain(`${hashes[0]!}:foo`);
 		// The error message flags the case where the suspect matches a real
 		// file-line hash (strong evidence the model copied a hash).
-		expect(caught!.message).toMatch(/matches a line hash in this file/);
+		expect(caught!.message).toMatch(/match file line hashes/);
 	});
 
 	it("rejects string lines before patch-prefix validation", () => {
@@ -117,7 +117,7 @@ describe("partial hash prefixes copied into content (issue #24)", () => {
 		expect(caught).toBeDefined();
 		expect(caught!.message).toMatch(/^\[E_BARE_HASH_PREFIX\]/);
 		expect(caught!.message).toContain(`${betaHash}:### heading`);
-		expect(caught!.message).toMatch(/matches a line hash in this file/);
+		expect(caught!.message).toMatch(/match file line hashes/);
 	});
 
 	it("rejects valid literal 'HHHH:' content when HHHH exists in the file hash set", () => {
@@ -159,7 +159,7 @@ describe("partial hash prefixes copied into content (issue #24)", () => {
 		// The error message notes the absence of a hash-set match — that
 		// distinction helps the model decide whether to rephrase the
 		// identifier or just look for a stale hash.
-		expect(caught!.message).toMatch(/None of the \d+ prefix/);
+		expect(caught!.message).toMatch(/None match file line hashes/);
 	});
 
 	it("accepts a single legit 'TS: TypeScript' line without warning", () => {
@@ -180,5 +180,36 @@ describe("partial hash prefixes copied into content (issue #24)", () => {
 			{ op: "replace", start: anchor, end: anchor, lines: ["# heading"] },
 		]);
 		expect(result.warnings ?? []).toEqual([]);
+	});
+});
+
+describe("Python .py file bare-prefix behavior", () => {
+	const file = "if True:\n    pass\nelse:\n    x = 1";
+	const hashes = computeLineHashes(file);
+	const anchor = hashes[0]!;
+
+	function applyToolPy(toolEdits: HashlineToolEdit[]) {
+		return applyHashlineEdits(file, resolveEditAnchors(toolEdits), undefined, undefined, "test.py");
+	}
+
+	it("warns instead of throwing for .py files with bare prefix", () => {
+		const result = applyToolPy([
+			{ op: "replace", start: anchor, end: anchor, lines: ["else: do_something"] },
+		]);
+		expect(result.content).toContain("else: do_something");
+		expect(result.warnings?.some((w) => w.includes("[W_BARE_HASH_PREFIX]"))).toBe(true);
+	});
+
+	it("still throws for non-.py files with bare prefix", () => {
+		let caught: Error | undefined;
+		try {
+			applyHashlineEdits(file, resolveEditAnchors([
+				{ op: "replace", start: anchor, end: anchor, lines: ["else: do_something"] },
+			]), undefined, undefined, "test.ts");
+		} catch (e) {
+			caught = e as Error;
+		}
+		expect(caught).toBeDefined();
+		expect(caught!.message).toMatch(/^\[E_BARE_HASH_PREFIX\]/);
 	});
 });

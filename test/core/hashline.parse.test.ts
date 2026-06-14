@@ -11,10 +11,10 @@ describe("parseHashRef", () => {
 		// The wire format is bare hash only. The `HASH:content` form from
 		// earlier versions is gone — there is no textHint on the wire.
 		expect(() => parseHashRef("aB3x:const x = 1;")).toThrow(
-			/Expected a 4-character "HASH"/,
+			/Expected a bare 4-character hash/,
 		);
 		expect(() => parseHashRef("aB3x:")).toThrow(
-			/Expected a 4-character "HASH"/,
+			/Expected a bare 4-character hash/,
 		);
 	});
 
@@ -57,7 +57,7 @@ describe("parseHashRef", () => {
 
 	it("rejects legacy LINE#HASH format", () => {
 		expect(() => parseHashRef("5#aB3x")).toThrow(
-			/Line numbers are no longer part of the anchor format/,
+			/Use the hash alone/,
 		);
 	});
 

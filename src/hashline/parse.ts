@@ -28,16 +28,16 @@ function diagnoseHashRef(ref: string): string {
 	const trimmed = ref.trim();
 
 	if (!trimmed.length) {
-		return `[E_BAD_REF] Invalid anchor "${ref}". Expected a 4-character "HASH" (e.g. "aB3x"). No content may follow the hash on the wire.`;
+		return `[E_BAD_REF] Invalid anchor. Expected a bare 4-character hash (e.g. "aB3x").`;
 	}
 
 	// Detect the legacy "LINE#HASH" form (5#aB3x, 12#MQ, etc.) so we can
 	// give a clear error pointing at the new format.
 	if (/^\d+\s*#/.test(trimmed)) {
-		return `[E_BAD_REF] Invalid anchor "${ref}". Line numbers are no longer part of the anchor format. Use the hash alone (e.g. "aB3x") — do not include a line number or any content after the hash.`;
+		return `[E_BAD_REF] Invalid anchor. Use the hash alone (e.g. "aB3x") — no line numbers or trailing content.`;
 	}
 
-	return `[E_BAD_REF] Invalid anchor "${trimmed}". Expected a 4-character "HASH" (e.g. "aB3x") with no trailing content.`;
+	return `[E_BAD_REF] Invalid anchor "${trimmed}". Expected a bare 4-character hash.`;
 }
 
 function parseAnchorRef(ref: string): Anchor {
@@ -89,7 +89,7 @@ function assertNoDisplayPrefixes(lines: string[]): void {
 			DIFF_MINUS_RE.test(line)
 		) {
 			throw new Error(
-				`[E_INVALID_PATCH] "lines" must contain literal file content, not rendered "HASH:" or diff "+/-" prefixes. Offending line: ${JSON.stringify(line)}`,
+			`[E_INVALID_PATCH] "lines" must contain literal file content, not HASH: or diff prefixes. Offending line: ${JSON.stringify(line)}`
 			);
 		}
 	}
