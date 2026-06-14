@@ -17,8 +17,7 @@ describe("extension registration", () => {
     register(pi);
 
     expect(toolNames.sort()).toEqual(["edit", "read"]);
-    // No lifecycle hooks are registered by default; the only optional hook is a
-    // debug session_start banner gated behind PI_HASHLINE_DEBUG.
-    expect(eventNames).toEqual([]);
-  });
+    // tool_result is registered for auto-read-after-write behavior
+    expect(eventNames).toEqual(["tool_result"]);
+});
 });
