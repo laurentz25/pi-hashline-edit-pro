@@ -201,12 +201,12 @@ function assertEditItem(edit: Record<string, unknown>, index: number): void {
 	const unknownKeys = Object.keys(edit).filter((key) => !ITEM_KEYS.has(key));
 	if (unknownKeys.length > 0) {
 		throw new Error(
-			`Edit ${index} contains unknown or unsupported fields: ${unknownKeys.join(", ")}.`,
+			`[E_BAD_SHAPE] Edit ${index} contains unknown or unsupported fields: ${unknownKeys.join(", ")}.`,
 		);
 	}
 
 	if (typeof edit.op !== "string") {
-		throw new Error(`Edit ${index} requires an "op" string.`);
+		throw new Error(`[E_BAD_SHAPE] Edit ${index} requires an "op" string.`);
 	}
 	if (
 		edit.op !== "replace" &&
@@ -219,22 +219,22 @@ function assertEditItem(edit: Record<string, unknown>, index: number): void {
 	}
 	if ("pos" in edit && typeof edit.pos !== "string") {
 		throw new Error(
-			`Edit ${index} field "pos" must be a string when provided.`,
+			`[E_BAD_SHAPE] Edit ${index} field "pos" must be a string when provided.`,
 		);
 	}
 	if ("start" in edit && typeof edit.start !== "string") {
 		throw new Error(
-			`Edit ${index} field "start" must be a string when provided.`,
+			`[E_BAD_SHAPE] Edit ${index} field "start" must be a string when provided.`,
 		);
 	}
 	if ("end" in edit && typeof edit.end !== "string") {
-		throw new Error(`Edit ${index} field "end" must be a string when provided.`);
+		throw new Error(`[E_BAD_SHAPE] Edit ${index} field "end" must be a string when provided.`);
 	}
 	if (!("lines" in edit)) {
-		throw new Error(`Edit ${index} requires a "lines" field.`);
+		throw new Error(`[E_BAD_SHAPE] Edit ${index} requires a "lines" field.`);
 	}
 	if ("lines" in edit && !isStringArray(edit.lines)) {
-		throw new Error(`Edit ${index} field "lines" must be a string array.`);
+		throw new Error(`[E_BAD_SHAPE] Edit ${index} field "lines" must be a string array.`);
 	}
 	if (edit.op === "replace") {
 		if ("pos" in edit) {

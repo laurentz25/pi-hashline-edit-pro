@@ -85,7 +85,8 @@ Edits use the `HASH:content` anchors from `read` output to target lines precisel
 | `append` | Insert lines after `pos`. Omit `pos` to append at EOF. | `pos` optional, `lines` |
 | `prepend` | Insert lines before `pos`. Omit `pos` to prepend at BOF. | `pos` optional, `lines` |
 
-The legacy `op: "replace_text"` (and the top-level `oldText`/`newText` dialect) is rejected with `[E_LEGACY_SHAPE]`. There is no fuzzy fallback, no auto-upgrade, and no "try to find it anyway" mode — those are exactly the failure modes this fork is designed to eliminate.
+- **Request structure validation.** The request envelope (path, edits, returnMode, returnRanges) and individual edit items are validated before any file I/O. Unknown fields, missing required fields, invalid types, and malformed anchors are rejected with `[E_BAD_SHAPE]` or `[E_BAD_OP]`. This catches structural errors early with actionable messages.
+- **Legacy dialect rejected.** The native top-level `oldText`/`newText` (and `old_text`/`new_text`) dialect and `op: "replace_text"` are rejected with `[E_LEGACY_SHAPE]`. The error message tells the model to call `read` first and send `{op:"replace", start:"<HASH>", end:"<HASH>", lines:[...]}` (or `append`/`prepend` with `pos`).
 
 All edits in a single call validate against the same pre-edit snapshot and apply bottom-up, so line numbers stay consistent across operations.
 

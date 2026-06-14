@@ -218,7 +218,7 @@ export function assertEditRequest(
 	request: unknown,
 ): asserts request is EditRequestParams {
 	if (!isRecord(request)) {
-		throw new Error("Edit request must be an object.");
+		throw new Error("[E_BAD_SHAPE] Edit request must be an object.");
 	}
 
 	// The legacy native top-level oldText/newText dialect (with or without the
@@ -230,7 +230,7 @@ export function assertEditRequest(
 	for (const legacyKey of ["oldText", "newText", "old_text", "new_text"]) {
 		if (hasOwn(request, legacyKey)) {
 			throw new Error(
-			`[E_LEGACY_SHAPE] "${legacyKey}" is not supported. Use {op:"replace", start:"<HASH>", end:"<HASH>", lines:[...]}.`
+				`[E_LEGACY_SHAPE] "${legacyKey}" is not supported. Use {op:"replace", start:"<HASH>", end:"<HASH", lines:[...]}.`
 			);
 		}
 	}
@@ -240,16 +240,16 @@ export function assertEditRequest(
 	);
 	if (unknownRootKeys.length > 0) {
 		throw new Error(
-			`Edit request contains unknown or unsupported fields: ${unknownRootKeys.join(", ")}.`,
+			`[E_BAD_SHAPE] Edit request contains unknown or unsupported fields: ${unknownRootKeys.join(", ")}.`,
 		);
 	}
 
 	if (typeof request.path !== "string" || request.path.length === 0) {
-		throw new Error('Edit request requires a non-empty "path" string.');
+		throw new Error('[E_BAD_SHAPE] Edit request requires a non-empty "path" string.');
 	}
 
 	if (hasOwn(request, "edits") && !Array.isArray(request.edits)) {
-		throw new Error('Edit request requires an "edits" array when provided.');
+		throw new Error('[E_BAD_SHAPE] Edit request requires an "edits" array when provided.');
 	}
 
 	if (hasOwn(request, "returnMode")) {
@@ -259,7 +259,7 @@ export function assertEditRequest(
 			request.returnMode !== "ranges"
 		) {
 			throw new Error(
-				'Edit request field "returnMode" must be "changed", "full", or "ranges" when provided.',
+				'[E_BAD_SHAPE] Edit request field "returnMode" must be "changed", "full", or "ranges" when provided.',
 			);
 		}
 	}
@@ -270,26 +270,26 @@ export function assertEditRequest(
 			request.returnRanges.length === 0
 		) {
 			throw new Error(
-				'Edit request field "returnRanges" must be a non-empty array when provided.',
+				'[E_BAD_SHAPE] Edit request field "returnRanges" must be a non-empty array when provided.',
 			);
 		}
 		for (const [index, range] of request.returnRanges.entries()) {
 			if (!isRecord(range)) {
-				throw new Error(`returnRanges[${index}] must be an object.`);
+				throw new Error(`[E_BAD_SHAPE] returnRanges[${index}] must be an object.`);
 			}
 			if (!Number.isInteger(range.start) || (range.start as number) < 1) {
 				throw new Error(
-					`returnRanges[${index}].start must be a positive integer.`,
+					`[E_BAD_SHAPE] returnRanges[${index}].start must be a positive integer.`,
 				);
 			}
 			if (hasOwn(range, "end")) {
 				if (!Number.isInteger(range.end) || (range.end as number) < 1) {
 					throw new Error(
-						`returnRanges[${index}].end must be a positive integer when provided.`,
+						`[E_BAD_SHAPE] returnRanges[${index}].end must be a positive integer when provided.`,
 					);
 				}
 				if ((range.end as number) < (range.start as number)) {
-					throw new Error(`returnRanges[${index}].end must be >= start.`);
+					throw new Error(`[E_BAD_SHAPE] returnRanges[${index}].end must be >= start.`);
 				}
 			}
 		}
@@ -301,12 +301,12 @@ export function assertEditRequest(
 			request.returnRanges.length === 0
 		) {
 			throw new Error(
-				'Edit request with returnMode "ranges" requires a non-empty "returnRanges" array.',
+				'[E_BAD_SHAPE] Edit request with returnMode "ranges" requires a non-empty "returnRanges" array.',
 			);
 		}
 	} else if (hasOwn(request, "returnRanges")) {
 		throw new Error(
-			'Edit request field "returnRanges" is only supported when returnMode is "ranges".',
+			'[E_BAD_SHAPE] Edit request field "returnRanges" is only supported when returnMode is "ranges".',
 		);
 	}
 
@@ -342,7 +342,7 @@ async function executeEditPipeline(
 	const normalized = normalizeEditRequest(request);
 	assertEditRequest(normalized);
 
-	const params = normalized as EditRequestParams;
+	const params = normalized;
 	const path = params.path;
 	const absolutePath = resolveToCwd(path, cwd);
 	const toolEdits = Array.isArray(params.edits)
@@ -592,7 +592,7 @@ const editToolDefinition: EditToolDefinition = {
 		// prepareArguments having run. Idempotent on canonical input.
 		const normalized = normalizeEditRequest(params);
 		assertEditRequest(normalized);
-		const normalizedParams = normalized as EditRequestParams;
+		const normalizedParams = normalized;
 		const path = normalizedParams.path;
 		const absolutePath = resolveToCwd(path, ctx.cwd);
 		const returnMode = normalizedParams.returnMode ?? "changed";
