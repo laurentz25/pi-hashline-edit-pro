@@ -93,6 +93,14 @@ All edits in a single call validate against the same pre-edit snapshot and apply
 
 After a successful edit, the result text contains an `--- Anchors ---` block with fresh `HASH:content` references for the changed region. These can be used directly in the next `edit` call on the same file without a full re-read, provided the next edit targets the same or nearby lines. For distant changes, use `read` first.
 
+### Auto-read after write
+
+After a successful `write`, the extension automatically reads the file and appends a `--- Auto-read (hashline anchors) ---` block to the result. This gives the model immediate `HASH:content` anchors for the newly written file without requiring a separate `read` call. The workflow becomes:
+
+1. `write` a file → result includes hashline anchors
+2. `edit` using those anchors directly
+
+For large files (>2000 lines), the auto-read output is truncated with a pagination hint. Use `read` with `offset` to see more.
 ### Diff for the host
 
 The post-edit diff (with `+`/`-` markers and new `HASH:content` anchors) is exposed to the host UI via `details.diff`. It is intentionally **not** in the LLM-visible text — the model only needs the fresh anchors in `text` to chain follow-up edits, and re-emitting the diff would cost extra tokens.

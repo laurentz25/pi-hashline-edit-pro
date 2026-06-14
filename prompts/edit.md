@@ -51,3 +51,8 @@ On success (`changed` mode, default), the response text contains an `--- Anchors
 Errors are text starting with a bracketed code (e.g. `[E_STALE_ANCHOR]`, `[E_BAD_OP]`, `[E_INVALID_PATCH]`, `[E_LEGACY_SHAPE]`, `[E_EDIT_CONFLICT]`, `[E_BAD_REF]`, `[E_AMBIGUOUS_ANCHOR]`, `[E_BARE_HASH_PREFIX]`, `[E_WOULD_EMPTY]`). The message tells you what to retry; stale-anchor errors include `>>> HASH:content` lines, ready to copy.
 
 The legacy `oldText`/`newText` shape (top-level or as `op: "replace_text"`) is rejected with `[E_LEGACY_SHAPE]`. Use hash-anchored edits instead.
+
+Auto-read after write:
+- After a successful `write`, the result includes a `--- Auto-read (hashline anchors) ---` block with HASH:content for the written file.
+- Use those anchors directly for `edit` calls without a separate `read`.
+- This enables a seamless write → edit workflow with no extra tool calls.

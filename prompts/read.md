@@ -21,3 +21,8 @@ File kinds:
 - Text files are returned as `HASH:content` lines.
 - Images (JPEG, PNG, GIF, WebP) are returned as visual attachments; the HASH-line protocol does not apply.
 - Binary files and directories are rejected with a descriptive error.
+
+Auto-read after write:
+- After a successful `write`, the result includes a `--- Auto-read (hashline anchors) ---` block with HASH:content for the written file.
+- Use those anchors directly for `edit` calls without a separate `read`.
+- The auto-read output follows the same format and rules as `read` output.
