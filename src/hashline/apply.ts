@@ -1,11 +1,3 @@
-/**
- * Application — edit span resolution, conflict detection, and assembly.
- *
- * This module owns the pipeline that turns resolved edits into character-level
- * spans, detects conflicts, and applies the spans back-to-front to produce
- * the final file content. It also owns the changed-line-range computation
- * and the hashline region formatting used by read and edit responses.
- */
 
 import { throwIfAborted } from "../runtime";
 import { computeLineHashes } from "./hash";
@@ -19,7 +11,6 @@ import {
 	type HashlineEdit,
 } from "./resolve";
 
-// ─── Line index ─────────────────────────────────────────────────────────
 
 type LineIndex = {
 	fileLines: string[];
@@ -47,7 +38,6 @@ export function buildLineIndex(content: string): LineIndex {
 	};
 }
 
-// ─── Edit span resolution ───────────────────────────────────────────────
 
 type ResolvedEditSpan = {
 	kind: "replace" | "insert";
@@ -319,13 +309,6 @@ function assertNoConflictingSpans(spans: ResolvedEditSpan[]): void {
 	}
 }
 
-/**
- * Resolve validated edits into ordered, conflict-free character-level spans.
- *
- * Each edit is mapped through resolveEditToSpan (which may produce a noop),
- * duplicate spans are deduplicated, conflicts are rejected, and the remaining
- * spans are sorted back-to-front for safe in-place assembly.
- */
 function resolveEditSpans(
 	edits: ResolvedHashlineEdit[],
 	content: string,
@@ -378,10 +361,6 @@ function resolveEditSpans(
 	});
 }
 
-/**
- * Apply ordered spans to content in reverse (back-to-front) order so earlier
- * spans' offsets stay valid.
- */
 function assembleEditResult(
 	content: string,
 	spans: ResolvedEditSpan[],
@@ -406,25 +385,7 @@ function assembleEditResult(
 	return result;
 }
 
-// ─── Main edit engine ───────────────────────────────────────────────────
 
-/**
- * Apply hashline-anchored edits to file content.
- *
- * Three-phase pipeline:
- *   1. validateAnchorEdits — resolve each hash to a line; mismatches are
- *      rejected with `[E_STALE_ANCHOR]` and collisions with
- *      `[E_AMBIGUOUS_ANCHOR]`
- *   2. resolveEditSpans   — map edits to character spans, dedup, conflict-detect, sort
- *   3. assembleEditResult — apply spans back-to-front, compute changed range
- *
- * `precomputedHashes` is an optional per-line hash array from
- * `computeLineHashes(content)`. When provided, the same array is used for
- * validation AND for the stale-anchor retry block in mismatch errors, so
- * the hashes the model sees on a stale-anchor failure match the hashes the
- * runtime actually validated against. When omitted, hashes are computed
- * once at the top of this function and threaded through all phases.
- */
 export function applyHashlineEdits(
 	content: string,
 	edits: import("./resolve").HashlineEdit[],
@@ -446,13 +407,7 @@ export function applyHashlineEdits(
 			lastChangedLine: undefined,
 		};
 
-	// Normalize `replace` edits: a single-element `lines: [""]` is equivalent
-	// to `lines: []` (deletion). The "non-empty lines" span branch preserves
-	// the trailing newline of the last replaced line, which would leave an
-	// extra blank line behind when the user meant to delete. Models commonly
-	// emit `[""]` to mean "delete this", and the deletion branch handles the
-	// trailing newline correctly. (`append`/`prepend` are unaffected — there
-	// `[""]` legitimately means "insert a blank line".)
+	// Normalize lines: [""] to lines: [] for deletion.
 	edits = edits.map((edit) =>
 		edit.op === "replace" &&
 		edit.lines.length === 1 &&
@@ -466,7 +421,6 @@ export function applyHashlineEdits(
 	const noopEdits: NoopEdit[] = [];
 	const warnings: string[] = [];
 
-	// Phase 1: validate anchors (and resolve to line numbers)
 	const { resolved, mismatches } = validateAnchorEdits(
 		edits,
 		lineIndex.fileLines,
@@ -484,7 +438,6 @@ export function applyHashlineEdits(
 	warnings.push(...barePrefixWarnings);
 	maybeWarnSuspiciousUnicodeEscapePlaceholder(edits, warnings);
 
-	// Phase 2: resolve edits to ordered spans
 	const orderedSpans = resolveEditSpans(
 		resolved,
 		content,
@@ -493,7 +446,6 @@ export function applyHashlineEdits(
 		signal,
 	);
 
-	// Phase 3: assemble result
 	const result = assembleEditResult(content, orderedSpans, signal);
 	assertDoesNotEmptyFile(content, result);
 	const changedRange = computeChangedLineRange(content, result);
@@ -507,17 +459,10 @@ export function applyHashlineEdits(
 	};
 }
 
-// ─── Affected-line computation (for returning anchors after edit) ───────
 
 const ANCHOR_CONTEXT_LINES = 2;
 const ANCHOR_MAX_OUTPUT_LINES = 12;
 
-/**
- * Compute the post-edit line range covering changed lines plus context.
- * Uses `firstChangedLine` and `lastChangedLine` from the edit result for
- * precise bounds. Returns null if the range (with context) exceeds the
- * output budget, signalling that the LLM should re-read instead.
- */
 export function computeAffectedLineRange(params: {
 	firstChangedLine: number | undefined;
 	lastChangedLine: number | undefined;
@@ -537,7 +482,6 @@ export function computeAffectedLineRange(params: {
 		return null;
 	}
 
-	// Empty file after edit: no meaningful anchor block.
 	if (resultLineCount === 0) {
 		return null;
 	}
@@ -545,7 +489,6 @@ export function computeAffectedLineRange(params: {
 	const start = Math.max(1, firstChangedLine - contextLines);
 	const end = Math.min(resultLineCount, lastChangedLine + contextLines);
 
-	// Guard against inverted range (can happen when context pushes end below start).
 	if (end < start) {
 		return null;
 	}
@@ -557,15 +500,6 @@ export function computeAffectedLineRange(params: {
 	return { start, end };
 }
 
-/**
- * Format a list of lines as `#HASH:content` rows.
- *
- * Used by the read tool's preview and the changed-mode anchor block. The
- * hashes must be the precomputed per-line hashes for the file — see
- * `computeLineHashes`. The line number is no longer part of the wire
- * format; callers that need line numbers for pagination or context can
- * compute them separately.
- */
 export function formatHashlineRegion(
 	hashes: string[],
 	lines: string[],
@@ -580,13 +514,7 @@ export function formatHashlineRegion(
 		.join("\n");
 }
 
-// ─── Changed line range computation ─────────────────────────────────
 
-/**
- * Compute first/last changed line numbers between two document versions.
- * Uses character-level diff to locate the changed span, then maps to line
- * numbers in the result document so downstream anchor chaining works.
- */
 export function computeChangedLineRange(
 	original: string,
 	result: string,

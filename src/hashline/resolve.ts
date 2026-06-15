@@ -1,23 +1,9 @@
-/**
- * Resolution — anchor resolution, edit validation, and mismatch formatting.
- *
- * This module owns the logic that resolves hash anchors to line numbers,
- * validates edit structure, and formats mismatch errors. It is the bridge
- * between the parsed edit requests and the apply pipeline.
- */
 
 import { throwIfAborted } from "../runtime";
 import { HASHLINE_BARE_PREFIX_RE } from "./hash";
 import { parseHashRef, hashlineParseText, type Anchor } from "./parse";
 
-// ─── Types ──────────────────────────────────────────────────────────────
 
-/**
- * The internal, post-resolution representation of an anchor. After
- * `validateAnchorEdits` has resolved the hash to a line, the resulting
- * `ResolvedAnchor` carries the line number plus whether the hash matched
- * exactly (vs. falling back to no-anchor-found / not-found).
- */
 export type ResolvedAnchor = {
 	line: number;
 	hash: string;
@@ -29,11 +15,6 @@ export type HashlineEdit =
 	| { op: "append"; pos?: Anchor; lines: string[] }
 	| { op: "prepend"; pos?: Anchor; lines: string[] };
 
-/**
- * A `HashlineEdit` with all anchors resolved to line numbers. This is
- * the shape consumed by `resolveEditToSpan` and the rest of the apply
- * pipeline.
- */
 export type ResolvedHashlineEdit =
 	| {
 			op: "replace";
@@ -56,17 +37,6 @@ export interface NoopEdit {
 	currentContent: string;
 }
 
-/**
- * Schema-level edit as received from the tool layer.
- *
- * `pos` is the anchor for `append`/`prepend`; `start` and `end` are the
- * inclusive range anchors for `replace`. `lines` is canonicalized to an array.
- *
- * The `oldText` and `newText` fields are legacy — they exist on this type
- * only because `normalizeEditRequest` may pass them through before
- * `assertEditRequest` rejects them with `[E_LEGACY_SHAPE]`. They are
- * never accepted by the edit pipeline. Do not use them in new code.
- */
 export type HashlineToolEdit = {
 	op: string;
 	pos?: string;
@@ -79,17 +49,7 @@ export type HashlineToolEdit = {
 	newText?: string;
 };
 
-// ─── Anchor resolution ──────────────────────────────────────────────────
 
-/**
- * Resolve an `Anchor` to a specific line in the file.
- *
- * Returns a `ResolvedAnchor` on success. Returns an error object on:
- *   - `not_found`: no line in the file has this hash
- *   - `ambiguous`: the hash matches multiple lines (the model must
- *     re-read to disambiguate; the runtime does not accept a
-	 *     `#HASH:content` disambiguator on the wire)
- */
 function resolveAnchor(
 	ref: Anchor,
 	fileLines: string[],
@@ -112,7 +72,6 @@ function resolveAnchor(
 	return { ref, kind: "ambiguous", candidates: hashMatches };
 }
 
-// ─── Mismatch formatting ────────────────────────────────────────────────
 
 export function formatMismatchError(
 	mismatches: HashMismatch[],
@@ -170,26 +129,7 @@ export function formatMismatchError(
 	return out.join("\n");
 }
 
-// ─── Edit structure validation ──────────────────────────────────────────
 
-/**
- * Validate + parse flat tool-schema edits into typed internal representations.
- *
- * This is the single source of truth for per-edit structural validation (shape,
- * op constraints, field types) and anchor parsing. `assertEditRequest` validates
- * only the request envelope (path, returnMode, etc.) and delegates here for
- * edit payload validation.
- *
- * Strict: provided anchors must parse successfully. Missing anchors are
- * fine for append (→ EOF) and prepend (→ BOF), but a malformed anchor
- * that was explicitly supplied is always an error.
- *
- * - replace + start + end → range replace (both anchors required; for a
- *   single-line replace, set start = end = the line's hash)
- * - append + pos → append after that anchor
- * - prepend + pos → prepend before that anchor
- * - no anchors → file-level append/prepend (only for those ops)
- */
 const ITEM_KEYS = new Set(["op", "pos", "start", "end", "lines"]);
 function isStringArray(value: unknown): value is string[] {
 	return (
@@ -269,15 +209,7 @@ export function resolveEditAnchors(edits: HashlineToolEdit[]): HashlineEdit[] {
 		const op = edit.op;
 		switch (op) {
 			case "replace": {
-				// Normalize `lines: [""]` (a single empty string) to `lines: []`
-				// (deletion). The "lines.length > 0" branch in resolveEditToSpan
-				// preserves the trailing newline of the last replaced line, so a
-				// single-element empty array would leave that newline behind and
-				// produce an extra blank line. Models commonly emit `[""]` to
-				// mean "delete this", and the deletion branch handles the
-				// trailing newline correctly. Note: this is `replace`-only;
-				// `append`/`prepend` legitimately use `[""]` to insert a blank
-				// line.
+				// Normalize lines: [""] to lines: [] for deletion.
 				const replaceLines = hashlineParseText(edit.lines ?? null);
 				const normalizedLines =
 					replaceLines.length === 1 && replaceLines[0] === ""
@@ -312,7 +244,6 @@ export function resolveEditAnchors(edits: HashlineToolEdit[]): HashlineEdit[] {
 	return result;
 }
 
-// ─── Anchor validation ──────────────────────────────────────────────────
 
 function maybeWarnSuspiciousUnicodeEscapePlaceholder(
 	edits: HashlineEdit[],
@@ -327,28 +258,6 @@ function maybeWarnSuspiciousUnicodeEscapePlaceholder(
 	}
 }
 
-/**
- * Reject edit content that starts with a bare hash prefix. Companion to
- * `assertNoDisplayPrefixes`, which rejects the unambiguous `+HASH:` form at
- * the parse stage; this catches the bare `HASH:` form (after optional leading
- * whitespace) at the apply stage. The first 5 characters of every `lines`
- * entry are checked: `#` prefix + 4 alphabet characters (A–Z, a–z, 0–9, `-`, `_`)
- * followed by `:`.
- *
- * Bare `#HASH:` prefixes in `lines` are almost always a model mistake — the
- * model copied the hash prefix from a `read` output but dropped the rest of
- * the rendered `#HASH:content` form. We reject with `[E_BARE_HASH_PREFIX]`
- * rather than warn, because a stray hash in the file content is a silent
- * correctness bug (the line is written verbatim, no autocorrection) and
- * because the cost of a false positive is small: the model can rephrase the
- * line (e.g. quote it, escape the colon, or use a different identifier
- * shape) and retry.
- *
- * The error message lists the offending lines, the suspect hash prefix for
- * each, and whether any of them collide with a real file-line hash. A
- * collision is a strong signal that the model was reading a `#HASH:content`
- * line and copied only the prefix.
- */
 export function assertNoBareHashPrefixLines(
 	edits: HashlineEdit[],
 	fileLines: string[],
@@ -360,8 +269,6 @@ export function assertNoBareHashPrefixLines(
 			`assertNoBareHashPrefixLines: fileHashes.length (${fileHashes.length}) must match fileLines.length (${fileLines.length}).`,
 		);
 	}
-	// Collect bare-prefix suspects up front: regex only. Almost every edit has
-	// none, so this lets the common path bail before paying for file hashes.
 	const suspects: { line: string; hash: string; editIndex: number; lineIndex: number }[] = [];
 	for (let editIndex = 0; editIndex < edits.length; editIndex++) {
 		const edit = edits[editIndex]!;
@@ -379,8 +286,6 @@ export function assertNoBareHashPrefixLines(
 	const matchedCount = matched.length;
 	const exampleLine = `${suspects[0]!.hash}:${suspects[0]!.line}`;
 
-	// For Python files, return a warning instead of throwing — Python uses
-	// `else:`, `except:`, `elif:` etc. which trigger the bare-prefix detector.
 	if (isPython) {
 		const hint = matchedCount > 0
 			? `${matchedCount} prefix(es) match file line hashes.`
@@ -398,18 +303,6 @@ export function assertNoBareHashPrefixLines(
 	);
 }
 
-/**
- * Validate + resolve hash-anchored edits against the current file content.
- *
- * For each anchor, the runtime:
- *   1. Looks up the hash in the file's precomputed hash array.
- *   2. If the hash uniquely matches a line, use it.
- *   3. If the hash matches multiple lines (rare at 24 bits, but possible),
- *      this is `[E_AMBIGUOUS_ANCHOR]` — the model must re-read to refresh.
- *   4. If the hash doesn't match any line, this is `[E_STALE_ANCHOR]`.
- *
- * Boundary / single-anchor / range warnings are appended to `warnings`.
- */
 export function validateAnchorEdits(
 	edits: HashlineEdit[],
 	fileLines: string[],
@@ -548,5 +441,4 @@ export function validateAnchorEdits(
 	return { resolved, mismatches };
 }
 
-// Re-export for apply module
 export { maybeWarnSuspiciousUnicodeEscapePlaceholder };

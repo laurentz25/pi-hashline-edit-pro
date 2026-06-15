@@ -95,12 +95,6 @@ export function formatHashlineReadPreview(
 		? Math.min(startLine - 1 + limit, totalLines)
 		: totalLines;
 	const selected = allLines.slice(startLine - 1, endIdx);
-	// The runtime precomputes the full per-line hash array so the model sees
-	// hashes consistent with what validation will compare against. Callers that
-	// already have one (the read tool, chained-edit tests) can pass it in;
-	// otherwise we recompute here for the visible window — acceptable for
-	// preview formatting because the hashes themselves are identical regardless
-	// of which slice of the file we look at.
 	const allHashes = precomputedHashes ?? computeLineHashes(text);
 	const selectedHashes = allHashes.slice(startLine - 1, endIdx);
 	const formatted = formatHashlineRegion(selectedHashes, selected);

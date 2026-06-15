@@ -127,11 +127,6 @@ export const hashlineEditToolSchema = Type.Object(
 		edits: Type.Optional(
 			Type.Array(hashlineEditItemSchema, { description: "edits over $path" }),
 		),
-		// File-path alias and JSON-stringified edits are still absorbed by
-		// normalizeEditRequest in the prepareArguments hook, which runs before
-		// this schema is validated. The legacy native top-level oldText/newText
-		// dialect is NOT folded — it is rejected outright with [E_LEGACY_SHAPE]
-		// in assertEditRequest, so it never reaches the schema validator.
 	},
 	{ additionalProperties: false },
 );
@@ -205,15 +200,6 @@ const EDIT_PROMPT_SNIPPET = readFileSync(
 
 const ROOT_KEYS = new Set(["path", "returnMode", "returnRanges", "edits"]);
 
-// Validates the canonical edit request envelope after normalizeEditRequest has
-// converged any model dialects. Per-edit structural validation is delegated to
-// resolveEditAnchors (src/hashline.ts), which is the single source of truth for
-// edit-item shape + op constraints. This function validates only the root-level
-// request fields: path, returnMode, returnRanges, and that edits is an array.
-//
-// Intentional overlap with the published TypeBox schema: pi normally runs AJV
-// validation before execute(), but that can be disabled in environments without
-// runtime code generation support, so the semantic checks here are the backstop.
 export function assertEditRequest(
 	request: unknown,
 ): asserts request is EditRequestParams {
@@ -221,12 +207,6 @@ export function assertEditRequest(
 		throw new Error("[E_BAD_SHAPE] Edit request must be an object.");
 	}
 
-	// The legacy native top-level oldText/newText dialect (with or without the
-	// snake_case aliases) is no longer supported. Hash-anchored edits are the
-	// only path — the legacy shape is what produces
-	// `[E_NO_MATCH] replace_text found no exact unique match` on real-world
-	// whitespace/Unicode drift. Reject early with a clear error so the model
-	// learns the right shape on the next turn.
 	for (const legacyKey of ["oldText", "newText", "old_text", "new_text"]) {
 		if (hasOwn(request, legacyKey)) {
 			throw new Error(
@@ -310,16 +290,8 @@ export function assertEditRequest(
 		);
 	}
 
-	// Per-edit validation lives in resolveEditAnchors — the single source of
-	// truth for edit-item shape, op constraints, and anchor parsing.
 }
 
-/**
- * Shared edit pipeline: normalize, validate, read file, resolve anchors,
- * and apply edits. Both `computeEditPreview` (dry-run) and `execute()`
- * (real) call this; the access mode parameter controls whether the file
- * must be writable.
- */
 async function executeEditPipeline(
 	request: unknown,
 	cwd: string,
@@ -392,10 +364,6 @@ async function executeEditPipeline(
 	const originalEnding = detectLineEnding(rawContent);
 	const originalNormalized = normalizeToLF(rawContent);
 
-	// Pre-compute hashes for the original file once. The same array is passed
-	// into applyHashlineEdits so validation and the stale-anchor retry block
-	// agree on what each line's hash is, and so we can return updated
-	// occurrence-aware anchors in the response without recomputing.
 	const originalHashes = computeLineHashes(originalNormalized);
 
 	const resolved = resolveEditAnchors(toolEdits);
@@ -458,16 +426,8 @@ const editToolDefinition: EditToolDefinition = {
 	description: EDIT_DESC,
 	parameters: hashlineEditToolSchema,
 	promptSnippet: EDIT_PROMPT_SNIPPET,
-	// Converge model dialects (JSON-string edits, file_path alias) onto the
-	// canonical hashline shape before Pi validates and before execute(). The
-	// legacy top-level oldText/newText dialect is NOT folded — it is rejected
-	// outright with [E_LEGACY_SHAPE] in assertEditRequest. See
-	// src/edit-normalize.ts.
 	prepareArguments: (args: unknown) =>
 		normalizeEditRequest(args) as EditRequestParams,
-	// Force the default tool shell (Box with pending/success/error background) so
-	// we don't inherit renderShell: "self" from the built-in edit tool of the
-	// same name, which would drop the shared background color block.
 	renderShell: "default",
 	renderCall(args, theme, context) {
 		const previewInput = getRenderablePreviewInput(args);
@@ -588,8 +548,6 @@ const editToolDefinition: EditToolDefinition = {
 	},
 
 	async execute(_toolCallId, params, signal, _onUpdate, ctx) {
-		// normalizeEditRequest is re-applied here so execute does not depend on
-		// prepareArguments having run. Idempotent on canonical input.
 		const normalized = normalizeEditRequest(params);
 		assertEditRequest(normalized);
 		const normalizedParams = normalized;
@@ -667,10 +625,6 @@ const editToolDefinition: EditToolDefinition = {
 				requestedReturnRanges,
 				originalNormalized,
 				result,
-				// Hash the post-edit file once. The result builders will use
-				// these for the per-line anchors in the full / ranges / changed
-				// response blocks; computing once here is cheaper than letting
-				// each builder recompute.
 				resultHashes: computeLineHashes(result),
 				warnings,
 				snapshotId: updatedSnapshotId,

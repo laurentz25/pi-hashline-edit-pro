@@ -1,14 +1,3 @@
-/**
- * Edit response builders.
- *
- * Pulled out of `src/edit.ts` execute() so each returnMode branch
- * (noop / full / ranges / changed) is independently testable and the
- * top-level execute path stays narrative.
- *
- * No behaviour change: outputs are byte-identical to the previous inline
- * implementation. The only additive surface is `details.metrics` (Phase 2 C
- * — observability for hosts; the LLM-visible text is unchanged).
- */
 
 import { generateDiffString } from "./edit-diff";
 import {
@@ -18,10 +7,6 @@ import {
 } from "./hashline";
 import { formatHashlineReadPreview } from "./read";
 
-// Local shape — pi-coding-agent does not export a public `ToolResult`. The
-// builders return `details` as `any` so callers can keep their own per-tool
-// details type without re-asserting it here. This file intentionally does
-// not import the agent's tool-result type to stay decoupled from internals.
 type ToolResult = {
 	content: Array<{ type: "text"; text: string }>;
 	isError?: boolean;
@@ -30,7 +15,6 @@ type ToolResult = {
 
 const CHANGED_ANCHOR_TEXT_BUDGET_BYTES = 50 * 1024;
 
-// ─── Public types ───────────────────────────────────────────────────────
 
 export type ReturnMode = "changed" | "full" | "ranges";
 
@@ -52,14 +36,6 @@ export type FullContentPreview = {
 	nextOffset?: number;
 };
 
-/**
- * Host-visible, opt-in observability surface (Phase 2 C). The LLM never sees
- * this — it lives in `details` only. Hosts can use it for dashboards,
- * adoption metrics, or regression alarms (e.g. "noop rate spiking").
- *
- * snake_case is intentional: most observability backends prefer it and
- * avoiding camelCase saves a transform on the host side.
- */
 export type EditMetrics = {
 	edits_attempted: number;
 	edits_noop: number;

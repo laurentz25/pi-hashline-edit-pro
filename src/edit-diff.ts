@@ -4,7 +4,6 @@ import {
   ANCHOR_LENGTH,
 } from "./hashline";
 
-// ─── Line ending normalization ──────────────────────────────────────────
 
 export function detectLineEnding(content: string): "\r\n" | "\n" {
   const crlfIdx = content.indexOf("\r\n");
@@ -30,7 +29,6 @@ export function stripBom(content: string): { bom: string; text: string } {
     : { bom: "", text: content };
 }
 
-// ─── Diff generation ────────────────────────────────────────────────────
 
 function formatDiffPreviewLine(
   prefix: " " | "+" | "-",
@@ -38,9 +36,6 @@ function formatDiffPreviewLine(
   hash: string | undefined,
 ): string {
   if (hash === undefined) {
-    // Removed lines have no hash, but they still need column alignment with
-    // the hash-prefixed lines (` HASH:`, `+HASH:`). Pad with `HASH_LENGTH`
-    // spaces so the `:` lines up in the same column.
     return `${prefix}${" ".repeat(ANCHOR_LENGTH)}:${line}`;
   }
   return `${prefix}${hash}:${line}`;
