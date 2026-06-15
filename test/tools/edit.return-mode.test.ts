@@ -33,8 +33,8 @@ describe("edit tool returnMode", () => {
       // No structural markers in plain text → outline omitted from text.
       expect(getText(result)).not.toContain("Structure outline:");
       expect(getText(result)).toContain("details.fullContent");
-      expect(result.details?.fullContent?.text).toContain(`${computeLineHash(1, "aaa")}:aaa`);
-      expect(result.details?.fullContent?.text).toContain(`${computeLineHash(2, "BBB")}:BBB`);
+	      expect(result.details?.fullContent?.text).toContain(`${computeLineHash(1, "aaa")}│aaa`);
+	      expect(result.details?.fullContent?.text).toContain(`${computeLineHash(2, "BBB")}│BBB`);
       expect(result.details?.nextOffset).toBeUndefined();
     });
   });
@@ -64,7 +64,7 @@ describe("edit tool returnMode", () => {
 
       expect(getText(result)).not.toContain("Structure outline:");
       expect(getText(result)).toContain("details.fullContent");
-      expect(result.details?.fullContent?.text).toContain(`${computeLineHash(1, "LINE-1")}:LINE-1`);
+	      expect(result.details?.fullContent?.text).toContain(`${computeLineHash(1, "LINE-1")}│LINE-1`);
       expect(result.details?.fullContent?.nextOffset).toBeGreaterThan(1);
     });
   });
@@ -98,10 +98,10 @@ describe("edit tool returnMode", () => {
       expect(getText(result)).not.toContain("Structure outline:");
       expect(getText(result)).toContain("details.returnedRanges");
       expect(result.details?.returnedRanges).toHaveLength(2);
-      expect(result.details?.returnedRanges?.[0]?.text).toContain(`${computeLineHash(1, "aaa")}:aaa`);
-      expect(result.details?.returnedRanges?.[0]?.text).toContain(`${computeLineHash(2, "BBB")}:BBB`);
-      expect(result.details?.returnedRanges?.[1]?.text).toContain(`${computeLineHash(4, "ddd")}:ddd`);
-      expect(result.details?.returnedRanges?.[0]?.text).not.toContain(`${computeLineHash(3, "ccc")}:ccc`);
+	      expect(result.details?.returnedRanges?.[0]?.text).toContain(`${computeLineHash(1, "aaa")}│aaa`);
+	      expect(result.details?.returnedRanges?.[0]?.text).toContain(`${computeLineHash(2, "BBB")}│BBB`);
+	      expect(result.details?.returnedRanges?.[1]?.text).toContain(`${computeLineHash(4, "ddd")}│ddd`);
+	      expect(result.details?.returnedRanges?.[0]?.text).not.toContain(`${computeLineHash(3, "ccc")}│ccc`);
     });
   });
 

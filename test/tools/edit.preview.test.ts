@@ -35,7 +35,7 @@ describe("computeEditPreview", () => {
         return;
       }
       expect(preview.diff).toContain(`+${computeLineHash(2, "BBB")}`);
-      expect(preview.diff).toContain(":BBB");
+	      expect(preview.diff).toContain("│BBB");
     });
   });
 
@@ -83,7 +83,7 @@ describe("computeEditPreview", () => {
         if (!("diff" in preview)) {
           return;
         }
-        expect(preview.diff).toContain(":BBB");
+	        expect(preview.diff).toContain("│BBB");
       } finally {
         await chmod(path, 0o644);
       }
@@ -110,7 +110,7 @@ describe("computeEditPreview", () => {
       if (!("diff" in preview)) {
         return;
       }
-      expect(preview.diff).toContain(":BBB");
+	      expect(preview.diff).toContain("│BBB");
       expect(vi.mocked(fileKindMod.classifyFileKind)).not.toHaveBeenCalled();
     });
   });

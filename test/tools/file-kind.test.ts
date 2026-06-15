@@ -322,7 +322,7 @@ describe("file kind guards in tools", () => {
 				expect(text).toContain("<LinearLayout");
 				expect(text).not.toMatch(/binary file/i);
 				// Text path renders hashline-prefixed lines (e.g. "1#<hash>:<?xml ...").
-				expect(text).toMatch(/^#[A-Za-z0-9_\-]{4}:<\?xml/m);
+				expect(text).toMatch(/^[A-Za-z0-9_\-]{4}│<\?xml/m);
 			},
 		);
 	});

@@ -2,23 +2,24 @@ import { describe, expect, it } from "vitest";
 import { buildCompactHashlineDiffPreview, generateDiffString } from "../../src/edit-diff";
 
 describe("generateDiffString", () => {
-	it("adds hash hints for context and addition lines and pads deletion lines to align the ':' column", () => {
+	it("adds hash hints for context and addition lines and pads deletion lines to align the '│' column", () => {
 		const result = generateDiffString("alpha\nbeta\ngamma", "alpha\nBETA\ngamma");
 		const diff = result.diff;
-		// Marker + (optional hash) + ":" + content. The marker is 1 char; the
+		// Marker + (optional hash) + "│" + content. The marker is 1 char; the
+		// hash (when present) is 4 chars, so the "│" sits in column 5 (0-indexed)
 		// hash (when present) is 4 chars, so the ":" sits in column 5 (0-indexed)
 		// for context and addition lines. Removed lines have no hash, so they are
-		// padded with 4 spaces of "ghost hash" so the ":" stays in the same column
+		// padded with 4 spaces of "ghost hash" so the "│" stays in the same column
 		// and removed-line content lines up with the surrounding context.
-		expect(diff).toMatch(/^ #[A-Za-z0-9_\-]{4}:alpha$/m);
-		expect(diff).toMatch(/^\+#[A-Za-z0-9_\-]{4}:BETA$/m);
-		expect(diff).toMatch(/^- {5}:beta$/m);
-		expect(diff).toMatch(/^ #[A-Za-z0-9_\-]{4}:gamma$/m);
+		expect(diff).toMatch(/^ [A-Za-z0-9_\-]{4}│alpha$/m);
+		expect(diff).toMatch(/^\+[A-Za-z0-9_\-]{4}│BETA$/m);
+		expect(diff).toMatch(/^- {4}│beta$/m);
+		expect(diff).toMatch(/^ [A-Za-z0-9_\-]{4}│gamma$/m);
 	});
 
-	it("keeps the ':' column aligned across context, addition, and deletion lines", () => {
+	it("keeps the '│' column aligned across context, addition, and deletion lines", () => {
 		// Realistic-ish snippet: drop a log line, rewrite the return. The test asserts
-		// that every line in the diff places its ':' at exactly the same column
+		// that every line in the diff places its "│" at exactly the same column
 		// index, so the diff reads as a tidy aligned table rather than a ragged
 		// stack. The console.log prints the full diff to the test output so the
 		// alignment is visible at a glance.
@@ -38,17 +39,20 @@ describe("generateDiffString", () => {
 		// eslint-disable-next-line no-console
 		console.log("\n--- generateDiffString output ---\n" + diff + "\n----------------------------------");
 
-		// Every line should be: 1-char marker + 5-char hash-or-padding + ':' + content.
-		// The ':' therefore lives at index 6 on every line.
+		// Every line should be: 1-char marker + 4-char hash-or-padding + '│' + content.
+		// The "│" therefore lives at index 5 on every line.
 		const lines = diff.split("\n");
-		const colonColumns = lines.map((line) => line.indexOf(":"));
-		expect(colonColumns).toEqual(lines.map(() => 6));
+		const colonColumns = lines.map((line) => line.indexOf("│"));
+		expect(colonColumns).toEqual(lines.map(() => 5));
 
 		// Spot-check the shape of each line type.
-		expect(lines).toContainEqual(expect.stringMatching(/^ #[A-Za-z0-9_\-]{4}:function greet\(name\) \{$/));
-		expect(lines).toContainEqual(expect.stringMatching(/^- {5}: {2}console\.log\('old'\)$/));
-		expect(lines).toContainEqual(expect.stringMatching(/^\+#[A-Za-z0-9_\-]{4}: {2}return `Hello, \$\{name\}`$/));
-		expect(lines).toContainEqual(expect.stringMatching(/^ #[A-Za-z0-9_\-]{4}:\}$/));
+		expect(lines).toContainEqual(expect.stringMatching(/^ [A-Za-z0-9_\-]{4}│function greet\(name\) \{$/));
+		expect(lines).toContainEqual(expect.stringMatching(/^- {4}│ {2}console\.log\('old'\)$/));
+		expect(lines).toContainEqual(expect.stringMatching(/^\+[A-Za-z0-9_\-]{4}│ {2}return `Hello, \$\{name\}`$/));
+		expect(lines).toContainEqual(expect.stringMatching(/^ [A-Za-z0-9_\-]{4}│\}$/));
+		expect(lines).toContainEqual(expect.stringMatching(/^- {4}│ {2}console\.log\('old'\)$/));
+		expect(lines).toContainEqual(expect.stringMatching(/^\+[A-Za-z0-9_\-]{4}│ {2}return `Hello, \$\{name\}`$/));
+		expect(lines).toContainEqual(expect.stringMatching(/^ [A-Za-z0-9_\-]{4}│\}$/));
 	});
 });
 

@@ -7,17 +7,18 @@ import {
 } from "../../src/hashline";
 
 describe("strict edit input (no autocorrection)", () => {
-	it("rejects bare HASH: prefix in content with E_BARE_HASH_PREFIX", () => {
+	it("rejects bare HASH| prefix in content with E_BARE_HASH_PREFIX", () => {
 		// The first 5 characters of an edit line are checked. If they look
-		// like a 4-char hash followed by ":", the edit is rejected — even when
-		// the prefix does not match any file-line hash. Bare HASH: in
+		// like a 4-char hash followed by "|", the edit is rejected — even when
+		// the prefix does not match any file-line hash. Bare HASH| in
 		// content is almost always a model mistake (copying a hash prefix
+		// from read output but dropping the rest of "HASH|content"), and
 		// from read output but dropping the rest of "HASH:content"), and
 		// strict rejection prevents a silent correctness bug in the file.
 		const file = "foo\nbar";
 		const hashes = computeLineHashes(file);
 		const toolEdits: HashlineToolEdit[] = [
-			{ op: "replace", start: hashes[0]!, end: hashes[0]!, lines: [`${hashes[0]!}:foo`] },
+			{ op: "replace", start: hashes[0]!, end: hashes[0]!, lines: [`${hashes[0]!}│foo`] },
 		];
 		let caught: Error | undefined;
 		try {
@@ -28,8 +29,8 @@ describe("strict edit input (no autocorrection)", () => {
 		expect(caught).toBeDefined();
 		expect(caught!.message).toMatch(/^\[E_BARE_HASH_PREFIX\]/);
 		// Error message lists the offending line and the suspect hash prefix.
-		expect(caught!.message).toContain(`${hashes[0]!}:`);
-		expect(caught!.message).toContain(`${hashes[0]!}:foo`);
+		expect(caught!.message).toContain(`${hashes[0]!}│`);
+		expect(caught!.message).toContain(`${hashes[0]!}│foo`);
 		// The error message flags the case where the suspect matches a real
 		// file-line hash (strong evidence the model copied a hash).
 		expect(caught!.message).toMatch(/match file line hashes/);
@@ -88,7 +89,8 @@ describe("strict edit input (no autocorrection)", () => {
 });
 
 describe("partial hash prefixes copied into content (issue #24)", () => {
-	// The bare-prefix detector matches HASH_LENGTH-char alphabet runs followed by ":".
+	// The bare-prefix detector matches HASH_LENGTH-char alphabet runs followed by "|".
+	// With 4-char hashes, a real-content prefix like "TODO:foo" can sometimes be a
 	// With 4-char hashes, a real-content prefix like "TODO:foo" can sometimes be a
 	// real concern. The detector warns but never silently patches.
 	const file = "alpha\nbeta\ngamma\ndelta";
@@ -109,14 +111,14 @@ describe("partial hash prefixes copied into content (issue #24)", () => {
 		let caught: Error | undefined;
 		try {
 			applyTool([
-				{ op: "replace", start: anchor, end: anchor, lines: [`${betaHash}:### heading`, "real content"] },
+				{ op: "replace", start: anchor, end: anchor, lines: [`${betaHash}│### heading`, "real content"] },
 			]);
 		} catch (e) {
 			caught = e as Error;
 		}
 		expect(caught).toBeDefined();
 		expect(caught!.message).toMatch(/^\[E_BARE_HASH_PREFIX\]/);
-		expect(caught!.message).toContain(`${betaHash}:### heading`);
+		expect(caught!.message).toContain(`${betaHash}│### heading`);
 		expect(caught!.message).toMatch(/match file line hashes/);
 	});
 
@@ -127,14 +129,14 @@ describe("partial hash prefixes copied into content (issue #24)", () => {
 		let caught: Error | undefined;
 		try {
 			applyTool([
-				{ op: "replace", start: anchor, end: anchor, lines: [`${gammaHash}:text`] },
+				{ op: "replace", start: anchor, end: anchor, lines: [`${gammaHash}│text`] },
 			]);
 		} catch (e) {
 			caught = e as Error;
 		}
 		expect(caught).toBeDefined();
 		expect(caught!.message).toMatch(/^\[E_BARE_HASH_PREFIX\]/);
-		expect(caught!.message).toContain(`${gammaHash}:text`);
+		expect(caught!.message).toContain(`${gammaHash}│text`);
 	});
 
 	it("rejects even when bare prefixes miss the file hash set (no 'strong signal' gate)", () => {
@@ -149,7 +151,7 @@ describe("partial hash prefixes copied into content (issue #24)", () => {
 		let caught: Error | undefined;
 		try {
 			applyTool([
-				{ op: "replace", start: anchor, end: anchor, lines: ["#ZZZZ:one", "#ZZZP:two"] },
+				{ op: "replace", start: anchor, end: anchor, lines: ["ZZZZ│one", "ZZZP│two"] },
 			]);
 		} catch (e) {
 			caught = e as Error;
@@ -193,12 +195,13 @@ describe("Python .py file bare-prefix behavior", () => {
 	}
 
 	it("warns instead of throwing for .py files with bare prefix", () => {
-		// With the # prefix format, Python syntax like else: no longer triggers
+		// With the prefix format, Python syntax like else: no longer triggers
+		// the detector. But a line like aB3x|content would trigger it.
 		// the detector. But a line like #aB3x:content would trigger it.
 		const result = applyToolPy([
-			{ op: "replace", start: anchor, end: anchor, lines: ["#aB3x:do_something"] },
+			{ op: "replace", start: anchor, end: anchor, lines: ["aB3x│do_something"] },
 		]);
-		expect(result.content).toContain("#aB3x:do_something");
+		expect(result.content).toContain("aB3x│do_something");
 		expect(result.warnings?.some((w) => w.includes("[W_BARE_HASH_PREFIX]"))).toBe(true);
 	});
 
@@ -206,7 +209,7 @@ describe("Python .py file bare-prefix behavior", () => {
 		let caught: Error | undefined;
 		try {
 			applyHashlineEdits(file, resolveEditAnchors([
-				{ op: "replace", start: anchor, end: anchor, lines: ["#aB3x:do_something"] },
+				{ op: "replace", start: anchor, end: anchor, lines: ["aB3x│do_something"] },
 			]), undefined, undefined, "test.ts");
 		} catch (e) {
 			caught = e as Error;

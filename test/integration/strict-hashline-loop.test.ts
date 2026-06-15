@@ -16,8 +16,8 @@ describe("strict hashline tool loop", () => {
       const firstText = firstRead.content[0].text as string;
       const betaRef = firstText
         .split("\n")
-        .find((line: string) => line.includes(":beta"))!
-        .split(":")[0]!;
+        .find((line: string) => line.includes("│beta"))!
+        .split("│")[0]!;
 
       await editTool.execute(
         "e1",
@@ -47,8 +47,8 @@ describe("strict hashline tool loop", () => {
       const secondText = secondRead.content[0].text as string;
       const freshRef = secondText
         .split("\n")
-        .find((line: string) => line.includes(":BETA"))!
-        .split(":")[0]!;
+	        .find((line: string) => line.includes("│BETA"))!
+	        .split("│")[0]!;
 
       await editTool.execute(
         "e3",

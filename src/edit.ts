@@ -61,7 +61,7 @@ function stringEnumSchema<const Values extends readonly string[]>(
 
 const hashlineEditLinesSchema = Type.Array(Type.String(), {
 	description:
-		"replacement content, one array entry per line, no HASH: prefix",
+		"replacement content, one array entry per line, no HASH| prefix",
 });
 
 const returnRangeSchema = Type.Object(
@@ -92,19 +92,19 @@ const hashlineEditItemSchema = Type.Object(
 		start: Type.Optional(
 			Type.String({
 				description:
-					"required range-start anchor for op \"replace\" (hash anchor like \"#aB3x\" copied from read output); no content may follow the anchor",
+					"required range-start anchor for op \"replace\" (hash anchor like \"aB3x\" copied from read output); no content may follow the anchor",
 			}),
 		),
 		end: Type.Optional(
 			Type.String({
 				description:
-					"required range-end anchor for op \"replace\" (hash anchor like \"#aB3x\"). To replace a single line, set start = end = the line's anchor",
+					"required range-end anchor for op \"replace\" (hash anchor like \"aB3x\"). To replace a single line, set start = end = the line's anchor",
 			}),
 		),
 		pos: Type.Optional(
 			Type.String({
 				description:
-					"anchor for op \"append\" or \"prepend\" (hash anchor like \"#aB3x\"). Omit for file-boundary insertion (EOF/BOF).",
+					"anchor for op \"append\" or \"prepend\" (hash anchor like \"aB3x\"). Omit for file-boundary insertion (EOF/BOF).",				
 			}),
 		),
 		lines: Type.Optional(hashlineEditLinesSchema),

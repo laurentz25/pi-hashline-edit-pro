@@ -44,7 +44,7 @@ describe("assertEditRequest", () => {
 			assertEditRequest({
 				path: "a.ts",
 				returnMode: "ranges",
-				edits: [{ op: "replace", start: "#ZZPM", end: "#ZZPM", lines: ["x"] }],
+				edits: [{ op: "replace", start: "ZZPM", end: "ZZPM", lines: ["x"] }],
 			} as any),
 		).toThrow(/returnRanges/i);
 	});
@@ -55,7 +55,7 @@ describe("assertEditRequest", () => {
 				path: "a.ts",
 				returnMode: "changed",
 				returnRanges: [{ start: 1, end: 2 }],
-				edits: [{ op: "replace", start: "#ZZPM", end: "#ZZPM", lines: ["x"] }],
+				edits: [{ op: "replace", start: "ZZPM", end: "ZZPM", lines: ["x"] }],
 			} as any),
 		).toThrow(/returnRanges/i);
 	});
@@ -118,11 +118,11 @@ describe("registerEditTool", () => {
 		// and be rejected with E_LEGACY_SHAPE.
 		const result = registered?.prepareArguments?.({
 			path: "a.ts",
-			edits: [{ op: "replace", start: "#ZZPM", end: "#ZZPM", lines: ["x"] }],
+			edits: [{ op: "replace", start: "ZZPM", end: "ZZPM", lines: ["x"] }],
 		});
 		expect(result).toEqual({
 			path: "a.ts",
-			edits: [{ op: "replace", start: "#ZZPM", end: "#ZZPM", lines: ["x"] }],
+			edits: [{ op: "replace", start: "ZZPM", end: "ZZPM", lines: ["x"] }],
 		});
 	});
 
@@ -213,7 +213,7 @@ describe("registerEditTool", () => {
 			expect(rendered).not.toContain("Changes: +1 -1");
 			expect(rendered).not.toContain("Diff preview:");
 			expect(rendered).not.toContain("```diff");
-			expect(rendered).toContain(`+${computeLineHash(2, "BBB")}:BBB`);
+			expect(rendered).toContain(`+${computeLineHash(2, "BBB")}│BBB`);
 			expect(rendered).not.toContain("Updated sample.txt");
 			expect(rendered).not.toContain("```text");
 		expect(result.details?.diff).toContain(`+${computeLineHash(2, "BBB")}`);

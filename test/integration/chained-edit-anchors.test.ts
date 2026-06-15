@@ -15,8 +15,8 @@ describe("chained edit anchors", () => {
       const firstRead = await readTool.execute("r1", { path: "sample.ts" }, undefined, undefined, ctx);
       const betaRef = firstRead.content[0].text
         .split("\n")
-        .find((line: string) => line.includes(":beta"))!
-        .split(":")[0]!;
+        .find((line: string) => line.includes("│beta"))!
+        .split("│")[0]!;
 
       const editResult = await editTool.execute(
         "e1",
@@ -27,13 +27,13 @@ describe("chained edit anchors", () => {
       );
 
       expect(editResult.content[0].text).toContain("--- Anchors");
-      expect(editResult.content[0].text).toContain(":BETA");
+	      expect(editResult.content[0].text).toContain("│BETA");
 
       // Extract an anchor from the returned block and use it for a second edit.
       const freshRef = editResult.content[0].text
         .split("\n")
-        .find((line: string) => line.includes(":BETA"))!
-        .split(":")[0]!;
+	        .find((line: string) => line.includes("│BETA"))!
+	        .split("│")[0]!;
 
       // Second edit using the returned anchor (no intermediate read).
       const editResult2 = await editTool.execute(
@@ -45,7 +45,7 @@ describe("chained edit anchors", () => {
       );
 
       expect(editResult2.content[0].text).toContain("--- Anchors");
-      expect(editResult2.content[0].text).toContain(":BETA-CHAINED");
+	      expect(editResult2.content[0].text).toContain("│BETA-CHAINED");
     });
   });
 
@@ -63,12 +63,12 @@ describe("chained edit anchors", () => {
       const firstRead = await readTool.execute("r1", { path: "big.ts" }, undefined, undefined, ctx);
       const line1Ref = firstRead.content[0].text
         .split("\n")
-        .find((line: string) => line.includes(":line 1"))!
-        .split(":")[0]!;
+	        .find((line: string) => line.includes("│line 1"))!
+	        .split("│")[0]!;
       const line15Ref = firstRead.content[0].text
         .split("\n")
-        .find((line: string) => line.includes(":line 15"))!
-        .split(":")[0]!;
+	        .find((line: string) => line.includes("│line 15"))!
+	        .split("│")[0]!;
 
       // Replace lines 1-15 with 15 new lines.
       const newLines = Array.from({ length: 15 }, (_, i) => `NEW ${i + 1}`);
@@ -101,8 +101,8 @@ describe("chained edit anchors", () => {
       const firstRead = await readTool.execute("r1", { path: "app.ts" }, undefined, undefined, ctx);
       const existingRef = firstRead.content[0].text
         .split("\n")
-        .find((line: string) => line.includes(":existing"))!
-        .split(":")[0]!;
+	        .find((line: string) => line.includes("│existing"))!
+	        .split("│")[0]!;
 
       const editResult = await editTool.execute(
         "e1",
@@ -113,7 +113,7 @@ describe("chained edit anchors", () => {
       );
 
       expect(editResult.content[0].text).toContain("--- Anchors");
-      expect(editResult.content[0].text).toContain(":appended");
+	      expect(editResult.content[0].text).toContain("│appended");
     });
   });
 
@@ -134,7 +134,7 @@ describe("chained edit anchors", () => {
       );
 
       expect(editResult.content[0].text).toContain("--- Anchors");
-      expect(editResult.content[0].text).toContain(":prepended");
+	      expect(editResult.content[0].text).toContain("│prepended");
     });
   });
 
@@ -150,8 +150,8 @@ describe("chained edit anchors", () => {
       const firstRead = await readTool.execute("r1", { path: "sentinel.ts" }, undefined, undefined, ctx);
       const existingRef = firstRead.content[0].text
         .split("\n")
-        .find((line: string) => line.includes(":existing"))!
-        .split(":")[0]!;
+	        .find((line: string) => line.includes("│existing"))!
+	        .split("│")[0]!;
 
       const editResult = await editTool.execute(
         "e1",
@@ -185,8 +185,8 @@ describe("chained edit anchors", () => {
       const firstRead = await readTool.execute("r1", { path: "expand.ts" }, undefined, undefined, ctx);
       const targetRef = firstRead.content[0].text
         .split("\n")
-        .find((line: string) => line.includes(":target"))!
-        .split(":")[0]!;
+	        .find((line: string) => line.includes("│target"))!
+	        .split("│")[0]!;
 
       const newLines = Array.from({ length: 11 }, (_, i) => `EXPANDED ${i + 1}`);
       const editResult = await editTool.execute(
@@ -215,12 +215,12 @@ describe("chained edit anchors", () => {
       const firstRead = await readTool.execute("r1", { path: "stale.ts" }, undefined, undefined, ctx);
       const betaRef = firstRead.content[0].text
         .split("\n")
-        .find((line: string) => line.includes(":beta"))!
-        .split(":")[0]!;
+        .find((line: string) => line.includes("│beta"))!
+        .split("│")[0]!;
       const alphaRef = firstRead.content[0].text
         .split("\n")
-        .find((line: string) => line.includes(":alpha"))!
-        .split(":")[0]!;
+        .find((line: string) => line.includes("│alpha"))!
+        .split("│")[0]!;
 
       // First edit changes beta.
       await editTool.execute(
@@ -251,7 +251,7 @@ describe("chained edit anchors", () => {
         ctx,
       );
       expect(alphaEdit.content[0].text).toContain("--- Anchors");
-      expect(alphaEdit.content[0].text).toContain(":ALPHA");
+	      expect(alphaEdit.content[0].text).toContain("│ALPHA");
     });
   });
 });

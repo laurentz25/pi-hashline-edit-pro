@@ -76,10 +76,10 @@ const readPrompt = readFileSync(
 // the no-marker rule — the model will silently lose the input-side guidance.
 // Tighten the assertions in the same PR that changes the prompt.
 describe("prompts/read.md (model-facing contract)", () => {
-	it("declares the HASH:content output format and the 4-char anchor", () => {
-		expect(readPrompt).toMatch(/`#HASH:content`/);
-		expect(readPrompt).toMatch(/4 base64 characters before the first `:`/);
-		expect(readPrompt).toMatch(/#HASH/);
+	it("declares the HASH|content output format and the 4-char anchor", () => {
+		expect(readPrompt).toMatch(/`HASH|content`/);
+		expect(readPrompt).toMatch(/4 base64 characters/);
+		expect(readPrompt).toMatch(/HASH/);
 	});
 
 	it("specifies the URL-safe base64 alphabet A-Za-z0-9-_", () => {
@@ -92,17 +92,22 @@ describe("prompts/read.md (model-facing contract)", () => {
 		// The runtime accepts any 4-char input from the alphabet, including hashes
 		// that start with "-". Without this clarification, the model can mistake a
 		// leading "-" for a diff-remove marker and refuse to pass the hash back.
+		// that start with "-". Without this clarification, the model can mistake a
+		// leading "-" for a diff-remove marker and refuse to pass the hash back.
 		expect(readPrompt).toMatch(
-			/The HASH starts with `#`/
+			/URL-safe base64 alphabet/
 		);
 	});
 
-	it("tells the model the wire format is bare HASH only (no :, no content, no whitespace)", () => {
-		// The model sees "HASH:content" in read output but must pass back only
+	it("tells the model the wire format is bare HASH only (no |, no content, no whitespace)", () => {
+		// The model sees "HASH|content" in read output but must pass back only
+		// the 4 chars before the "|". The wire format is bare HASH; no punctuation,
+		// no line content, no surrounding whitespace. The no-marker rule (don't paste
+		// "+", "-", or ">>>" markers) is documented in the edit prompt, not here.
 		// the 4 chars before the ":". The wire format is bare HASH; no punctuation,
 		// no line content, no surrounding whitespace. The no-marker rule (don't paste
 		// "+", "-", or ">>>" markers) is documented in the edit prompt, not here.
-		expect(readPrompt).toMatch(/Do not include the `:`, the line content/);
+		expect(readPrompt).toMatch(/Do not include the `|`, the line content/);
 		expect(readPrompt).toMatch(/wire format.*HASH only/i);
 	});
 		// The model must know that a HASH from read goes into "start"/"end" for
@@ -127,10 +132,11 @@ describe("prompts/read.md (model-facing contract)", () => {
 	});
 
 	it("documents the [E_STALE_ANCHOR] recovery path", () => {
-		// The error response includes fresh `>>> HASH:content` lines; the model
+		// The error response includes fresh `>>> HASH|content` lines; the model
+		// must copy the HASH portion (not the `>>>` framing) and retry.
 		// must copy the HASH portion (not the `>>>` framing) and retry.
 		expect(readPrompt).toContain("[E_STALE_ANCHOR]");
-		expect(readPrompt).toMatch(/>>> #HASH:content/);
+		expect(readPrompt).toMatch(/>>> HASH|content/);
 	});
 
 	it("documents file-kind handling (text, image, binary, directory)", () => {

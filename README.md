@@ -1,6 +1,6 @@
 # pi-hashline-edit-pro
 
-A [pi-coding-agent](https://github.com/badlogic/pi-mono/tree/main/packages/coding-agent) extension that replaces the built-in `read` and `edit` tools with a hash-anchored line-editing workflow. **Strict semantics** — no silent relocation, no autocorrection, no fuzzy fallback. **Higher-entropy anchors** — `#`-prefixed 4-character content hashes over a 64-character URL-safe base64 alphabet (24 bits / 16 777 216 buckets) so birthday-paradox collisions are effectively zero in any realistic file.
+A [pi-coding-agent](https://github.com/badlogic/pi-mono/tree/main/packages/coding-agent) extension that replaces the built-in `read` and `edit` tools with a hash-anchored line-editing workflow. **Strict semantics** — no silent relocation, no autocorrection, no fuzzy fallback. **Higher-entropy anchors** — 4-character content hashes over a 64-character URL-safe base64 alphabet (24 bits / 16 777 216 buckets) so birthday-paradox collisions are effectively zero in any realistic file.
 
 This is a fork of [pi-hashline-edit](https://github.com/RimuruW/pi-hashline-edit) by RimuruW. The strict-semantics policy is unchanged. This fork extends the upstream design in two compounding ways: a 4-character hash length and an occurrence-aware discriminator that makes identical content at different positions hash to different values.
 
@@ -29,7 +29,7 @@ pi install /path/to/pi-hashline-edit-pro
 
 ### `read` — tagged line output
 
-Text files are returned with a `#HASH:content` prefix on every line. The line number is no longer part of the wire format — only the `#`-prefixed 4-character hash followed by the line content. Example output for the source below; the hashes are the real xxHash-derived values for the file content shown:
+Text files are returned with a `HASH│content` prefix on every line. The line number is no longer part of the wire format — only the 4-character hash followed by the `│` separator and the line content. Example output for the source below; the hashes are the real xxHash-derived values for the file content shown:
 
 ```js
 function hello() {
@@ -40,12 +40,12 @@ function hello() {
 would be returned as:
 
 ```text
-#0qH3:function hello() {
-#szJr:  console.log("world");
-#_zlP:}
+0qH3│function hello() {
+szJr│  console.log("world");
+_zlP│}
 ```
 
-- `HASH` — `#`-prefixed 4-character content hash from the URL-safe base64 alphabet `A-Za-z0-9-_` (e.g. `#aB3x`).
+- `HASH` — 4-character content hash from the URL-safe base64 alphabet `A-Za-z0-9-_` (e.g. `aB3x`).
 
 Optional parameters:
 
@@ -56,13 +56,13 @@ Images (JPEG, PNG, GIF, WebP) are passed through as attachments and do not parti
 
 ### `edit` — hash-anchored modifications
 
-Edits use the `#HASH:content` anchors from `read` output to target lines precisely:
+Edits use the `HASH│content` anchors from `read` output to target lines precisely:
 
 ```json
 {
   "path": "src/main.ts",
   "edits": [
-    { "op": "replace", "start": "#ve7o", "end": "#ve7o", "lines": ["  console.log('hashline');"] }
+    { "op": "replace", "start": "ve7o", "end": "ve7o", "lines": ["  console.log('hashline');"] }
   ]
 }
 ```
@@ -80,32 +80,33 @@ All edits in a single call validate against the same pre-edit snapshot and apply
 
 ### Chained edits
 
-After a successful edit, the result text contains an `--- Anchors ---` block with fresh `#HASH:content` references for the changed region. These can be used directly in the next `edit` call on the same file without a full re-read, provided the next edit targets the same or nearby lines. For distant changes, use `read` first.
+After a successful edit, the result text contains an `--- Anchors ---` block with fresh `HASH│content` references for the changed region. These can be used directly in the next `edit` call on the same file without a full re-read, provided the next edit targets the same or nearby lines. For distant changes, use `read` first.
 
 ### Auto-read after write
 
-After a successful `write`, the extension automatically reads the file and appends a `--- Auto-read (hashline anchors) ---` block to the result. This gives the model immediate `#HASH:content` anchors for the newly written file without requiring a separate `read` call. The workflow becomes:
+After a successful `write`, the extension automatically reads the file and appends a `--- Auto-read (hashline anchors) ---` block to the result. This gives the model immediate `HASH│content` anchors for the newly written file without requiring a separate `read` call. The workflow becomes:
 
 1. `write` a file → result includes hashline anchors
 2. `edit` using those anchors directly
 
 For large files (>2000 lines), the auto-read output is truncated with a pagination hint. Use `read` with `offset` to see more.
+
 ### Diff for the host
 
-The post-edit diff (with `+`/`-` markers and new `#HASH:content` anchors) is exposed to the host UI via `details.diff`. It is intentionally **not** in the LLM-visible text — the model only needs the fresh anchors in `text` to chain follow-up edits, and re-emitting the diff would cost extra tokens.
+The post-edit diff (with `+`/`-` markers and new `HASH│content` anchors) is exposed to the host UI via `details.diff`. It is intentionally **not** in the LLM-visible text — the model only needs the fresh anchors in `text` to chain follow-up edits, and re-emitting the diff would cost extra tokens.
 
 ## Design Decisions
 
-- **Stale anchors fail.** A hash mismatch means the file has changed since the last `read`. The error includes fresh `>>> #HASH:content` lines for the affected region; the model copies the HASH portion and retries.
+- **Stale anchors fail.** A hash mismatch means the file has changed since the last `read`. The error includes fresh `>>> HASH│content` lines for the affected region; the model copies the HASH portion and retries.
 - **No fallback relocation.** Mismatched anchors are never silently relocated to a "close enough" line. This trades convenience for correctness.
-- **Strict patch content.** If `lines` contains `+#HASH:` display prefixes (or `-N   ` diff rows), the edit is rejected with `[E_INVALID_PATCH]`. Bare `#HASH:` content (the first 6 chars of a `lines` entry looking like `#` + 4 base64 chars + `:`) is also rejected with `[E_BARE_HASH_PREFIX]` — issue #24. When the suspect's prefix happens to match a real file-line anchor, the error message flags that as strong evidence the model copied an anchor from the read output; the model should rephrase the line (quote it, escape the colon, or use a different identifier shape) and retry.
+- **Strict patch content.** If `lines` contains `+HASH│` display prefixes (or `-N   ` diff rows), the edit is rejected with `[E_INVALID_PATCH]`. Bare `HASH│` content (the first 5 chars of a `lines` entry looking like 4 base64 chars + `│`) is also rejected with `[E_BARE_HASH_PREFIX]` — issue #24. When the suspect's prefix happens to match a real file-line anchor, the error message flags that as strong evidence the model copied an anchor from the read output; the model should rephrase the line (quote it, escape the separator, or use a different identifier shape) and retry.
 - **Legacy dialect rejected.** The native top-level `oldText`/`newText` (and `old_text`/`new_text`) dialect and `op: "replace_text"` are rejected with `[E_LEGACY_SHAPE]`. The error message tells the model to call `read` first and send `{op:"replace", start:"<HASH>", end:"<HASH>", lines:[...]}` (or `append`/`prepend` with `pos`).
 - **Atomic writes.** Files are written via temp-file-then-rename to avoid corruption from interrupted writes. Symlink chains are resolved so the target file is updated without replacing the symlink. Hard-linked files are updated in place to preserve the shared inode. File permissions are preserved across atomic renames.
 - **Per-file mutation queue.** Edits queue by the canonical write target, so concurrent edits through different symlink paths still serialize onto the same underlying file.
 
 ## Hashing
 
-Hashes are computed with [xxhashjs](https://github.com/pierrec/js-xxhash) (xxHash32), then mapped to a `#`-prefixed 4-character string from the URL-safe base64 alphabet `A-Za-z0-9-_` — 64 distinct characters, 6 bits per position, **24 bits of entropy per anchor**.
+Hashes are computed with [xxhashjs](https://github.com/pierrec/js-xxhash) (xxHash32), then mapped to a 4-character string from the URL-safe base64 alphabet `A-Za-z0-9-_` — 64 distinct characters, 6 bits per position, **24 bits of entropy per anchor**.
 
 The alphabet is sized for an LLM consumer. The model tokenizes — it doesn't squint at pixel glyphs — so the human-readability heuristics used by smaller hand-curated alphabets (no G/L/I/O because they look like digits, no vowels so the hash doesn't accidentally spell a word, no hex digits so it can't be confused with `0xFF`) don't apply. The full 64 chars give maximum entropy per character, with case and digits included.
 
@@ -120,7 +121,7 @@ The runtime always precomputes the full per-line hash array for a file via `comp
 
 ### Trade-off: the bare-prefix detector
 
-With the `#` prefix format, the bare-prefix detector regex `^\s*#[A-Za-z0-9_-]{4}:` is highly specific — it only matches lines starting with `#` followed by exactly 4 base64 chars and `:`. This eliminates false positives from common code patterns like `init:`, `data:`, `else:`, etc. that plagued the old 4-char-only detector. The detector rejects edit lines matching this pattern with `[E_BARE_HASH_PREFIX]` to prevent the model from accidentally pasting hash anchors into file content.
+With the `│` delimiter format, the bare-prefix detector regex `^\s*[A-Za-z0-9_-]{4}│` is highly specific — it only matches lines starting with exactly 4 base64 chars and `│`. This eliminates false positives from common code patterns like `init:`, `data:`, `else:`, etc. The detector rejects edit lines matching this pattern with `[E_BARE_HASH_PREFIX]` to prevent the model from accidentally pasting hash anchors into file content.
 
 ## Development
 

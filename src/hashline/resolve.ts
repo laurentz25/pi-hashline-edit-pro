@@ -107,12 +107,12 @@ export function formatMismatchError(
 			const lines = sample
 				.map((line) => {
 					const content = fileLines[line - 1] ?? "";
-					return `    ${line}: ${fileHashes[line - 1]}:${content}`;
+					return `    ${line}: ${fileHashes[line - 1]}│${content}`;
 				})
 				.join("\n");
-			out.push(
-				`  Hash "${m.ref.hash}" matches lines ${sample.join(", ")}${more}.\n${lines}`,
-			);
+				out.push(
+					`  Hash "${m.ref.hash}" matches lines ${sample.join(", ")}${more}.\n${lines}`,
+				);
 		}
 	}
 
@@ -120,7 +120,7 @@ export function formatMismatchError(
 	out.push("Current state (first lines):");
 	const sampleSize = Math.min(fileLines.length, 5);
 	for (let i = 0; i < sampleSize; i++) {
-		out.push(`>>> ${fileHashes[i]}:${fileLines[i]}`);
+		out.push(`>>> ${fileHashes[i]}│${fileLines[i]}`);
 	}
 	if (fileLines.length > sampleSize) {
 		out.push(`... ${fileLines.length - sampleSize} more.`);
@@ -284,7 +284,7 @@ export function assertNoBareHashPrefixLines(
 	const fileHashSet = new Set(fileHashes);
 	const matched = suspects.filter((s) => fileHashSet.has(s.hash));
 	const matchedCount = matched.length;
-	const exampleLine = `${suspects[0]!.hash}:${suspects[0]!.line}`;
+	const exampleLine = `${suspects[0]!.hash}│${suspects[0]!.line}`;
 
 	if (isPython) {
 		const hint = matchedCount > 0
@@ -299,7 +299,7 @@ export function assertNoBareHashPrefixLines(
 			: `${matchedCount} match file line hashes — likely a copied hash.`;
 
 	throw new Error(
-		`[E_BARE_HASH_PREFIX] ${suspects.length} edit line(s) start with a hash-like prefix (e.g. ${JSON.stringify(exampleLine)}). ${linesHint} Use literal file content in "lines" — never paste #HASH:content from read output.`
+		`[E_BARE_HASH_PREFIX] ${suspects.length} edit line(s) start with a hash-like prefix (e.g. ${JSON.stringify(exampleLine)}). ${linesHint} Use literal file content in \"lines\" — never paste HASH│content from read output.`
 	);
 }
 
@@ -344,7 +344,7 @@ export function validateAnchorEdits(
 			case "replace": {
 				const startResolved = tryResolve(edit.start);
 				const endResolved = tryResolve(edit.end);
-				if (!startResolved || !endResolved) {
+					if (!startResolved || !endResolved) {
 					continue;
 				}
 				if (startResolved.line > endResolved.line) {

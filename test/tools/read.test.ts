@@ -23,12 +23,12 @@ describe("formatHashlineReadPreview", () => {
 		expect(result.truncation?.firstLineExceedsLimit).toBe(true);
 	});
 
-	it("formats ordinary lines as HASH:content (no line number)", () => {
+	it("formats ordinary lines as HASH|content (no line number)", () => {
 		const result = formatHashlineReadPreview("alpha\nbeta", { offset: 1 });
 		// No line number in the wire format; the hash is the anchor.
 		expect(result.text).not.toMatch(/^\d/m);
-		expect(result.text).toContain(":alpha");
-		expect(result.text).toContain(":beta");
+		expect(result.text).toContain("│alpha");
+		expect(result.text).toContain("│beta");
 	});
 
 	it("uses the file's precomputed hash array for visible lines", () => {
@@ -40,9 +40,9 @@ describe("formatHashlineReadPreview", () => {
 		const hashes = computeLineHashes(text);
 
 		expect(result.text.split("\n").slice(0, 3)).toEqual([
-			`${hashes[7]}:line-8`,
-			`${hashes[8]}:line-9`,
-			`${hashes[9]}:line-10`,
+			`${hashes[7]}│line-8`,
+			`${hashes[8]}│line-9`,
+			`${hashes[9]}│line-10`,
 		]);
 	});
 
@@ -56,8 +56,8 @@ describe("formatHashlineReadPreview", () => {
 	it("hides the terminal newline sentinel from preview output", () => {
 		const result = formatHashlineReadPreview("alpha\nbeta\n", { offset: 1 });
 		const hashes = computeLineHashes("alpha\nbeta\n");
-		expect(result.text).toContain(`${hashes[0]}:alpha`);
-		expect(result.text).toContain(`${hashes[1]}:beta`);
+		expect(result.text).toContain(`${hashes[0]}│alpha`);
+		expect(result.text).toContain(`${hashes[1]}│beta`);
 		expect(result.text).not.toMatch(/^\d#/m);
 		expect(result.text).not.toContain("2 lines total");
 	});
@@ -92,7 +92,7 @@ describe("formatHashlineReadPreview", () => {
 });
 
 describe("formatHashlineRegion", () => {
-	it("formats lines as HASH:content rows", () => {
+	it("formats lines as HASH|content rows", () => {
 		// 10-line file so we can request a window starting at line 5.
 		const allLines = Array.from({ length: 10 }, (_, i) => `line-${i + 1}`);
 		const content = allLines.join("\n");
@@ -102,9 +102,9 @@ describe("formatHashlineRegion", () => {
 		const result = formatHashlineRegion(visibleHashes, visibleLines);
 
 		expect(result).toBe(
-			`${visibleHashes[0]}:line-5\n` +
-				`${visibleHashes[1]}:line-6\n` +
-				`${visibleHashes[2]}:line-7`,
+			`${visibleHashes[0]}│line-5\n` +
+				`${visibleHashes[1]}│line-6\n` +
+				`${visibleHashes[2]}│line-7`,
 		);
 	});
 
@@ -117,15 +117,15 @@ describe("formatHashlineRegion", () => {
 		const result = formatHashlineRegion(visibleHashes, visibleLines);
 
 		expect(result).toBe(
-			`${visibleHashes[0]}:line-8\n` +
-				`${visibleHashes[1]}:line-9\n` +
-				`${visibleHashes[2]}:line-10`,
+			`${visibleHashes[0]}│line-8\n` +
+				`${visibleHashes[1]}│line-9\n` +
+				`${visibleHashes[2]}│line-10`,
 		);
 	});
 
 	it("handles a single line", () => {
 		const result = formatHashlineRegion(["h1h1"], ["hello"]);
-		expect(result).toBe(`h1h1:hello`);
+		expect(result).toBe(`h1h1│hello`);
 	});
 
 	it("handles empty array", () => {
@@ -184,8 +184,8 @@ describe("read tool protocol", () => {
 				{ cwd } as any,
 			);
 
-			expect(result.content[0].text).toContain(":alpha");
-			expect(result.content[0].text).toContain(":beta");
+			expect(result.content[0].text).toContain("│alpha");
+			expect(result.content[0].text).toContain("│beta");
 			expect(result.content[0].text).not.toMatch(/^\d#/m);
 		});
 	});
@@ -212,8 +212,8 @@ describe("read tool protocol", () => {
 				{ cwd } as any,
 			);
 
-			expect(result.content[0].text).toContain(":alpha");
-			expect(result.content[0].text).toContain(":beta");
+			expect(result.content[0].text).toContain("│alpha");
+			expect(result.content[0].text).toContain("│beta");
 			expect(vi.mocked(fileKindMod.classifyFileKind)).not.toHaveBeenCalled();
 		});
 	});

@@ -4,9 +4,9 @@ import * as XXH from "xxhashjs";
 
 export const HASH_LENGTH = 4;
 
-export const HASH_PREFIX = "#";
+export const HASH_PREFIX = "";
 
-export const ANCHOR_LENGTH = HASH_PREFIX.length + HASH_LENGTH;
+export const ANCHOR_LENGTH = HASH_LENGTH;
 
 const HASH_ALPHABET =
 	"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
@@ -15,7 +15,6 @@ const HASH_ALPHABET_MASK = (1 << HASH_ALPHABET_BITS) - 1;
 const HASH_ALPHABET_REGEX_SAFE = HASH_ALPHABET.replace(/-/g, "\\-");
 const HASH_ALPHABET_RE = new RegExp(`^[${HASH_ALPHABET_REGEX_SAFE}]+$`);
 export const HASH_CHARS_CLASS = `${HASH_PREFIX}[${HASH_ALPHABET_REGEX_SAFE}]{${HASH_LENGTH}}`;
-
 function hashToString(h: number): string {
 	const totalBits = HASH_LENGTH * HASH_ALPHABET_BITS;
 	const shift = 32 - totalBits;
@@ -28,18 +27,18 @@ function hashToString(h: number): string {
 					HASH_ALPHABET_MASK
 			]!;
 	}
-	return HASH_PREFIX + out;
+	return out;
 }
 
 export const HASHLINE_PREFIX_RE = new RegExp(
-	`^\\s*(?:>>>|>>)?\\s*${HASH_CHARS_CLASS}:`,
+	`^\\s*(?:>>>|>>)?\\s*${HASH_CHARS_CLASS}│`,
 );
 export const HASHLINE_PREFIX_PLUS_RE = new RegExp(
-	`^\\+\\s*${HASH_CHARS_CLASS}:`,
+	`^\\+\\s*${HASH_CHARS_CLASS}│`,
 );
 export const DIFF_MINUS_RE = /^-\s*\d+\s{4}/;
 
-export const HASHLINE_BARE_PREFIX_RE = new RegExp(`^\\s*(${HASH_CHARS_CLASS}):`);
+export const HASHLINE_BARE_PREFIX_RE = new RegExp(`^\\s*(${HASH_CHARS_CLASS})│`);
 
 const RE_SIGNIFICANT = /[\p{L}\p{N}]/u;
 

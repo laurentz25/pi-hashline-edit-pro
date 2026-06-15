@@ -1,7 +1,6 @@
 
 import {
 	ANCHOR_LENGTH,
-	HASH_PREFIX,
 	HASH_ALPHABET_RE,
 	HASH_CHARS_CLASS,
 	HASHLINE_PREFIX_PLUS_RE,
@@ -16,14 +15,14 @@ function diagnoseHashRef(ref: string): string {
 	const trimmed = ref.trim();
 
 	if (!trimmed.length) {
-		return `[E_BAD_REF] Invalid anchor. Expected a hash anchor like "#aB3x" (prefix "#" + 4 base64 chars).`;
+		return `[E_BAD_REF] Invalid anchor. Expected a 4-character base64 anchor (e.g. \"aB3x\").`;
 	}
 
-	if (/^\d+\s*#/.test(trimmed)) {
-		return `[E_BAD_REF] Invalid anchor. Use the hash alone (e.g. "#aB3x") — no line numbers or trailing content.`;
+	if (/^\d+/.test(trimmed)) {
+		return `[E_BAD_REF] Invalid anchor. Use the hash alone (e.g. \"aB3x\") — no line numbers or trailing content.`;
 	}
 
-	return `[E_BAD_REF] Invalid anchor "${trimmed}". Expected a hash anchor like "#aB3x".`;
+	return `[E_BAD_REF] Invalid anchor \"${trimmed}\". Expected a 4-character base64 anchor (e.g. \"aB3x\").`;
 }
 
 function parseAnchorRef(ref: string): Anchor {
@@ -31,8 +30,7 @@ function parseAnchorRef(ref: string): Anchor {
 
 	if (
 		trimmed.length === ANCHOR_LENGTH &&
-		trimmed.startsWith(HASH_PREFIX) &&
-		HASH_ALPHABET_RE.test(trimmed.slice(HASH_PREFIX.length))
+		HASH_ALPHABET_RE.test(trimmed)
 	) {
 		return { hash: trimmed };
 	}
@@ -51,7 +49,7 @@ function assertNoDisplayPrefixes(lines: string[]): void {
 			DIFF_MINUS_RE.test(line)
 		) {
 			throw new Error(
-			`[E_INVALID_PATCH] "lines" must contain literal file content, not HASH: or diff prefixes. Offending line: ${JSON.stringify(line)}`
+			`[E_INVALID_PATCH] \"lines\" must contain literal file content, not HASH| or diff prefixes. Offending line: ${JSON.stringify(line)}`
 			);
 		}
 	}

@@ -36,9 +36,9 @@ function formatDiffPreviewLine(
   hash: string | undefined,
 ): string {
   if (hash === undefined) {
-    return `${prefix}${" ".repeat(ANCHOR_LENGTH)}:${line}`;
+    return `${prefix}${" ".repeat(ANCHOR_LENGTH)}│${line}`;
   }
-  return `${prefix}${hash}:${line}`;
+  return `${prefix}${hash}│${line}`;
 }
 
 export function generateDiffString(

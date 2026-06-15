@@ -170,7 +170,7 @@ function truncateOutlineEntry(text: string, max = 88): string {
 function collectOutlineEntries(previewText: string): string[] {
 	const structural: string[] = [];
 	for (const line of previewText.split("\n")) {
-		const match = line.match(/^\s*#([A-Za-z0-9_\-]{4}):(.*)$/);
+		const match = line.match(/^\s*([A-Za-z0-9_\-]{4})│(.*)$/);
 		if (!match) continue;
 		const content = match[2]!.trim();
 		if (content.length === 0) continue;
@@ -226,7 +226,7 @@ function formatRequestedRangePreviews(
 			},
 			precomputedHashes,
 		);
-		const hasReturnedLines = /^\s*#[A-Za-z0-9_\-]{4}:/m.test(preview.text);
+		const hasReturnedLines = /^\s*[A-Za-z0-9_\-]{4}│/m.test(preview.text);
 		const actualEnd = hasReturnedLines
 			? preview.nextOffset !== undefined
 				? preview.nextOffset - 1

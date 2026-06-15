@@ -510,7 +510,7 @@ export function formatHashlineRegion(
 		);
 	}
 	return lines
-		.map((line, index) => `${hashes[index]}:${line}`)
+		.map((line, index) => `${hashes[index]}│${line}`)
 		.join("\n");
 }
 

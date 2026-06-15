@@ -1,3 +1,3 @@
 - Use read before edit when you do not have current HASH anchors for the file.
-- Copy exactly the HASH (the `#` + 4 characters before the `:`); never include the `:` or line content in `pos`/`end`.
-- A HASH always starts with `#`; the body may contain `-` as a normal alphabet character.
+- Copy exactly the HASH (the 4 characters before the `│`); never include the `│` or line content in `pos`/`end`.
+- A HASH may contain `-` as a normal alphabet character.

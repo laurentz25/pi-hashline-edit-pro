@@ -25,10 +25,10 @@ describe("applyHashlineEdits — error handling", () => {
 	it("throws when the hash matches no line in the file", () => {
 		const content = "aaa\nbbb";
 		const edits: HashlineEdit[] = [
-			{ op: "replace", start: { hash: "#ZZPM" }, end: { hash: "#ZZPM" }, lines: ["x"] },
+			{ op: "replace", start: { hash: "ZZPM" }, end: { hash: "ZZPM" }, lines: ["x"] },
 		];
 		expect(() => applyHashlineEdits(content, edits)).toThrow(
-			/2 stale anchors: "#ZZPM", "#ZZPM"/,
+			/2 stale anchors: "ZZPM", "ZZPM"/,
 		);
 	});
 
@@ -71,10 +71,10 @@ describe("applyHashlineEdits — error handling", () => {
 		expect(() =>
 			applyHashlineEdits("aaa", [
 				{
-					op: "replace", start: { hash: "#ZZPM" }, end: { hash: "#ZZPM" }, lines: ["bbb"],
+					op: "replace", start: { hash: "ZZPM" }, end: { hash: "ZZPM" }, lines: ["bbb"],
 				} as any,
 			]),
-		).toThrow(/[A-Za-z0-9_\-]{4}:aaa/);
+		).toThrow(/[A-Za-z0-9_\-]{4}│aaa/);
 	});
 
 	it("rejects overlapping replace ranges in one request", () => {
@@ -301,7 +301,7 @@ describe("integration: resolveEditAnchors → applyHashlineEdits", () => {
 		// `+HHHH:` form (diff-style addition) is what assertNoDisplayPrefixes
 		// catches on shape alone, and it remains rejected.
 		const toolEdits: HashlineToolEdit[] = [
-			{ op: "replace", start: hash, end: hash, lines: [`+${hash}:BBB`] },
+			{ op: "replace", start: hash, end: hash, lines: [`+${hash}│BBB`] },
 		];
 		expect(() => resolveEditAnchors(toolEdits)).toThrow(/^\[E_INVALID_PATCH\]/);
 	});

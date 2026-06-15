@@ -8,7 +8,7 @@ import {
 describe("resolveEditAnchors", () => {
 	it("resolves replace with start + end", () => {
 		const edits: HashlineToolEdit[] = [
-			{ op: "replace", start: "#ZZPM", end: "#PPWV", lines: ["a", "b"] },
+			{ op: "replace", start: "ZZPM", end: "PPWV", lines: ["a", "b"] },
 		];
 		const resolved = resolveEditAnchors(edits);
 		expect(resolved).toHaveLength(1);
@@ -19,7 +19,7 @@ describe("resolveEditAnchors", () => {
 
 	it("resolves a 1-line replace (start == end)", () => {
 		const edits: HashlineToolEdit[] = [
-			{ op: "replace", start: "#MQXV", end: "#MQXV", lines: ["new"] },
+			{ op: "replace", start: "MQXV", end: "MQXV", lines: ["new"] },
 		];
 		const resolved = resolveEditAnchors(edits);
 		expect(resolved).toHaveLength(1);
@@ -30,13 +30,13 @@ describe("resolveEditAnchors", () => {
 			end: Anchor;
 			lines: string[];
 		};
-		expect(r.start.hash).toBe("#MQXV");
-		expect(r.end.hash).toBe("#MQXV");
+		expect(r.start.hash).toBe("MQXV");
+		expect(r.end.hash).toBe("MQXV");
 	});
 
 	it("rejects replace with end but no start", () => {
 		const edits: HashlineToolEdit[] = [
-			{ op: "replace", end: "#MQXV", lines: ["new"] },
+			{ op: "replace", end: "MQXV", lines: ["new"] },
 		];
 		expect(() => resolveEditAnchors(edits)).toThrow(
 			/requires a "start" anchor/i,
@@ -52,7 +52,7 @@ describe("resolveEditAnchors", () => {
 
 	it("rejects replace with start but no end", () => {
 		const edits: HashlineToolEdit[] = [
-			{ op: "replace", start: "#MQXV", lines: ["new"] },
+			{ op: "replace", start: "MQXV", lines: ["new"] },
 		];
 		expect(() => resolveEditAnchors(edits)).toThrow(
 			/requires an "end" anchor/i,
@@ -61,7 +61,7 @@ describe("resolveEditAnchors", () => {
 
 	it("rejects replace with the legacy 'pos' field", () => {
 		const edits: HashlineToolEdit[] = [
-			{ op: "replace", pos: "#MQXV", end: "#MQXV", lines: ["new"] } as any,
+			{ op: "replace", pos: "MQXV", end: "MQXV", lines: ["new"] } as any,
 		];
 		expect(() => resolveEditAnchors(edits)).toThrow(
 			/uses "pos".*use "start"/i,
@@ -91,14 +91,14 @@ describe("resolveEditAnchors", () => {
 
 	it("throws on malformed end for replace with valid start", () => {
 		const edits: HashlineToolEdit[] = [
-			{ op: "replace", start: "#MQXV", end: "garbage", lines: ["x"] },
+			{ op: "replace", start: "MQXV", end: "garbage", lines: ["x"] },
 		];
 		expect(() => resolveEditAnchors(edits)).toThrow(/Invalid anchor/);
 	});
 
 	it("resolves append with pos", () => {
 		const edits: HashlineToolEdit[] = [
-			{ op: "append", pos: "#MQXV", lines: ["new"] },
+			{ op: "append", pos: "MQXV", lines: ["new"] },
 		];
 		const resolved = resolveEditAnchors(edits);
 		expect(resolved[0]!.op).toBe("append");
@@ -107,7 +107,7 @@ describe("resolveEditAnchors", () => {
 			pos?: Anchor;
 			lines: string[];
 		};
-		expect(append.pos?.hash).toBe("#MQXV");
+		expect(append.pos?.hash).toBe("MQXV");
 	});
 
 	it("resolves append without pos (EOF)", () => {
@@ -124,7 +124,7 @@ describe("resolveEditAnchors", () => {
 
 	it("rejects append with end", () => {
 		const edits: HashlineToolEdit[] = [
-			{ op: "append", end: "#MQXV", lines: ["new"] },
+			{ op: "append", end: "MQXV", lines: ["new"] },
 		];
 		expect(() => resolveEditAnchors(edits)).toThrow(
 			/\[E_BAD_OP\].*append.*end/i,
@@ -133,7 +133,7 @@ describe("resolveEditAnchors", () => {
 
 	it("resolves prepend with pos", () => {
 		const edits: HashlineToolEdit[] = [
-			{ op: "prepend", pos: "#MQXV", lines: ["new"] },
+			{ op: "prepend", pos: "MQXV", lines: ["new"] },
 		];
 		const resolved = resolveEditAnchors(edits);
 		expect(resolved[0]!.op).toBe("prepend");
@@ -153,7 +153,7 @@ describe("resolveEditAnchors", () => {
 
 	it("rejects prepend with end", () => {
 		const edits: HashlineToolEdit[] = [
-			{ op: "prepend", end: "#MQXV", lines: ["new"] },
+			{ op: "prepend", end: "MQXV", lines: ["new"] },
 		];
 		expect(() => resolveEditAnchors(edits)).toThrow(
 			/\[E_BAD_OP\].*prepend.*end/i,
@@ -164,8 +164,8 @@ describe("resolveEditAnchors", () => {
 		const edits: HashlineToolEdit[] = [
 			{
 				op: "replace",
-				start: "#ZZPM",
-				end: "#ZZPM",
+				start: "ZZPM",
+				end: "ZZPM",
 				lines: "hello\nworld\n",
 			} as unknown as HashlineToolEdit,
 		];
@@ -178,8 +178,8 @@ describe("resolveEditAnchors", () => {
 		const edits: HashlineToolEdit[] = [
 			{
 				op: "replace",
-				start: "#ZZPM",
-				end: "#ZZPM",
+				start: "ZZPM",
+				end: "ZZPM",
 				lines: null,
 			} as unknown as HashlineToolEdit,
 		];
@@ -190,7 +190,7 @@ describe("resolveEditAnchors", () => {
 
 	it("throws on unknown op", () => {
 		const edits: HashlineToolEdit[] = [
-			{ op: "something_weird", pos: "#ZZPM", lines: ["x"] },
+			{ op: "something_weird", pos: "ZZPM", lines: ["x"] },
 		];
 		expect(() => resolveEditAnchors(edits)).toThrow(
 			/\[E_BAD_OP\].*unknown op.*something_weird/i,
@@ -198,7 +198,7 @@ describe("resolveEditAnchors", () => {
 	});
 
 	it("rejects missing op", () => {
-		const edits = [{ pos: "#ZZPM", lines: ["x"] }] as any;
+		const edits = [{ pos: "ZZPM", lines: ["x"] }] as any;
 		expect(() => resolveEditAnchors(edits)).toThrow(
 			/requires an "op" string/i,
 		);
