@@ -165,9 +165,9 @@ describe("chained edit anchors", () => {
       expect(editResult.content[0].text).toContain("--- Anchors");
       const anchorLines = editResult.content[0].text
         .split("\n")
-        .filter((line: string) => line.match(/^\s*[A-Za-z0-9_\-]{4}:.*/));
+        .filter((line: string) => line.match(/^\s*#[A-Za-z0-9_\-]{4}:.*/));
       for (const line of anchorLines) {
-        expect(line).not.toMatch(/^\s*[A-Za-z0-9_\-]{4}:$/);
+        expect(line).not.toMatch(/^\s*#[A-Za-z0-9_\-]{4}:$/);
       }
     });
   });

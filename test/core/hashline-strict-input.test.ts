@@ -149,7 +149,7 @@ describe("partial hash prefixes copied into content (issue #24)", () => {
 		let caught: Error | undefined;
 		try {
 			applyTool([
-				{ op: "replace", start: anchor, end: anchor, lines: ["ZZZZ:one", "ZZZP:two"] },
+				{ op: "replace", start: anchor, end: anchor, lines: ["#ZZZZ:one", "#ZZZP:two"] },
 			]);
 		} catch (e) {
 			caught = e as Error;
@@ -193,10 +193,12 @@ describe("Python .py file bare-prefix behavior", () => {
 	}
 
 	it("warns instead of throwing for .py files with bare prefix", () => {
+		// With the # prefix format, Python syntax like else: no longer triggers
+		// the detector. But a line like #aB3x:content would trigger it.
 		const result = applyToolPy([
-			{ op: "replace", start: anchor, end: anchor, lines: ["else: do_something"] },
+			{ op: "replace", start: anchor, end: anchor, lines: ["#aB3x:do_something"] },
 		]);
-		expect(result.content).toContain("else: do_something");
+		expect(result.content).toContain("#aB3x:do_something");
 		expect(result.warnings?.some((w) => w.includes("[W_BARE_HASH_PREFIX]"))).toBe(true);
 	});
 
@@ -204,7 +206,7 @@ describe("Python .py file bare-prefix behavior", () => {
 		let caught: Error | undefined;
 		try {
 			applyHashlineEdits(file, resolveEditAnchors([
-				{ op: "replace", start: anchor, end: anchor, lines: ["else: do_something"] },
+				{ op: "replace", start: anchor, end: anchor, lines: ["#aB3x:do_something"] },
 			]), undefined, undefined, "test.ts");
 		} catch (e) {
 			caught = e as Error;

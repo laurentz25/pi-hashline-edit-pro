@@ -6,7 +6,8 @@
  */
 
 import {
-	HASH_LENGTH,
+	ANCHOR_LENGTH,
+	HASH_PREFIX,
 	HASH_ALPHABET_RE,
 	HASH_CHARS_CLASS,
 	HASHLINE_PREFIX_PLUS_RE,
@@ -28,30 +29,32 @@ function diagnoseHashRef(ref: string): string {
 	const trimmed = ref.trim();
 
 	if (!trimmed.length) {
-		return `[E_BAD_REF] Invalid anchor. Expected a bare 4-character hash (e.g. "aB3x").`;
+		return `[E_BAD_REF] Invalid anchor. Expected a hash anchor like "#aB3x" (prefix "#" + 4 base64 chars).`;
 	}
 
 	// Detect the legacy "LINE#HASH" form (5#aB3x, 12#MQ, etc.) so we can
 	// give a clear error pointing at the new format.
 	if (/^\d+\s*#/.test(trimmed)) {
-		return `[E_BAD_REF] Invalid anchor. Use the hash alone (e.g. "aB3x") — no line numbers or trailing content.`;
+		return `[E_BAD_REF] Invalid anchor. Use the hash alone (e.g. "#aB3x") — no line numbers or trailing content.`;
 	}
 
-	return `[E_BAD_REF] Invalid anchor "${trimmed}". Expected a bare 4-character hash.`;
+	return `[E_BAD_REF] Invalid anchor "${trimmed}". Expected a hash anchor like "#aB3x".`;
 }
 
 function parseAnchorRef(ref: string): Anchor {
 	const trimmed = ref.trim();
 
-	// Strict: the wire format is a 4-character hash from the URL-safe base64
+	// Strict: the wire format is `#` + 4-character hash from the URL-safe base64
 	// alphabet (A-Za-z0-9-_), copied verbatim from `read` output. The first
-	// character can be `-` (a valid alphabet char), so a hash like `-qkl` is
-	// taken literally. No other form is tolerated: `+`/`-`/`>>>` markers from
-	// diff contexts or stale-anchor retry blocks are rejected. The model must
-	// copy just the 4-character hash with no surrounding characters.
+	// character of the hash body can be `-` (a valid alphabet char), so an anchor
+	// like `#-qkl` is taken literally. No other form is tolerated: `+`/`-`/`>>>`
+	// markers from diff contexts or stale-anchor retry blocks are rejected. The
+	// model must copy just the anchor (prefix + 4 chars) with no surrounding
+	// characters.
 	if (
-		trimmed.length === HASH_LENGTH &&
-		HASH_ALPHABET_RE.test(trimmed)
+		trimmed.length === ANCHOR_LENGTH &&
+		trimmed.startsWith(HASH_PREFIX) &&
+		HASH_ALPHABET_RE.test(trimmed.slice(HASH_PREFIX.length))
 	) {
 		return { hash: trimmed };
 	}

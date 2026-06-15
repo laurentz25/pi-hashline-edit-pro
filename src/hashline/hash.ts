@@ -23,6 +23,13 @@ import * as XXH from "xxhashjs";
  */
 export const HASH_LENGTH = 4;
 
+/** Prefix marker for hash anchors. Every anchor starts with `#` so the hash */
+/** format is `#` + HASH_LENGTH base64 chars (e.g. `#aB3x`, `#4yN-`). */
+export const HASH_PREFIX = "#";
+
+/** Total wire-format length of an anchor: prefix + hash body. */
+export const ANCHOR_LENGTH = HASH_PREFIX.length + HASH_LENGTH;
+
 /**
  * URL-safe base64 alphabet: A–Z, a–z, 0–9, `-`, `_`. 64 distinct chars
  * giving 6 bits per hash character. No exclusions, no human-readability
@@ -40,7 +47,7 @@ const HASH_ALPHABET_MASK = (1 << HASH_ALPHABET_BITS) - 1;
 // silently swallows the literal `-`). The `_` is always literal.
 const HASH_ALPHABET_REGEX_SAFE = HASH_ALPHABET.replace(/-/g, "\\-");
 const HASH_ALPHABET_RE = new RegExp(`^[${HASH_ALPHABET_REGEX_SAFE}]+$`);
-export const HASH_CHARS_CLASS = `[${HASH_ALPHABET_REGEX_SAFE}]{${HASH_LENGTH}}`;
+export const HASH_CHARS_CLASS = `${HASH_PREFIX}[${HASH_ALPHABET_REGEX_SAFE}]{${HASH_LENGTH}}`;
 
 /**
  * Encode the top `HASH_LENGTH * 6` bits of a 32-bit hash value as a
@@ -68,7 +75,7 @@ function hashToString(h: number): string {
 					HASH_ALPHABET_MASK
 			]!;
 	}
-	return out;
+	return HASH_PREFIX + out;
 }
 
 /**
@@ -85,16 +92,16 @@ export const HASHLINE_PREFIX_PLUS_RE = new RegExp(
 export const DIFF_MINUS_RE = /^-\s*\d+\s{4}/;
 
 /**
- * Bare hashline prefix: a HASH_LENGTH-char hash followed by ":" with no
- * "LINE#" part (e.g. "KKZ:### heading", "TPN:text", "TJZ:"). Capture
- * group 1 is the hash.
+ * Bare hashline prefix: a `#` + HASH_LENGTH-char hash followed by ":" with
+ * no "LINE#" part (e.g. "#KKZ:### heading", "#TPN:text", "#TJZ:"). Capture
+ * group 1 is the full anchor (including `#` prefix).
  *
  * This is the partial-hash failure mode from issue #24: the model copies a
  * hash it saw in `read` output into the line content but drops the rest
- * of the rendered `HASH:content` form. The first 5 characters of the line
- * (4 alphabet chars + ":") are matched by this regex, then
- * `assertNoBareHashPrefixLines` rejects the edit with `[E_BARE_HASH_PREFIX]`
- * so the model gets actionable feedback instead of a silent correctness bug.
+ * of the rendered `HASH:content` form. The anchor (prefix + HASH_LENGTH chars
+ * + ":") is matched by this regex, then `assertNoBareHashPrefixLines` rejects
+ * the edit with `[E_BARE_HASH_PREFIX]` so the model gets actionable feedback
+ * instead of a silent correctness bug.
  */
 export const HASHLINE_BARE_PREFIX_RE = new RegExp(`^\\s*(${HASH_CHARS_CLASS}):`);
 
@@ -182,7 +189,9 @@ export function computeLineHash(idx: number, line: string): string {
 
 /** Exported for tests and for downstream tools that want to mirror the format. */
 export const HASH_FORMAT = {
+	prefix: HASH_PREFIX,
 	length: HASH_LENGTH,
+	anchorLength: ANCHOR_LENGTH,
 	bitsPerChar: HASH_ALPHABET_BITS,
 	alphabet: HASH_ALPHABET,
 };

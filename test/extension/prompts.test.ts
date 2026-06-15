@@ -77,9 +77,9 @@ const readPrompt = readFileSync(
 // Tighten the assertions in the same PR that changes the prompt.
 describe("prompts/read.md (model-facing contract)", () => {
 	it("declares the HASH:content output format and the 4-char anchor", () => {
-		expect(readPrompt).toMatch(/`HASH:content`/);
-		expect(readPrompt).toMatch(/4 characters? before the first `:`/);
-		expect(readPrompt).toMatch(/4-character HASH/);
+		expect(readPrompt).toMatch(/`#HASH:content`/);
+		expect(readPrompt).toMatch(/4 base64 characters before the first `:`/);
+		expect(readPrompt).toMatch(/#HASH/);
 	});
 
 	it("specifies the URL-safe base64 alphabet A-Za-z0-9-_", () => {
@@ -93,7 +93,7 @@ describe("prompts/read.md (model-facing contract)", () => {
 		// that start with "-". Without this clarification, the model can mistake a
 		// leading "-" for a diff-remove marker and refuse to pass the hash back.
 		expect(readPrompt).toMatch(
-			/can start with any of these characters, including `-`/,
+			/The HASH starts with `#`/
 		);
 	});
 
@@ -103,7 +103,7 @@ describe("prompts/read.md (model-facing contract)", () => {
 		// no line content, no surrounding whitespace. The no-marker rule (don't paste
 		// "+", "-", or ">>>" markers) is documented in the edit prompt, not here.
 		expect(readPrompt).toMatch(/Do not include the `:`, the line content/);
-		expect(readPrompt).toMatch(/wire format.*bare 4-character HASH/i);
+		expect(readPrompt).toMatch(/wire format.*HASH only/i);
 	});
 		// The model must know that a HASH from read goes into "start"/"end" for
 		// replace and "pos" for append/prepend. The wire format is the same (a
@@ -130,7 +130,7 @@ describe("prompts/read.md (model-facing contract)", () => {
 		// The error response includes fresh `>>> HASH:content` lines; the model
 		// must copy the HASH portion (not the `>>>` framing) and retry.
 		expect(readPrompt).toContain("[E_STALE_ANCHOR]");
-		expect(readPrompt).toMatch(/>>> HASH:content/);
+		expect(readPrompt).toMatch(/>>> #HASH:content/);
 	});
 
 	it("documents file-kind handling (text, image, binary, directory)", () => {

@@ -1,7 +1,7 @@
 import * as Diff from "diff";
 import {
   computeLineHashes,
-  HASH_LENGTH,
+  ANCHOR_LENGTH,
 } from "./hashline";
 
 // ─── Line ending normalization ──────────────────────────────────────────
@@ -41,7 +41,7 @@ function formatDiffPreviewLine(
     // Removed lines have no hash, but they still need column alignment with
     // the hash-prefixed lines (` HASH:`, `+HASH:`). Pad with `HASH_LENGTH`
     // spaces so the `:` lines up in the same column.
-    return `${prefix}${" ".repeat(HASH_LENGTH)}:${line}`;
+    return `${prefix}${" ".repeat(ANCHOR_LENGTH)}:${line}`;
   }
   return `${prefix}${hash}:${line}`;
 }

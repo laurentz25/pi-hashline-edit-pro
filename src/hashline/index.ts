@@ -6,15 +6,16 @@
  *
  * This fork preserves the strict semantics of the original (no silent
  * relocation, no autocorrection heuristics, no fuzzy fallback) and uses a
- * 4-character hash over a 64-character URL-safe base64 alphabet, giving
+ * `#`-prefixed hash over a 64-character URL-safe base64 alphabet, giving
  * 24 bits of entropy (16 777 216 buckets) per anchor. Birthday-paradox
  * collisions become effectively zero for any realistic file size. The
  * alphabet is sized for an LLM consumer, not a human reader — the model
  * tokenizes, it does not squint at pixel glyphs.
  *
- * Anchor format: a bare hash alone (`aB3x`). The line number is no longer
- * part of the wire format, and no content may follow the hash either. The
- * model never has to type a line number; the runtime resolves each hash to
+ * Anchor format: `#` prefix + 4 base64 chars (e.g. `#aB3x`). The line number
+ * is no longer part of the wire format, and no content may follow the anchor
+ * either. The model never has to type a line number; the runtime resolves each
+ * anchor to a line via the file's precomputed hash array.
  * a line via the file's precomputed hash array.
  *
  * On a hash collision (two different lines happen to have the same hash
@@ -30,6 +31,8 @@
 export {
 	// Hash computation
 	HASH_LENGTH,
+	HASH_PREFIX,
+	ANCHOR_LENGTH,
 	HASH_FORMAT,
 	HASH_CHARS_CLASS,
 	HASHLINE_PREFIX_RE,

@@ -1,6 +1,6 @@
 # pi-hashline-edit-pro
 
-A [pi-coding-agent](https://github.com/badlogic/pi-mono/tree/main/packages/coding-agent) extension that replaces the built-in `read` and `edit` tools with a hash-anchored line-editing workflow. **Strict semantics** — no silent relocation, no autocorrection, no fuzzy fallback. **Higher-entropy anchors** — 4-character content hashes over a 64-character URL-safe base64 alphabet (24 bits / 16 777 216 buckets) so birthday-paradox collisions are effectively zero in any realistic file.
+A [pi-coding-agent](https://github.com/badlogic/pi-mono/tree/main/packages/coding-agent) extension that replaces the built-in `read` and `edit` tools with a hash-anchored line-editing workflow. **Strict semantics** — no silent relocation, no autocorrection, no fuzzy fallback. **Higher-entropy anchors** — `#`-prefixed 4-character content hashes over a 64-character URL-safe base64 alphabet (24 bits / 16 777 216 buckets) so birthday-paradox collisions are effectively zero in any realistic file.
 
 This is a fork of [pi-hashline-edit](https://github.com/RimuruW/pi-hashline-edit) by RimuruW. The strict-semantics policy is unchanged. This fork extends the upstream design in two compounding ways: a 4-character hash length and an occurrence-aware discriminator that makes identical content at different positions hash to different values.
 
@@ -29,7 +29,7 @@ pi install /path/to/pi-hashline-edit-pro
 
 ### `read` — tagged line output
 
-Text files are returned with a `HASH:content` prefix on every line. The line number is no longer part of the wire format — only the 4-character hash followed by the line content. Example output for the source below; the hashes are the real xxHash-derived values for the file content shown:
+Text files are returned with a `#HASH:content` prefix on every line. The line number is no longer part of the wire format — only the `#`-prefixed 4-character hash followed by the line content. Example output for the source below; the hashes are the real xxHash-derived values for the file content shown:
 
 ```js
 function hello() {
@@ -40,12 +40,12 @@ function hello() {
 would be returned as:
 
 ```text
-0qH3:function hello() {
-szJr:  console.log("world");
-_zlP:}
+#0qH3:function hello() {
+#szJr:  console.log("world");
+#_zlP:}
 ```
 
-- `HASH` — 4-character content hash from the URL-safe base64 alphabet `A-Za-z0-9-_`.
+- `HASH` — `#`-prefixed 4-character content hash from the URL-safe base64 alphabet `A-Za-z0-9-_` (e.g. `#aB3x`).
 
 Optional parameters:
 
@@ -105,7 +105,7 @@ The post-edit diff (with `+`/`-` markers and new `HASH:content` anchors) is expo
 
 ## Hashing
 
-Hashes are computed with [xxhashjs](https://github.com/pierrec/js-xxhash) (xxHash32), then mapped to a 4-character string from the URL-safe base64 alphabet `A-Za-z0-9-_` — 64 distinct characters, 6 bits per position, **24 bits of entropy per anchor**.
+Hashes are computed with [xxhashjs](https://github.com/pierrec/js-xxhash) (xxHash32), then mapped to a `#`-prefixed 4-character string from the URL-safe base64 alphabet `A-Za-z0-9-_` — 64 distinct characters, 6 bits per position, **24 bits of entropy per anchor**.
 
 The alphabet is sized for an LLM consumer. The model tokenizes — it doesn't squint at pixel glyphs — so the human-readability heuristics used by smaller hand-curated alphabets (no G/L/I/O because they look like digits, no vowels so the hash doesn't accidentally spell a word, no hex digits so it can't be confused with `0xFF`) don't apply. The full 64 chars give maximum entropy per character, with case and digits included.
 
@@ -120,7 +120,7 @@ The runtime always precomputes the full per-line hash array for a file via `comp
 
 ### Trade-off: the bare-prefix detector
 
-With a 64-char alphabet, the regex `^\s*[A-Za-z0-9_-]{4}:` matches a LOT of code (any 4-char identifier followed by `:` — `todo:`, `done:`, `note:`, `init:`). The "did the model accidentally paste a hash into its content?" detector used to fire on a count-based heuristic (too noisy at 64 chars), then on a "strong signal" gate (the prefix matches a real file-line hash) and only warned, then escalated to a strict rejection. Today the first 5 characters of every `lines` entry are checked; if they look like a 4-char hash followed by `:`, the edit is rejected with `[E_BARE_HASH_PREFIX]`. The false-positive cost (rejecting `init:`, `data:`, etc.) is real but small: the model can rephrase the line (quote it, add a leading space, use a different identifier shape) and retry. The false-negative cost (a stray hash in the file) is silent and catastrophic.
+With the `#` prefix format, the bare-prefix detector regex `^\s*#[A-Za-z0-9_-]{4}:` is highly specific — it only matches lines starting with `#` followed by exactly 4 base64 chars and `:`. This eliminates false positives from common code patterns like `init:`, `data:`, `else:`, etc. that plagued the old 4-char-only detector. The detector rejects edit lines matching this pattern with `[E_BARE_HASH_PREFIX]` to prevent the model from accidentally pasting hash anchors into file content.
 
 ## Development
 

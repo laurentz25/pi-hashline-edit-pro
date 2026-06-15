@@ -2,53 +2,44 @@ import { describe, expect, it } from "vitest";
 import { hashlineParseText, parseHashRef } from "../../src/hashline";
 
 describe("parseHashRef", () => {
-	it("parses a bare HASH", () => {
-		const ref = parseHashRef("aB3x");
-		expect(ref).toEqual({ hash: "aB3x" });
+	it("parses a hash anchor with # prefix", () => {
+		const ref = parseHashRef("#aB3x");
+		expect(ref).toEqual({ hash: "#aB3x" });
 	});
 
-	it("rejects trailing content after the hash", () => {
-		// The wire format is bare hash only. The `HASH:content` form from
-		// earlier versions is gone — there is no textHint on the wire.
-		expect(() => parseHashRef("aB3x:const x = 1;")).toThrow(
-			/Expected a bare 4-character hash/,
+	it("rejects trailing content after the anchor", () => {
+		// The wire format is anchor only. No content may follow.
+		expect(() => parseHashRef("#aB3x:const x = 1;")).toThrow(
+			/Expected a hash anchor/,
 		);
-		expect(() => parseHashRef("aB3x:")).toThrow(
-			/Expected a bare 4-character hash/,
+		expect(() => parseHashRef("#aB3x:")).toThrow(
+			/Expected a hash anchor/,
 		);
 	});
 
 	it("rejects leading >>> markers (strict mode: no marker stripping)", () => {
-		// The wire format is the bare 4-character hash. A `>>> ` prefix from a
+		// The wire format is the bare anchor. A `>>> ` prefix from a
 		// stale-anchor retry block is not part of the wire format and is rejected;
-		// the model must copy just the hash, not the surrounding retry-block framing.
-		expect(() => parseHashRef(">>> aB3x")).toThrow(/E_BAD_REF/);
+		// the model must copy just the anchor, not the surrounding retry-block framing.
+		expect(() => parseHashRef(">>> #aB3x")).toThrow(/E_BAD_REF/);
 	});
 
-	it("rejects + and - diff markers (strict mode: bare hash only)", () => {
-		// `+` is not in the URL-safe base64 alphabet, so a 5-char input like `+aB3x`
-		// is unambiguously a model mistake (a diff-add prefix leaked into the wire).
-		// `-` IS in the alphabet, so a 5-char input like `-aB3x` is either a
-		// model mistake (a diff-remove prefix) or a malformed hash (5 chars instead
-		// of 4). Either way the strict wire format rejects it; the model must copy
-		// exactly the 4 characters that appeared in `read` output.
-		expect(() => parseHashRef("+aB3x")).toThrow(/E_BAD_REF/);
-		expect(() => parseHashRef("-aB3x")).toThrow(/E_BAD_REF/);
+	it("rejects + and - diff markers (strict mode: anchor only)", () => {
+		expect(() => parseHashRef("+#aB3x")).toThrow(/E_BAD_REF/);
+		expect(() => parseHashRef("-#aB3x")).toThrow(/E_BAD_REF/);
 	});
 
-	it("accepts a 4-character hash that starts with - (alphabet char, not a marker)", () => {
-		// Regression: the URL-safe base64 alphabet is A-Za-z0-9-_, so a hash can
-		// legitimately begin with "-". The pre-fix code stripped the leading "-" as
-		// if it were a diff-removal marker and rejected the remaining 3 chars as a
-		// wrong-length hash. The strict path catches these.
-		expect(parseHashRef("-qkl")).toEqual({ hash: "-qkl" });
-		expect(parseHashRef("-_-a")).toEqual({ hash: "-_-a" });
-		expect(parseHashRef("----")).toEqual({ hash: "----" });
+	it("accepts a hash that starts with - in the body (alphabet char, not a marker)", () => {
+		// The URL-safe base64 alphabet is A-Za-z0-9-_, so the hash body can
+		// legitimately begin with "-". E.g. `#-qkl` is a valid anchor.
+		expect(parseHashRef("#-qkl")).toEqual({ hash: "#-qkl" });
+		expect(parseHashRef("#-_-a")).toEqual({ hash: "#-_-a" });
+		expect(parseHashRef("#----")).toEqual({ hash: "#----" });
 	});
 
-	it("rejects + as a hash first character (not in alphabet)", () => {
-		// "+" is not in the URL-safe base64 alphabet, so a 4-char input starting
-		expect(() => parseHashRef("+qkl")).toThrow(/E_BAD_REF/);
+	it("rejects + as a hash body character (not in alphabet)", () => {
+		// "+" is not in the URL-safe base64 alphabet
+		expect(() => parseHashRef("#+qkl")).toThrow(/E_BAD_REF/);
 	});
 
 	it("rejects malformed anchors with E_BAD_REF", () => {
@@ -61,14 +52,17 @@ describe("parseHashRef", () => {
 		);
 	});
 
-	it("rejects wrong-length hashes", () => {
-		expect(() => parseHashRef("aB3")).toThrow(/E_BAD_REF/);
-		expect(() => parseHashRef("aB3xX")).toThrow(/E_BAD_REF/);
-
+	it("rejects wrong-length anchors", () => {
+		// Too short (missing prefix or body chars)
+		expect(() => parseHashRef("#aB3")).toThrow(/E_BAD_REF/);
+		// Too long
+		expect(() => parseHashRef("#aB3xX")).toThrow(/E_BAD_REF/);
+		// No # prefix
+		expect(() => parseHashRef("aB3x")).toThrow(/E_BAD_REF/);
 	});
 
-	it("rejects hashes with invalid alphabet", () => {
-		expect(() => parseHashRef("!@#$")).toThrow(/^\[E_BAD_REF\]/);
+	it("rejects anchors with invalid alphabet", () => {
+		expect(() => parseHashRef("#!@#$")).toThrow(/^\[E_BAD_REF\]/);
 	});
 });
 
@@ -106,30 +100,28 @@ describe("hashlineParseText", () => {
 		expect(hashlineParseText("")).toEqual([""]);
 	});
 
-	it("rejects array input that contains HASH: prefixes", () => {
-		// Bare "HASH:content" prefixes are ambiguous in the new design (the
-		// format is also valid literal content; see warnBareHashPrefixLines).
-		// The +HASH: form, on the other hand, is unambiguous diff metadata and
+	it("rejects array input that contains #HASH: prefixes", () => {
+		// The +#HASH: form is unambiguous diff metadata and
 		// always rejected on shape alone.
-		expect(() => hashlineParseText(["+aB3x:foo", "+xYp9:bar"])).toThrow(
+		expect(() => hashlineParseText(["+#aB3x:foo", "+#xYp9:bar"])).toThrow(
 			/^\[E_INVALID_PATCH\]/,
 		);
 	});
 
 	it("rejects diff-preview hunks with + and context hash prefixes", () => {
 		expect(() =>
-			hashlineParseText([" aB3x:keep", "+xYp9:new", " mNo3:after"]),
+			hashlineParseText([" #aB3x:keep", "+#xYp9:new", " #mNo3:after"]),
 		).toThrow(/^\[E_INVALID_PATCH\]/);
 	});
 
 	it("rejects diff-preview deletion rows", () => {
 		expect(() =>
-			hashlineParseText([" aB3x:keep", "-10    old", " xYp9:after"]),
+			hashlineParseText([" #aB3x:keep", "-10    old", " #xYp9:after"]),
 		).toThrow(/^\[E_INVALID_PATCH\]/);
 	});
 
 	it("rejects string-form rendered diff hunks", () => {
-		const input = " aB3x:keep\n-10    old\n+xYp9:new\n mNo3:after";
+		const input = " #aB3x:keep\n-10    old\n+#xYp9:new\n #mNo3:after";
 		expect(() => hashlineParseText(input)).toThrow(/^\[E_INVALID_PATCH\]/);
 	});
 });

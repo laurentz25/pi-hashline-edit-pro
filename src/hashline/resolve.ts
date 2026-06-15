@@ -7,7 +7,7 @@
  */
 
 import { throwIfAborted } from "../runtime";
-import { HASH_LENGTH, HASHLINE_BARE_PREFIX_RE } from "./hash";
+import { HASHLINE_BARE_PREFIX_RE } from "./hash";
 import { parseHashRef, hashlineParseText, type Anchor } from "./parse";
 
 // ─── Types ──────────────────────────────────────────────────────────────

@@ -17,7 +17,7 @@ describe("applyHashlineEdits — error handling", () => {
 	it("throws on hash mismatch", () => {
 		const content = "aaa\nbbb\nccc";
 		const edits: HashlineEdit[] = [
-			{ op: "replace", start: { hash: "XXPM" }, end: { hash: "XXPM" }, lines: ["BBB"] },
+			{ op: "replace", start: { hash: "#XXPM" }, end: { hash: "#XXPM" }, lines: ["BBB"] },
 		];
 		expect(() => applyHashlineEdits(content, edits)).toThrow(/E_STALE_ANCHOR/);
 	});
@@ -25,10 +25,10 @@ describe("applyHashlineEdits — error handling", () => {
 	it("throws when the hash matches no line in the file", () => {
 		const content = "aaa\nbbb";
 		const edits: HashlineEdit[] = [
-			{ op: "replace", start: { hash: "ZZPM" }, end: { hash: "ZZPM" }, lines: ["x"] },
+			{ op: "replace", start: { hash: "#ZZPM" }, end: { hash: "#ZZPM" }, lines: ["x"] },
 		];
 		expect(() => applyHashlineEdits(content, edits)).toThrow(
-			/2 stale anchors: "ZZPM", "ZZPM"/,
+			/2 stale anchors: "#ZZPM", "#ZZPM"/,
 		);
 	});
 
@@ -48,8 +48,8 @@ describe("applyHashlineEdits — error handling", () => {
 	it("reports multiple mismatches at once", () => {
 		const content = "aaa\nbbb\nccc";
 		const edits: HashlineEdit[] = [
-			{ op: "replace", start: { hash: "XXPM" }, end: { hash: "XXPM" }, lines: ["A"] },
-			{ op: "replace", start: { hash: "YYWV" }, end: { hash: "YYWV" }, lines: ["C"] },
+			{ op: "replace", start: { hash: "#XXPM" }, end: { hash: "#XXPM" }, lines: ["A"] },
+			{ op: "replace", start: { hash: "#YYWV" }, end: { hash: "#YYWV" }, lines: ["C"] },
 		];
 		expect(() => applyHashlineEdits(content, edits)).toThrow(
 			/4 stale anchors/,
@@ -59,11 +59,11 @@ describe("applyHashlineEdits — error handling", () => {
 	it("lists stale anchor hashes in mismatch errors", () => {
 		const content = "aaa\nbbb\nccc";
 		const edits: HashlineEdit[] = [
-			{ op: "replace", start: { hash: "XXPM" }, end: { hash: "XXPM" }, lines: ["A"] },
-			{ op: "replace", start: { hash: "YYWV" }, end: { hash: "YYWV" }, lines: ["C"] },
+			{ op: "replace", start: { hash: "#XXPM" }, end: { hash: "#XXPM" }, lines: ["A"] },
+			{ op: "replace", start: { hash: "#YYWV" }, end: { hash: "#YYWV" }, lines: ["C"] },
 		];
 		expect(() => applyHashlineEdits(content, edits)).toThrow(
-			/4 stale anchors: "XXPM", "XXPM", "YYWV", "YYWV"/,
+			/4 stale anchors: "#XXPM", "#XXPM", "#YYWV", "#YYWV"/,
 		);
 	});
 
@@ -71,7 +71,7 @@ describe("applyHashlineEdits — error handling", () => {
 		expect(() =>
 			applyHashlineEdits("aaa", [
 				{
-					op: "replace", start: { hash: "ZZPM" }, end: { hash: "ZZPM" }, lines: ["bbb"],
+					op: "replace", start: { hash: "#ZZPM" }, end: { hash: "#ZZPM" }, lines: ["bbb"],
 				} as any,
 			]),
 		).toThrow(/[A-Za-z0-9_\-]{4}:aaa/);
