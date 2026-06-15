@@ -56,13 +56,13 @@ Images (JPEG, PNG, GIF, WebP) are passed through as attachments and do not parti
 
 ### `edit` — hash-anchored modifications
 
-Edits use the `HASH:content` anchors from `read` output to target lines precisely:
+Edits use the `#HASH:content` anchors from `read` output to target lines precisely:
 
 ```json
 {
   "path": "src/main.ts",
   "edits": [
-    { "op": "replace", "start": "ve7o", "end": "ve7o", "lines": ["  console.log('hashline');"] }
+    { "op": "replace", "start": "#ve7o", "end": "#ve7o", "lines": ["  console.log('hashline');"] }
   ]
 }
 ```
@@ -80,11 +80,11 @@ All edits in a single call validate against the same pre-edit snapshot and apply
 
 ### Chained edits
 
-After a successful edit, the result text contains an `--- Anchors ---` block with fresh `HASH:content` references for the changed region. These can be used directly in the next `edit` call on the same file without a full re-read, provided the next edit targets the same or nearby lines. For distant changes, use `read` first.
+After a successful edit, the result text contains an `--- Anchors ---` block with fresh `#HASH:content` references for the changed region. These can be used directly in the next `edit` call on the same file without a full re-read, provided the next edit targets the same or nearby lines. For distant changes, use `read` first.
 
 ### Auto-read after write
 
-After a successful `write`, the extension automatically reads the file and appends a `--- Auto-read (hashline anchors) ---` block to the result. This gives the model immediate `HASH:content` anchors for the newly written file without requiring a separate `read` call. The workflow becomes:
+After a successful `write`, the extension automatically reads the file and appends a `--- Auto-read (hashline anchors) ---` block to the result. This gives the model immediate `#HASH:content` anchors for the newly written file without requiring a separate `read` call. The workflow becomes:
 
 1. `write` a file → result includes hashline anchors
 2. `edit` using those anchors directly
@@ -92,13 +92,13 @@ After a successful `write`, the extension automatically reads the file and appen
 For large files (>2000 lines), the auto-read output is truncated with a pagination hint. Use `read` with `offset` to see more.
 ### Diff for the host
 
-The post-edit diff (with `+`/`-` markers and new `HASH:content` anchors) is exposed to the host UI via `details.diff`. It is intentionally **not** in the LLM-visible text — the model only needs the fresh anchors in `text` to chain follow-up edits, and re-emitting the diff would cost extra tokens.
+The post-edit diff (with `+`/`-` markers and new `#HASH:content` anchors) is exposed to the host UI via `details.diff`. It is intentionally **not** in the LLM-visible text — the model only needs the fresh anchors in `text` to chain follow-up edits, and re-emitting the diff would cost extra tokens.
 
 ## Design Decisions
 
-- **Stale anchors fail.** A hash mismatch means the file has changed since the last `read`. The error includes fresh `>>> HASH:content` lines for the affected region; the model copies the HASH portion and retries.
+- **Stale anchors fail.** A hash mismatch means the file has changed since the last `read`. The error includes fresh `>>> #HASH:content` lines for the affected region; the model copies the HASH portion and retries.
 - **No fallback relocation.** Mismatched anchors are never silently relocated to a "close enough" line. This trades convenience for correctness.
-- **Strict patch content.** If `lines` contains `+HASH:` display prefixes (or `-N   ` diff rows), the edit is rejected with `[E_INVALID_PATCH]`. Bare `HASH:` content (the first 5 chars of a `lines` entry looking like a 4-char hash followed by `:`) is also rejected with `[E_BARE_HASH_PREFIX]` — issue #24. When the suspect's prefix happens to match a real file-line hash, the error message flags that as strong evidence the model copied a hash from the read output; the model should rephrase the line (quote it, escape the colon, or use a different identifier shape) and retry.
+- **Strict patch content.** If `lines` contains `+#HASH:` display prefixes (or `-N   ` diff rows), the edit is rejected with `[E_INVALID_PATCH]`. Bare `#HASH:` content (the first 6 chars of a `lines` entry looking like `#` + 4 base64 chars + `:`) is also rejected with `[E_BARE_HASH_PREFIX]` — issue #24. When the suspect's prefix happens to match a real file-line anchor, the error message flags that as strong evidence the model copied an anchor from the read output; the model should rephrase the line (quote it, escape the colon, or use a different identifier shape) and retry.
 - **Legacy dialect rejected.** The native top-level `oldText`/`newText` (and `old_text`/`new_text`) dialect and `op: "replace_text"` are rejected with `[E_LEGACY_SHAPE]`. The error message tells the model to call `read` first and send `{op:"replace", start:"<HASH>", end:"<HASH>", lines:[...]}` (or `append`/`prepend` with `pos`).
 - **Atomic writes.** Files are written via temp-file-then-rename to avoid corruption from interrupted writes. Symlink chains are resolved so the target file is updated without replacing the symlink. Hard-linked files are updated in place to preserve the shared inode. File permissions are preserved across atomic renames.
 - **Per-file mutation queue.** Edits queue by the canonical write target, so concurrent edits through different symlink paths still serialize onto the same underlying file.

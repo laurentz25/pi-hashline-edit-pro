@@ -558,7 +558,7 @@ export function computeAffectedLineRange(params: {
 }
 
 /**
- * Format a list of lines as `HASH:content` rows.
+ * Format a list of lines as `#HASH:content` rows.
  *
  * Used by the read tool's preview and the changed-mode anchor block. The
  * hashes must be the precomputed per-line hashes for the file — see

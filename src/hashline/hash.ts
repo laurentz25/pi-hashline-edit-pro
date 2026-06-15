@@ -98,7 +98,7 @@ export const DIFF_MINUS_RE = /^-\s*\d+\s{4}/;
  *
  * This is the partial-hash failure mode from issue #24: the model copies a
  * hash it saw in `read` output into the line content but drops the rest
- * of the rendered `HASH:content` form. The anchor (prefix + HASH_LENGTH chars
+ * of the rendered `#HASH:content` form. The anchor (prefix + HASH_LENGTH chars
  * + ":") is matched by this regex, then `assertNoBareHashPrefixLines` rejects
  * the edit with `[E_BARE_HASH_PREFIX]` so the model gets actionable feedback
  * instead of a silent correctness bug.

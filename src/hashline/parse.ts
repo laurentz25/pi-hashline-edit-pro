@@ -63,8 +63,8 @@ function parseAnchorRef(ref: string): Anchor {
 }
 
 /**
- * Parse a hash anchor. Accepts `HASH` (e.g. `"aB3x"`) only. The
- * `HASH:content` disambiguator from earlier versions is gone — the hash
+ * Parse a hash anchor. Accepts `#HASH` (e.g. `"#aB3x"`) only. The
+ * `#HASH:content` disambiguator from earlier versions is gone — the anchor
  * is the entire wire format for `pos` and `end`, and no content may
  * follow it.
  *

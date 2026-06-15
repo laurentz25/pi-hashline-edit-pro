@@ -88,7 +88,7 @@ export type HashlineToolEdit = {
  *   - `not_found`: no line in the file has this hash
  *   - `ambiguous`: the hash matches multiple lines (the model must
  *     re-read to disambiguate; the runtime does not accept a
- *     `HASH:content` disambiguator on the wire)
+	 *     `#HASH:content` disambiguator on the wire)
  */
 function resolveAnchor(
 	ref: Anchor,
@@ -332,12 +332,12 @@ function maybeWarnSuspiciousUnicodeEscapePlaceholder(
  * `assertNoDisplayPrefixes`, which rejects the unambiguous `+HASH:` form at
  * the parse stage; this catches the bare `HASH:` form (after optional leading
  * whitespace) at the apply stage. The first 5 characters of every `lines`
- * entry are checked: 4 alphabet characters (A–Z, a–z, 0–9, `-`, `_`)
+ * entry are checked: `#` prefix + 4 alphabet characters (A–Z, a–z, 0–9, `-`, `_`)
  * followed by `:`.
  *
- * Bare `HASH:` prefixes in `lines` are almost always a model mistake — the
+ * Bare `#HASH:` prefixes in `lines` are almost always a model mistake — the
  * model copied the hash prefix from a `read` output but dropped the rest of
- * the rendered `HASH:content` form. We reject with `[E_BARE_HASH_PREFIX]`
+ * the rendered `#HASH:content` form. We reject with `[E_BARE_HASH_PREFIX]`
  * rather than warn, because a stray hash in the file content is a silent
  * correctness bug (the line is written verbatim, no autocorrection) and
  * because the cost of a false positive is small: the model can rephrase the
@@ -346,7 +346,7 @@ function maybeWarnSuspiciousUnicodeEscapePlaceholder(
  *
  * The error message lists the offending lines, the suspect hash prefix for
  * each, and whether any of them collide with a real file-line hash. A
- * collision is a strong signal that the model was reading a `HASH:content`
+ * collision is a strong signal that the model was reading a `#HASH:content`
  * line and copied only the prefix.
  */
 export function assertNoBareHashPrefixLines(
@@ -394,7 +394,7 @@ export function assertNoBareHashPrefixLines(
 			: `${matchedCount} match file line hashes — likely a copied hash.`;
 
 	throw new Error(
-		`[E_BARE_HASH_PREFIX] ${suspects.length} edit line(s) start with a hash-like prefix (e.g. ${JSON.stringify(exampleLine)}). ${linesHint} Use literal file content in "lines" — never paste HASH:content from read output.`
+		`[E_BARE_HASH_PREFIX] ${suspects.length} edit line(s) start with a hash-like prefix (e.g. ${JSON.stringify(exampleLine)}). ${linesHint} Use literal file content in "lines" — never paste #HASH:content from read output.`
 	);
 }
 
