@@ -1,10 +1,10 @@
 {
   "name": "pi-hashline-edit-pro",
-  "version": "0.5.0",
+  "version": "0.2.0",
   "description": "Strict hashline read/edit tool override for pi-coding-agent with hash-anchored edits (4-char, 24-bit)",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/your-org/pi-hashline-edit-pro.git"
+    "url": "git+https://github.com/YuGiMob/pi-hashline-edit-pro.git"
   },
   "author": "pi-hashline-edit-pro contributors",
   "keywords": [
