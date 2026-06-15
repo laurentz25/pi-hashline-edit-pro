@@ -17,11 +17,15 @@ This fork makes two changes that compound:
 
 ## Installation
 
-```bash
-# From npm
-pi install npm:pi-hashline-edit-pro
+From npm:
 
-# From a local checkout
+```bash
+pi install npm:pi-hashline-edit-pro
+```
+
+From a local checkout:
+
+```bash
 pi install /path/to/pi-hashline-edit-pro
 ```
 
