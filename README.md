@@ -18,7 +18,7 @@ This fork makes **two** changes that compound:
 ## Installation
 
 ```bash
-# From npm (once published)
+# From npm
 pi install npm:pi-hashline-edit-pro
 
 # From a local checkout
