@@ -15,18 +15,6 @@ This fork makes **two** changes that compound:
 1. **Bump hash length to 4 characters** of the 64-char URL-safe base64 alphabet → 24 bits / 16 777 216 buckets. Birthday-paradox collisions are effectively nullified for any realistic file.
 2. **Make the hash occurrence-aware.** The hash for line N is `xxHash32("C{occurrence}:{content}")` where `occurrence` is the running count of that content string earlier in the file. Symbol-only lines use `"S{lineNumber}"` as the discriminator. Two `import {...}` statements at different positions now hash to different values, so the model can target a specific occurrence without resorting to `offset` + a small `limit` window.
 
-Measured on the current files in this repo (unique line-hashes out of total visible lines, i.e. excluding the terminal empty line produced by a trailing newline):
-
-| File | Lines | 2-char (upstream) | 4-char (this fork) |
-|---|---:|---:|---:|
-| `README.md` (prose) | 138 | 73 (53%) | 138 (100%) |
-| `AGENTS.md` (prose) | 106 | 64 (60%) | 106 (100%) |
-| `package.json` (data) | 54 | 42 (78%) | 54 (100%) |
-| `src/edit.ts` (code) | 694 | 210 (30%) | 694 (100%) |
-| `src/hashline.ts` (code) | 1 463 | 248 (17%) | 1 463 (100%) |
-
-The 4-char / occurrence-aware hash gives ~100% unique anchors in these files. The 2-char / content-only hash leaves 47–83% collisions because repeated lines (a lone `}`, repeated `import {...}` statements, repeated punctuation) all share a hash. The remaining 0% on the 4-char side is the practical floor — birthday-paradox collisions between structurally different lines are rare enough to be invisible at these file sizes.
-
 ## Installation
 
 ```bash
@@ -128,7 +116,7 @@ Hashes are **occurrence-aware**: a discriminator prefix is mixed into the xxHash
 
 The runtime always precomputes the full per-line hash array for a file via `computeLineHashes(content)`, then looks up by line number during validation and during `read` / `edit` response formatting. There is no per-line recomputation that could disagree with what the model saw in its last read.
 
-`HASH_LENGTH` and `HASH_ALPHABET` are constants at the top of `src/hashline.ts`; bump the length to 5 if you ever need even more entropy.
+`HASH_LENGTH` and `HASH_ALPHABET` are constants at the top of `src/hashline/hash.ts`; bump the length to 5 if you ever need even more entropy.
 
 ### Trade-off: the bare-prefix detector
 
