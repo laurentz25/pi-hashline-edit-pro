@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { detectLineEnding, normalizeToLF, stripBom } from "../../src/edit-diff";
+import { detectLineEnding, normalizeToLF, restoreLineEndings, stripBom } from "../../src/edit-diff";
 
 // ─── detectLineEnding ───────────────────────────────────────────────────
 
@@ -70,5 +70,34 @@ describe("stripBom", () => {
   it("handles plain empty string", () => {
     const result = stripBom("");
     expect(result).toEqual({ bom: "", text: "" });
+  });
+});
+
+// ─── restoreLineEndings ────────────────────────────────────────────────
+
+describe("restoreLineEndings", () => {
+  it("converts LF back to CRLF when original used CRLF", () => {
+    expect(restoreLineEndings("hello\nworld", "\r\n")).toBe("hello\r\nworld");
+  });
+
+  it("leaves LF unchanged when original used LF", () => {
+    expect(restoreLineEndings("hello\nworld", "\n")).toBe("hello\nworld");
+  });
+
+  it("handles empty string with CRLF target", () => {
+    expect(restoreLineEndings("", "\r\n")).toBe("");
+  });
+
+  it("handles empty string with LF target", () => {
+    expect(restoreLineEndings("", "\n")).toBe("");
+  });
+
+  it("handles multiple lines with CRLF target", () => {
+    expect(restoreLineEndings("a\nb\nc", "\r\n")).toBe("a\r\nb\r\nc");
+  });
+
+  it("preserves content without newlines", () => {
+    expect(restoreLineEndings("hello", "\r\n")).toBe("hello");
+    expect(restoreLineEndings("hello", "\n")).toBe("hello");
   });
 });

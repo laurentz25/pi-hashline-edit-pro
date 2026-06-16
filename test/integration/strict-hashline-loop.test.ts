@@ -63,3 +63,70 @@ describe("strict hashline tool loop", () => {
     });
   });
 });
+
+describe("CRLF line ending preservation", () => {
+  it("preserves CRLF line endings after edit", async () => {
+    await withTempFile("crlf.ts", "alpha\r\nbeta\r\ngamma\r\n", async ({ cwd, path }) => {
+      const { pi, getTool } = makeFakePiRegistry();
+      register(pi);
+      const ctx = { cwd, ui: { notify() {} } } as any;
+
+      const readTool = getTool("read");
+      const editTool = getTool("edit");
+
+      // Read and get anchor for beta
+      const readResult = await readTool.execute("r1", { path: "crlf.ts" }, undefined, undefined, ctx);
+      const betaRef = readResult.content[0].text
+        .split("\n")
+        .find((line: string) => line.includes("│beta"))!
+        .split("│")[0]!;
+
+      // Edit beta → BETA
+      await editTool.execute(
+        "e1",
+        { path: "crlf.ts", edits: [{ op: "replace", start: betaRef, end: betaRef, lines: ["BETA"] }] },
+        undefined,
+        undefined,
+        ctx,
+      );
+
+      // Verify file on disk still uses CRLF
+      const { readFile } = await import("fs/promises");
+      const content = await readFile(path, "utf-8");
+      expect(content).toBe("alpha\r\nBETA\r\ngamma\r\n");
+      expect(content).toContain("\r\n");
+      expect(content).not.toMatch(/[^\r]\n/); // no bare LF
+    });
+  });
+
+  it("preserves LF line endings after edit (no CRLF introduced)", async () => {
+    await withTempFile("lf.ts", "alpha\nbeta\ngamma\n", async ({ cwd, path }) => {
+      const { pi, getTool } = makeFakePiRegistry();
+      register(pi);
+      const ctx = { cwd, ui: { notify() {} } } as any;
+
+      const readTool = getTool("read");
+      const editTool = getTool("edit");
+
+      const readResult = await readTool.execute("r1", { path: "lf.ts" }, undefined, undefined, ctx);
+      const betaRef = readResult.content[0].text
+        .split("\n")
+        .find((line: string) => line.includes("│beta"))!
+        .split("│")[0]!;
+
+      await editTool.execute(
+        "e1",
+        { path: "lf.ts", edits: [{ op: "replace", start: betaRef, end: betaRef, lines: ["BETA"] }] },
+        undefined,
+        undefined,
+        ctx,
+      );
+
+      // Verify file on disk still uses LF (no CRLF introduced)
+      const { readFile } = await import("fs/promises");
+      const content = await readFile(path, "utf-8");
+      expect(content).toBe("alpha\nBETA\ngamma\n");
+      expect(content).not.toContain("\r");
+    });
+  });
+});
