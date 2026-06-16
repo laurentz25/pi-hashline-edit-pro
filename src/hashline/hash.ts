@@ -1,5 +1,5 @@
 
-import * as XXH from "xxhashjs";
+import xxhash from "xxhash-wasm";
 
 
 export const HASH_LENGTH = 4;
@@ -42,8 +42,33 @@ export const HASHLINE_BARE_PREFIX_RE = new RegExp(`^\\s*(${HASH_CHARS_CLASS})│
 
 const RE_SIGNIFICANT = /[\p{L}\p{N}]/u;
 
+// Lazy-initialized xxhash-wasm hasher. Initialization starts at module load
+// time and completes in ~2ms. By the time any tool calls xxh32(), the hasher
+// is ready.
+type Hasher = { h32(input: string, seed?: number): number };
+let hasherPromise: Promise<Hasher> | null = null;
+let hasherSync: Hasher | null = null;
+
+function getHasher(): Hasher {
+	if (hasherSync) return hasherSync;
+	// Fast path won't hit this in practice — the wasm init completes in ~2ms
+	// and no tool call happens at import time. But if it does, throw clearly.
+	throw new Error("xxhash-wasm not initialized yet. This should not happen.");
+}
+
+// Start initialization immediately at module load time.
+hasherPromise = xxhash().then((h) => {
+	hasherSync = h;
+	return h;
+});
+
+// Export for tests that need to await readiness.
+export function ensureHasherReady(): Promise<Hasher> {
+	return hasherPromise!;
+}
+
 function xxh32(input: string, seed = 0): number {
-	return XXH.h32(seed).update(input).digest().toNumber() >>> 0;
+	return getHasher().h32(input, seed) >>> 0;
 }
 
 const SYMBOL_DISCRIMINATOR = (lineNumber: number): string => `S${lineNumber}`;
