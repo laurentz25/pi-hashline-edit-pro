@@ -1,6 +1,6 @@
 {
   "name": "pi-hashline-edit-pro",
-  "version": "0.3.7",
+  "version": "0.3.8",
   "description": "Strict hashline read/edit tool override for pi-coding-agent with hash-anchored edits (4-char, 24-bit)",
   "repository": {
     "type": "git",
@@ -36,8 +36,7 @@
   },
   "peerDependencies": {
     "@earendil-works/pi-coding-agent": ">=0.74.0",
-    "@earendil-works/pi-tui": "*",
-    "@sinclair/typebox": "*"
+    "@earendil-works/pi-tui": "*"
   },
   "scripts": {
     "test": "vitest run",

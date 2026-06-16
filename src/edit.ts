@@ -4,7 +4,7 @@ import type {
 	ToolDefinition,
 } from "@earendil-works/pi-coding-agent";
 import { withFileMutationQueue } from "@earendil-works/pi-coding-agent";
-import { Type } from "@sinclair/typebox";
+import { Type } from "typebox";
 import { constants } from "fs";
 import { readFileSync } from "fs";
 import { access as fsAccess } from "fs/promises";

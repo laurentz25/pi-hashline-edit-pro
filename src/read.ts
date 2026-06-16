@@ -7,7 +7,7 @@ import {
 	truncateHead,
 	type TruncationResult,
 } from "@earendil-works/pi-coding-agent";
-import { Type } from "@sinclair/typebox";
+import { Type } from "typebox";
 import { readFileSync } from "fs";
 import { access as fsAccess } from "fs/promises";
 import { constants } from "fs";
