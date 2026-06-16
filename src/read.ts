@@ -17,6 +17,7 @@ import { computeLineHashes, formatHashlineRegion } from "./hashline";
 import { resolveToCwd } from "./path-utils";
 import { throwIfAborted } from "./runtime";
 import { getFileSnapshot } from "./snapshot";
+import { getVisibleLines } from "./utils";
 
 const READ_DESC = readFileSync(
 	new URL("../prompts/read.md", import.meta.url),
@@ -55,21 +56,13 @@ function normalizePositiveInteger(
 	return value;
 }
 
-function getPreviewLines(text: string): string[] {
-	if (text.length === 0) {
-		return [];
-	}
-
-	const lines = text.split("\n");
-	return text.endsWith("\n") ? lines.slice(0, -1) : lines;
-}
 
 export function formatHashlineReadPreview(
 	text: string,
 	options: { offset?: number; limit?: number },
 	precomputedHashes?: string[],
 ): { text: string; truncation?: TruncationResult; nextOffset?: number } {
-	const allLines = getPreviewLines(text);
+	const allLines = getVisibleLines(text);
 	const totalLines = allLines.length;
 	const startLine = normalizePositiveInteger(options.offset, "offset") ?? 1;
 	if (totalLines === 0) {

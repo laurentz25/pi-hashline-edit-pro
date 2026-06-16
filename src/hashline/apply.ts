@@ -6,10 +6,12 @@ import {
 	assertNoBareHashPrefixLines,
 	maybeWarnSuspiciousUnicodeEscapePlaceholder,
 	formatMismatchError,
+	describeEdit,
 	type ResolvedHashlineEdit,
 	type NoopEdit,
 	type HashlineEdit,
 } from "./resolve";
+import { countVisibleLines } from "../utils";
 
 
 type LineIndex = {
@@ -58,16 +60,6 @@ function assertDoesNotEmptyFile(originalContent: string, result: string): void {
 	}
 }
 
-function describeEdit(edit: ResolvedHashlineEdit): string {
-	switch (edit.op) {
-		case "replace":
-			return `replace ${edit.start.hash}-${edit.end.hash}`;
-		case "append":
-			return edit.pos ? `append after ${edit.pos.hash}` : "append at EOF";
-		case "prepend":
-			return edit.pos ? `prepend before ${edit.pos.hash}` : "prepend at BOF";
-	}
-}
 
 function throwEditConflict(
 	left: { index: number; label: string },
@@ -521,13 +513,6 @@ export function computeChangedLineRange(
 ): { firstChangedLine: number; lastChangedLine: number } | null {
 	if (original === result) return null;
 
-	function countVisibleLines(text: string): number {
-		if (text.length === 0) {
-			return 0;
-		}
-		const lines = text.split("\n");
-		return text.endsWith("\n") ? lines.length - 1 : lines.length;
-	}
 
 	if (original.length === 0) {
 		return {

@@ -4,6 +4,8 @@ import { join, isAbsolute } from "path";
 import { computeLineHashes, formatHashlineRegion } from "./src/hashline";
 import { registerEditTool } from "./src/edit";
 import { registerReadTool } from "./src/read";
+import { normalizeToLF } from "./src/edit-diff";
+import { getVisibleLines } from "./src/utils";
 
 export default function (pi: ExtensionAPI): void {
   registerReadTool(pi);
@@ -22,9 +24,8 @@ export default function (pi: ExtensionAPI): void {
       const content = await readFile(absolutePath, "utf-8");
 
       // Normalize and compute hashline output
-      const normalized = content.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
-      const lines = normalized.split("\n");
-      const visibleLines = normalized.endsWith("\n") ? lines.slice(0, -1) : lines;
+		const normalized = normalizeToLF(content);
+		const visibleLines = getVisibleLines(normalized);
 
       if (visibleLines.length === 0) return;
 

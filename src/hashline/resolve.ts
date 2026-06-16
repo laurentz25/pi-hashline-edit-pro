@@ -303,6 +303,21 @@ export function assertNoBareHashPrefixLines(
 	);
 }
 
+
+/**
+ * Human-readable label for a resolved edit (used in warnings and conflict errors).
+ */
+export function describeEdit(edit: ResolvedHashlineEdit): string {
+	switch (edit.op) {
+		case "replace":
+			return `replace ${edit.start.hash}-${edit.end.hash}`;
+		case "append":
+			return edit.pos ? `append after ${edit.pos.hash}` : "append at EOF";
+		case "prepend":
+			return edit.pos ? `prepend before ${edit.pos.hash}` : "prepend at BOF";
+	}
+}
+
 export function validateAnchorEdits(
 	edits: HashlineEdit[],
 	fileLines: string[],
@@ -327,16 +342,6 @@ export function validateAnchorEdits(
 		return result;
 	};
 
-	function describeEdit(edit: ResolvedHashlineEdit): string {
-		switch (edit.op) {
-			case "replace":
-				return `replace ${edit.start.hash}-${edit.end.hash}`;
-			case "append":
-				return edit.pos ? `append after ${edit.pos.hash}` : "append at EOF";
-			case "prepend":
-				return edit.pos ? `prepend before ${edit.pos.hash}` : "prepend at BOF";
-		}
-	}
 
 	for (const edit of edits) {
 		throwIfAborted(signal);

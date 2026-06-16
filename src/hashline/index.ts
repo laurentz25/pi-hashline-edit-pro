@@ -26,6 +26,7 @@ export {
 	type ResolvedHashlineEdit,
 	type HashlineToolEdit,
 	type NoopEdit,
+	describeEdit,
 	resolveEditAnchors,
 	validateAnchorEdits,
 	assertNoBareHashPrefixLines,

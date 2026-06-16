@@ -6,6 +6,7 @@ import {
 	formatHashlineRegion,
 } from "./hashline";
 import { formatHashlineReadPreview } from "./read";
+import { getVisibleLines } from "./utils";
 
 type ToolResult = {
 	content: Array<{ type: "text"; text: string }>;
@@ -96,11 +97,6 @@ export interface SuccessResponseInput {
 
 // ─── Helpers ────────────────────────────────────────────────────────────
 
-function getVisibleLines(text: string): string[] {
-	if (text.length === 0) return [];
-	const lines = text.split("\n");
-	return text.endsWith("\n") ? lines.slice(0, -1) : lines;
-}
 
 function countDiffLines(diff: string, marker: "+" | "-"): number {
 	if (!diff) return 0;
