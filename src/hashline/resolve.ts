@@ -157,7 +157,7 @@ function assertEditItem(edit: Record<string, unknown>, index: number): void {
 			`[E_BAD_OP] Edit ${index} uses unknown op "${edit.op}". Expected "replace", "append", or "prepend".`,
 		);
 	}
-	if ("pos" in edit && typeof edit.pos !== "string") {
+	if ("pos" in edit && typeof edit.pos !== "string" && edit.op !== "replace") {
 		throw new Error(
 			`[E_BAD_SHAPE] Edit ${index} field "pos" must be a string when provided.`,
 		);

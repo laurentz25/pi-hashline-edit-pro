@@ -68,6 +68,15 @@ describe("resolveEditAnchors", () => {
 		);
 	});
 
+	it("rejects replace with non-string pos field (E_BAD_OP, not E_BAD_SHAPE)", () => {
+		const edits: HashlineToolEdit[] = [
+			{ op: "replace", pos: 123 as any, end: "MQXV", lines: ["new"] } as any,
+		];
+		expect(() => resolveEditAnchors(edits)).toThrow(
+			/\[E_BAD_OP\].*uses "pos".*use "start"/i,
+		);
+	});
+
 	it("throws on malformed pos for append (not silently degraded to EOF)", () => {
 		const edits: HashlineToolEdit[] = [
 			{ op: "append", pos: "garbage", lines: ["new"] },

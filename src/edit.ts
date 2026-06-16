@@ -322,7 +322,7 @@ async function executeEditPipeline(
 		: [];
 
 	if (toolEdits.length === 0) {
-		throw new Error("No edits provided.");
+		throw new Error("[E_BAD_SHAPE] Edit request requires a non-empty \"edits\" array.");
 	}
 
 	throwIfAborted(signal);
