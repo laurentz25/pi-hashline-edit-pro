@@ -22,11 +22,12 @@ describe("computeLineHash", () => {
 		expect(computeLineHash(1, "hello\r")).toBe(computeLineHash(1, "hello"));
 	});
 
-	it("mixes line index for symbol-only lines", () => {
+	it("treats all lines uniformly via occurrence-based discrimination", () => {
 		const h1 = computeLineHash(1, "}");
 		const h10 = computeLineHash(10, "}");
 		expect(h1).toMatch(/^[A-Za-z0-9_\-]{4}$/);
-		expect(h10).toMatch(/^[A-Za-z0-9_\-]{4}$/);
+		// computeLineHash treats every input as 1st occurrence, so same content → same hash
+		expect(h1).toBe(h10);
 	});
 
 	it("does NOT mix line index for lines with alphanumeric content", () => {

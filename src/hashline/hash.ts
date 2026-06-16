@@ -40,7 +40,7 @@ export const DIFF_MINUS_RE = /^-\s*\d+\s{4}/;
 
 export const HASHLINE_BARE_PREFIX_RE = new RegExp(`^\\s*(${HASH_CHARS_CLASS})│`);
 
-const RE_SIGNIFICANT = /[\p{L}\p{N}]/u;
+
 
 // Lazy-initialized xxhash-wasm hasher. Initialization starts at module load
 // time and completes in ~2ms. By the time any tool calls xxh32(), the hasher
@@ -64,22 +64,17 @@ hasherPromise = xxhash().then((h) => {
 
 // Export for tests that need to await readiness.
 export function ensureHasherReady(): Promise<Hasher> {
-	return hasherPromise!;
+	return hasherPromise!
 }
 
 function xxh32(input: string, seed = 0): number {
 	return getHasher().h32(input, seed) >>> 0;
 }
 
-const SYMBOL_DISCRIMINATOR = (lineNumber: number): string => `S${lineNumber}`;
-const CONTENT_DISCRIMINATOR = (occurrence: number): string => `C${occurrence}`;
+const DISCRIMINATOR = (occurrence: number): string => `C${occurrence}`;
 
 function canonicalizeLine(line: string): string {
 	return line.replace(/\r/g, "").trimEnd();
-}
-
-function isSymbolOnly(canonical: string): boolean {
-	return !RE_SIGNIFICANT.test(canonical);
 }
 
 export function computeLineHashes(content: string): string[] {
@@ -87,27 +82,17 @@ export function computeLineHashes(content: string): string[] {
 	const hashes = new Array<string>(lines.length);
 	const counts = new Map<string, number>();
 	for (let i = 0; i < lines.length; i++) {
-		const lineNumber = i + 1;
 		const canonical = canonicalizeLine(lines[i]!);
-		let discriminator: string;
-		if (isSymbolOnly(canonical)) {
-			discriminator = SYMBOL_DISCRIMINATOR(lineNumber);
-		} else {
-			const occurrence = (counts.get(canonical) ?? 0) + 1;
-			counts.set(canonical, occurrence);
-			discriminator = CONTENT_DISCRIMINATOR(occurrence);
-		}
-		hashes[i] = hashToString(xxh32(`${discriminator}:${canonical}`));
+		const occurrence = (counts.get(canonical) ?? 0) + 1;
+		counts.set(canonical, occurrence);
+		hashes[i] = hashToString(xxh32(`${DISCRIMINATOR(occurrence)}:${canonical}`));
 	}
 	return hashes;
 }
 
 export function computeLineHash(idx: number, line: string): string {
 	const canonical = canonicalizeLine(line);
-	const discriminator = isSymbolOnly(canonical)
-		? SYMBOL_DISCRIMINATOR(idx)
-		: CONTENT_DISCRIMINATOR(1);
-	return hashToString(xxh32(`${discriminator}:${canonical}`));
+	return hashToString(xxh32(`${DISCRIMINATOR(1)}:${canonical}`));
 }
 
 export const HASH_FORMAT = {

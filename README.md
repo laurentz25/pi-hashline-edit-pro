@@ -13,8 +13,7 @@ The original uses 2-character hashes of a 16-character alphabet, with the hash b
 This fork makes two changes that compound:
 
 1. **Bump hash length to 4 characters** of the 64-char URL-safe base64 alphabet. That gives 24 bits / 16 777 216 buckets. Birthday-paradox collisions are effectively nullified for any realistic file.
-2. **Make the hash occurrence-aware.** The hash for line N is `xxHash32("C{occurrence}:{content}")` where `occurrence` is the running count of that content string earlier in the file. Symbol-only lines use `"S{lineNumber}"` as the discriminator. Two `import {...}` statements at different positions now hash to different values, so the model can target a specific occurrence without resorting to `offset` + a small `limit` window.
-
+2. **Make the hash occurrence-aware.** The hash for line N is `xxHash32("C{occurrence}:{content}")` where `occurrence` is the running count of that content string earlier in the file. Two `import {...}` statements at different positions now hash to different values, so the model can target a specific occurrence without resorting to `offset` + a small `limit` window. All lines — including symbol-only lines like `}` — use the same occurrence-based discrimination.
 ## Installation
 
 From npm:
@@ -114,10 +113,10 @@ Hashes are computed with [xxhash-wasm](https://github.com/jungomi/xxhash-wasm) (
 
 The alphabet is sized for an LLM consumer. The model tokenizes, it doesn't squint at pixel glyphs, so the human-readability heuristics used by smaller hand-curated alphabets (no G/L/I/O because they look like digits, no vowels so the hash doesn't accidentally spell a word, no hex digits so it can't be confused with `0xFF`) don't apply. The full 64 chars give maximum entropy per character, with case and digits included.
 
-Hashes are occurrence-aware: a discriminator prefix is mixed into the xxHash input before the line content. Symbol-only lines (lone `}`, etc.) use `S{lineNumber}` as the discriminator; content lines use `C{occurrence}` where `occurrence` is the running count of that canonical content earlier in the file. This way:
+Hashes are occurrence-aware: a discriminator prefix is mixed into the xxHash input before the line content. All lines (including symbol-only lines like `}`) use `C{occurrence}` as the discriminator, where `occurrence` is the running count of that canonical content earlier in the file. This way:
 
-- `}` on line 5 and `}` on line 17 hash differently (different `S{...}` prefix).
-- `import { foo } from 'bar';` on line 3 and the same string on line 47 hash differently (different `C{...}` prefix, 1 vs 2).
+- `}` on line 5 and `}` on line 17 hash differently (1st vs 2nd occurrence of `}`).
+- `import { foo } from 'bar';` on line 3 and the same string on line 47 hash differently (1st vs 2nd occurrence).
 
 The runtime always precomputes the full per-line hash array for a file via `computeLineHashes(content)`, then looks up by line number during validation and during `read` / `edit` response formatting. There is no per-line recomputation that could disagree with what the model saw in its last read.
 

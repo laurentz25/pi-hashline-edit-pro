@@ -1,6 +1,6 @@
 {
   "name": "pi-hashline-edit-pro",
-  "version": "0.4.3",
+  "version": "0.5.0",
   "description": "Strict hashline read/edit tool override for pi-coding-agent with hash-anchored edits (4-char, 24-bit)",
   "main": "index.ts",
   "repository": {
