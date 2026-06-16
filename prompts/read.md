@@ -22,6 +22,9 @@ File kinds:
 - Images (JPEG, PNG, GIF, WebP) are returned as visual attachments; the HASH-line protocol does not apply.
 - Binary files and directories are rejected with a descriptive error.
 
+Non-UTF-8 bytes:
+- Non-UTF-8 bytes are decoded as U+FFFD. The output is flagged when this happens; editing such a file rewrites it as UTF-8. Recover the original encoding with `iconv` afterwards if it must survive.
+
 Auto-read after write:
 - After a successful `write`, the result includes a `--- Auto-read (hashline anchors) ---` block with `HASH│content` for the written file.
 - Use those anchors directly for `edit` calls without a separate `read`.

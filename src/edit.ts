@@ -198,6 +198,15 @@ const EDIT_PROMPT_SNIPPET = readFileSync(
 	"utf-8",
 ).trim();
 
+
+const EDIT_PROMPT_GUIDELINES = readFileSync(
+	new URL("../prompts/edit-guidelines.md", import.meta.url),
+	"utf-8",
+)
+	.split("\n")
+	.map((line) => line.trim())
+	.filter((line) => line.startsWith("- "))
+	.map((line) => line.slice(2));
 const ROOT_KEYS = new Set(["path", "returnMode", "returnRanges", "edits"]);
 
 export function assertEditRequest(
@@ -426,6 +435,7 @@ const editToolDefinition: EditToolDefinition = {
 	description: EDIT_DESC,
 	parameters: hashlineEditToolSchema,
 	promptSnippet: EDIT_PROMPT_SNIPPET,
+	promptGuidelines: EDIT_PROMPT_GUIDELINES,
 	prepareArguments: (args: unknown) =>
 		normalizeEditRequest(args) as EditRequestParams,
 	renderShell: "default",
