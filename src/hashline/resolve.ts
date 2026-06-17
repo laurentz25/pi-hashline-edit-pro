@@ -78,15 +78,15 @@ export function formatMismatchError(
 
 	if (notFound.length > 0) {
 		const refList = notFound.map((m) => `"${m.ref.hash}"`).join(", ");
-		out.push(
-			`[E_STALE_ANCHOR] ${notFound.length} stale anchor${notFound.length > 1 ? "s" : ""}: ${refList}. Re-read the file to refresh.`
-		);
+	out.push(
+		`[E_STALE_ANCHOR] ${notFound.length} stale anchor${notFound.length > 1 ? "s" : ""}: ${refList}. Call read() to get fresh anchors, then copy the 4-character HASH from each line into your next replace call.`
+	);
 	}
 	if (ambiguous.length > 0) {
 		if (out.length > 0) out.push("");
-		out.push(
-			`[E_AMBIGUOUS_ANCHOR] ${ambiguous.length} ambiguous anchor${ambiguous.length > 1 ? "s" : ""}. Re-read the file to refresh.`
-		);
+	out.push(
+		`[E_AMBIGUOUS_ANCHOR] ${ambiguous.length} ambiguous anchor${ambiguous.length > 1 ? "s" : ""}. Call read() to get fresh anchors, then copy the 4-character HASH from each line into your next replace call.`
+	);
 		for (const m of ambiguous) {
 			const sample = (m.candidates ?? []).slice(0, 5);
 			const more =
@@ -198,7 +198,6 @@ export function assertNoBareHashPrefixLines(
 	edits: HashlineEdit[],
 	fileLines: string[],
 	fileHashes: string[],
-	filePath?: string,
 ): string[] {
 	if (fileHashes.length !== fileLines.length) {
 		throw new Error(
@@ -216,18 +215,11 @@ export function assertNoBareHashPrefixLines(
 	}
 	if (suspects.length === 0) return [];
 
-	const isPython = filePath?.endsWith('.py');
 	const fileHashSet = new Set(fileHashes);
 	const matched = suspects.filter((s) => fileHashSet.has(s.hash));
 	const matchedCount = matched.length;
 	const exampleLine = `${suspects[0]!.hash}│${suspects[0]!.line}`;
 
-	if (isPython) {
-		const hint = matchedCount > 0
-			? `${matchedCount} prefix(es) match file line hashes.`
-			: `None match file line hashes — likely Python syntax.`;
-		return [`[W_BARE_HASH_PREFIX] ${suspects.length} edit line(s) start with a hash-like prefix (e.g. ${JSON.stringify(exampleLine)}). ${hint}`];
-	}
 
 	const linesHint =
 		matchedCount === 0

@@ -368,7 +368,6 @@ async function executeEditPipeline(
 		resolved,
 		signal,
 		originalHashes,
-		absolutePath,
 	);
 
 	return {

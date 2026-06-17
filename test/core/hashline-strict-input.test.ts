@@ -176,37 +176,3 @@ describe("partial hash prefixes copied into content (issue #24)", () => {
 		expect(result.warnings ?? []).toEqual([]);
 	});
 });
-
-describe("Python .py file bare-prefix behavior", () => {
-	const file = "if True:\n    pass\nelse:\n    x = 1";
-	const hashes = computeLineHashes(file);
-	const anchor = hashes[0]!;
-
-	function applyToolPy(toolEdits: HashlineToolEdit[]) {
-		return applyHashlineEdits(file, resolveEditAnchors(toolEdits), undefined, undefined, "test.py");
-	}
-
-	it("warns instead of throwing for .py files with bare prefix", () => {
-		// With the prefix format, Python syntax like else: no longer triggers
-		// the detector. But a line like aB3x|content would trigger it.
-		// the detector. But a line like #aB3x:content would trigger it.
-		const result = applyToolPy([
-			{ start: anchor, end: anchor, lines: ["aB3x│do_something"] },
-		]);
-		expect(result.content).toContain("aB3x│do_something");
-		expect(result.warnings?.some((w) => w.includes("[W_BARE_HASH_PREFIX]"))).toBe(true);
-	});
-
-	it("still throws for non-.py files with bare prefix", () => {
-		let caught: Error | undefined;
-		try {
-			applyHashlineEdits(file, resolveEditAnchors([
-				{ start: anchor, end: anchor, lines: ["aB3x│do_something"] },
-			]), undefined, undefined, "test.ts");
-		} catch (e) {
-			caught = e as Error;
-		}
-		expect(caught).toBeDefined();
-		expect(caught!.message).toMatch(/^\[E_BARE_HASH_PREFIX\]/);
-	});
-});

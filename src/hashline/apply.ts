@@ -220,7 +220,6 @@ export function applyHashlineEdits(
 	edits: import("./resolve").HashlineEdit[],
 	signal?: AbortSignal,
 	precomputedHashes?: string[],
-	filePath?: string,
 ): {
 	content: string;
 	firstChangedLine: number | undefined;
@@ -262,7 +261,7 @@ export function applyHashlineEdits(
 		);
 	}
 
-	const barePrefixWarnings = assertNoBareHashPrefixLines(edits, lineIndex.fileLines, fileHashes, filePath);
+	const barePrefixWarnings = assertNoBareHashPrefixLines(edits, lineIndex.fileLines, fileHashes);
 	warnings.push(...barePrefixWarnings);
 	maybeWarnSuspiciousUnicodeEscapePlaceholder(edits, warnings);
 
