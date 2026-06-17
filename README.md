@@ -100,7 +100,7 @@ The post-edit diff (with `+`/`-` markers and new `HASH│content` anchors) is ex
 
 ## Design Decisions
 
-- **Stale anchors fail.** A hash mismatch means the file has changed since the last `read`. The error includes fresh `>>> HASH│content` lines for the affected region. The model copies the HASH portion and retries.
+- **Stale anchors fail.** A hash mismatch means the file has changed since the last `read`. The error tells the model to call `read()` to get fresh anchors, then copy the 4-character HASH from each line into the next replace call.
 - **No fallback relocation.** Mismatched anchors are never silently relocated to a "close enough" line. This trades convenience for correctness.
 - **Strict patch content.** If `lines` contains `+HASH│` display prefixes (or `-N   ` diff rows), the edit is rejected with `[E_INVALID_PATCH]`. Bare `HASH│` content (the first 5 chars of a `lines` entry looking like 4 base64 chars + `│`) is also rejected with `[E_BARE_HASH_PREFIX]`. When the suspect's prefix happens to match a real file-line anchor, the error message flags that as strong evidence the model copied an anchor from the read output.
 - **Legacy dialect rejected.** The native top-level `oldText`/`newText` (and `old_text`/`new_text`) dialect is rejected with `[E_LEGACY_SHAPE]`. The error message tells the model to call `read` first and send `{start:"<HASH>", end:"<HASH>", lines:[...]}`.
