@@ -2,9 +2,9 @@ import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { readFile } from "fs/promises";
 import { join, isAbsolute } from "path";
 import { computeLineHashes, formatHashlineRegion } from "./src/hashline";
-import { registerEditTool } from "./src/edit";
+import { registerEditTool } from "./src/replace";
 import { registerReadTool } from "./src/read";
-import { normalizeToLF } from "./src/edit-diff";
+import { normalizeToLF } from "./src/replace-diff";
 import { getVisibleLines } from "./src/utils";
 
 export default function (pi: ExtensionAPI): void {

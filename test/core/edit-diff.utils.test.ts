@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { detectLineEnding, normalizeToLF, restoreLineEndings, stripBom } from "../../src/edit-diff";
+import { detectLineEnding, normalizeToLF, restoreLineEndings, stripBom } from "../../src/replace-diff";
 
 // ─── detectLineEnding ───────────────────────────────────────────────────
 

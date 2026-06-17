@@ -4,7 +4,7 @@ import {
 	assertEditRequest,
 	hashlineEditToolSchema,
 	registerEditTool,
-} from "../../src/edit";
+} from "../../src/replace";
 import { computeLineHash } from "../../src/hashline";
 import { makeFakePiRegistry, withTempFile } from "../support/fixtures";
 import register from "../../index";

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { chmod } from "fs/promises";
-import { computeEditPreview } from "../../src/edit";
+import { computeEditPreview } from "../../src/replace";
 import { computeLineHash } from "../../src/hashline";
 import { withTempFile } from "../support/fixtures";
 
@@ -133,7 +133,7 @@ describe("computeEditPreview", () => {
       };
 
       // Import registerEditTool to set up the tool with its render methods
-      const { registerEditTool } = await import("../../src/edit");
+      const { registerEditTool } = await import("../../src/replace");
       const tools = new Map<string, any>();
       const pi = {
         registerTool(tool: any) {

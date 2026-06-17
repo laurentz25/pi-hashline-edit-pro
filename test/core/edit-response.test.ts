@@ -7,7 +7,7 @@ import {
 	type NoopResponseInput,
 	type SuccessResponseInput,
 	type EditMeta,
-} from "../../src/edit-response";
+} from "../../src/replace-response";
 import { computeLineHash } from "../../src/hashline";
 
 const baseEditMeta: EditMeta = {

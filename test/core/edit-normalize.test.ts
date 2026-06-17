@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { normalizeEditRequest } from "../../src/edit-normalize";
+import { normalizeEditRequest } from "../../src/replace-normalize";
 
 describe("normalizeEditRequest", () => {
 	it("returns non-object input unchanged", () => {

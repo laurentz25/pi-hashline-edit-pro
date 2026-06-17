@@ -11,7 +11,7 @@ import { Type } from "typebox";
 import { readFileSync } from "fs";
 import { access as fsAccess } from "fs/promises";
 import { constants } from "fs";
-import { normalizeToLF, stripBom } from "./edit-diff";
+import { normalizeToLF, stripBom } from "./replace-diff";
 import { loadFileKindAndText } from "./file-kind";
 import { computeLineHashes, formatHashlineRegion } from "./hashline";
 import { resolveToCwd } from "./path-utils";

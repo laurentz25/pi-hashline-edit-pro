@@ -14,8 +14,8 @@ import {
 	normalizeToLF,
 	restoreLineEndings,
 	stripBom,
-} from "./edit-diff";
-import { normalizeEditRequest } from "./edit-normalize";
+} from "./replace-diff";
+import { normalizeEditRequest } from "./replace-normalize";
 import { isRecord, hasOwn } from "./utils";
 import { resolveMutationTargetPath, writeFileAtomically } from "./fs-write";
 import {
@@ -35,7 +35,7 @@ import {
 	buildRangesResponse,
 	type EditMeta,
 	type ReturnMode,
-} from "./edit-response";
+} from "./replace-response";
 import {
 	buildAppliedChangedResultText,
 	createRenderedEditMarkdownTheme,
@@ -46,7 +46,7 @@ import {
 	isAppliedChangedResult,
 	type EditPreview,
 	type EditRenderState,
-} from "./edit-render";
+} from "./replace-render";
 
 function stringEnumSchema<const Values extends readonly string[]>(
 	values: Values,

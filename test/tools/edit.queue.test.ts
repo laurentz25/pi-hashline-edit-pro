@@ -23,7 +23,7 @@ vi.mock("../../src/read", async (importOriginal) => {
 });
 
 import { withFileMutationQueue } from "@earendil-works/pi-coding-agent";
-import { registerEditTool } from "../../src/edit";
+import { registerEditTool } from "../../src/replace";
 
 function makeFakeRegistry() {
   const tools = new Map<string, any>();

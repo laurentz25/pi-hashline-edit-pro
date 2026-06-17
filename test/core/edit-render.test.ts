@@ -12,8 +12,8 @@ import {
 	type EditPreview,
 	type EditRenderState,
 	type FgTheme,
-} from "../../src/edit-render";
-import type { HashlineEditToolDetails } from "../../src/edit";
+} from "../../src/replace-render";
+import type { HashlineEditToolDetails } from "../../src/replace";
 
 // Mock theme for testing
 const mockTheme: FgTheme = {

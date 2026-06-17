@@ -1,5 +1,5 @@
 
-import { generateDiffString } from "./edit-diff";
+import { generateDiffString } from "./replace-diff";
 import {
 	computeAffectedLineRange,
 	computeLineHashes,

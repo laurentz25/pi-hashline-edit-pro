@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildCompactHashlineDiffPreview, generateDiffString } from "../../src/edit-diff";
+import { buildCompactHashlineDiffPreview, generateDiffString } from "../../src/replace-diff";
 
 describe("generateDiffString", () => {
 	it("adds hash hints for context and addition lines and pads deletion lines to align the '│' column", () => {

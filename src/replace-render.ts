@@ -1,13 +1,13 @@
 /**
  * TUI rendering helpers for the replace tool.
  *
- * Extracted from `src/edit.ts` to separate presentation (color themes, diff
+ * Extracted from `src/replace.ts` to separate presentation (color themes, diff
  * formatting, Markdown rendering) from tool execution logic.
  */
 
 import type { Theme } from "@earendil-works/pi-coding-agent";
-import { normalizeEditRequest } from "./edit-normalize";
-import type { EditRequestParams, HashlineEditToolDetails } from "./edit";
+import { normalizeEditRequest } from "./replace-normalize";
+import type { EditRequestParams, HashlineEditToolDetails } from "./replace";
 import { isRecord } from "./utils";
 
 // ─── Theme type aliases ─────────────────────────────────────────────────
