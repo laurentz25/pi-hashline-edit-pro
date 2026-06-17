@@ -16,7 +16,7 @@ describe("extension registration", () => {
 
     register(pi);
 
-    expect(toolNames.sort()).toEqual(["read", "replace"]);
+    expect(toolNames.sort()).toEqual(["edit", "read", "replace"]);
     // tool_result is registered for auto-read-after-write behavior
     expect(eventNames).toEqual(["tool_result"]);
 });
