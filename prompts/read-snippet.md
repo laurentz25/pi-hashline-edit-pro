@@ -1,1 +1,1 @@
-Read a text file with HASH│content anchors for edit
+Read a text file and return HASH│content lines

@@ -1,10 +1,8 @@
-Replace lines in a text file using `HASH` anchors copied verbatim from `read`.
+Replace lines in a text file using HASH anchors from `read`.
 
-Put all operations on one file in a single `replace` call. Stack every region into the `edits` array, even when they are far apart. Anchors within one call must all come from the same pre-edit read; the runtime applies them atomically against that one snapshot, so you do not adjust anchors for line-number shifts between edits in the same call.
+Put all operations on one file in a single `replace` call. Stack every region into the `edits` array, even when they are far apart. Anchors within one call must all come from the same pre-edit read; the runtime applies them atomically against that one snapshot.
 
-Anchors are 4 characters (e.g. `aB3x`), alphabet `A-Za-z0-9-_`. The wire format for `start`/`end` is the anchor only — no line number, no trailing content, no line content.
-
-End-to-end workflow:
+How to use:
 
 1. Call `read` to get HASH anchors:
 ```
@@ -15,7 +13,7 @@ read({ path: "src/main.ts" })
 // VRWS│const z = 3;
 ```
 
-2. Copy anchors from read output into `replace`:
+2. Copy the 4-character HASH (before `│`) into `start`/`end`:
 ```json
 { "path": "src/main.ts", "edits": [
   { "start": "MQXV", "end": "MQXV", "lines": ["const x = 99;"] }
@@ -51,26 +49,20 @@ Examples:
 ```
 
 Rules:
-- `start` and `end` are required. A single-line replace is `start=X, end=X`. To replace more than one line, set `end` to a different line's anchor.
+- `start` and `end` are required. A single-line replace is `start=X, end=X`.
 - To delete a range, use `lines: []`.
-- `start`, `end` are HASH anchors only (e.g. `aB3x`). Other forms are rejected with `[E_BAD_REF]`.
-- `lines` is literal file content. No `HASH│` prefix, no leading `+`/`-` (those are read/diff metadata, not file content). Lines starting with 4 base64 chars + `│` are checked; if detected, the replace is rejected with `[E_BARE_HASH_PREFIX]`. For `.py` files, this becomes a `[W_BARE_HASH_PREFIX]` warning instead (Python syntax like `else:`, `except:` triggers the detector).
+- `start`, `end` are HASH anchors only (e.g. `aB3x`). Do not include `│` or line content.
+- `lines` is literal file content. No `HASH│` prefix, no `+`/`-` diff markers.
 - Copy anchors from the most recent `read` of the file. Do not guess or construct them.
-- All edits in one call must be non-conflicting. The runtime rejects with `[E_EDIT_CONFLICT]` if two `replace` ranges overlap. Fix: merge into one or split into a follow-up `replace` call.
-- When building replace ranges, double-check that `start` is on the first line you want changed and `end` is on the last. If two edits would touch the same lines or adjacent lines, merge them into one replace with the combined new content.
-- If `lines` matches the current content byte-for-byte, the replace is classified as `Classification: noop` (file unchanged, not an error).
+- All edits in one call must be non-conflicting. The runtime rejects with `[E_EDIT_CONFLICT]` if two ranges overlap.
+- If `lines` matches current content, the replace is classified as `noop` (file unchanged).
 
-On success (`changed` mode, default), the response text contains an `--- Anchors ---` block with fresh `HASH│content` for the changed region (2 lines of context, capped at ~12 lines / 50 KB). Use those for nearby follow-up replaces instead of re-reading. If the response says `Anchors omitted; use read for subsequent replaces`, the region was too large — call `read` again. For distant follow-ups, or on any error, call `read` again. `full` and `ranges` modes put previews in `details`; the model only needs what's in the text.
-
-Error recovery:
-- `[E_STALE_ANCHOR]` — the file changed since your last read. The error includes fresh `>>> HASH│content` lines; copy the HASH portion (the 4 chars before `│`) and retry.
-- `[E_BAD_REF]` — malformed HASH. Re-read and try again with a valid HASH anchor (e.g. `aB3x`).
-
-Errors are text starting with a bracketed code (e.g. `[E_BAD_SHAPE]`, `[E_STALE_ANCHOR]`, `[E_BAD_OP]`, `[E_INVALID_PATCH]`, `[E_LEGACY_SHAPE]`, `[E_EDIT_CONFLICT]`, `[E_BAD_REF]`, `[E_AMBIGUOUS_ANCHOR]`, `[E_BARE_HASH_PREFIX]`, `[E_WOULD_EMPTY]`). The message tells you what to retry; stale-anchor errors include `>>> HASH│content` lines, ready to copy.
-
-The legacy `oldText`/`newText` shape (top-level) is rejected with `[E_LEGACY_SHAPE]`. Use hash-anchored replaces instead.
+On success, the response contains an `--- Anchors ---` block with fresh HASH anchors for the changed region. Use those for nearby follow-up replaces instead of re-reading.
 
 Auto-read after write:
-- After a successful `write`, the result includes a `--- Auto-read (hashline anchors) ---` block with `HASH│content` for the written file.
+- After a successful `write`, the result includes a `--- Auto-read (hashline anchors) ---` block.
 - Use those anchors directly for `replace` calls without a separate `read`.
-- This enables a seamless write → replace workflow with no extra tool calls.
+
+Error recovery:
+- `[E_STALE_ANCHOR]` — file changed since last read. The error includes fresh `>>> HASH│content` lines; copy the HASH and retry.
+- `[E_BAD_REF]` — malformed HASH. Re-read and try again.
