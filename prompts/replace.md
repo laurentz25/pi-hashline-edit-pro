@@ -4,6 +4,24 @@ Put all operations on one file in a single `replace` call. Stack every region in
 
 Anchors are 4 characters (e.g. `aB3x`), alphabet `A-Za-z0-9-_`. The wire format for `start`/`end` is the anchor only — no line number, no trailing content, no line content.
 
+End-to-end workflow:
+
+1. Call `read` to get HASH anchors:
+```
+read({ path: "src/main.ts" })
+// Returns:
+// MQXV│const x = 1;
+// ZPMQ│const y = 2;
+// VRWS│const z = 3;
+```
+
+2. Copy anchors from read output into `replace`:
+```json
+{ "path": "src/main.ts", "edits": [
+  { "start": "MQXV", "end": "MQXV", "lines": ["const x = 99;"] }
+] }
+```
+
 Examples:
 
 1. Single line replace:
