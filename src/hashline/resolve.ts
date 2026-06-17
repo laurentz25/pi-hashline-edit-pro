@@ -105,15 +105,6 @@ export function formatMismatchError(
 		}
 	}
 
-	out.push("");
-	out.push("Current state (first lines):");
-	const sampleSize = Math.min(fileLines.length, 5);
-	for (let i = 0; i < sampleSize; i++) {
-		out.push(`>>> ${fileHashes[i]}│${fileLines[i]}`);
-	}
-	if (fileLines.length > sampleSize) {
-		out.push(`... ${fileLines.length - sampleSize} more.`);
-	}
 
 	return out.join("\n");
 }

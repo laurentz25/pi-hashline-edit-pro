@@ -128,13 +128,8 @@ describe("occurrence-aware hashline", () => {
 		}
 		expect(caught).toBeDefined();
 		expect(caught!.message).toMatch(/E_STALE_ANCHOR/);
-		// The current-state block shows fresh hashes for the file's lines.
-		const freshHashes = computeLineHashes(file);
-		expect(caught!.message).toContain(freshHashes[0]!);
-		expect(caught!.message).toContain(freshHashes[1]!);
-		expect(caught!.message).toContain(freshHashes[2]!);
-		// Line 1 and line 3 have different hashes (occurrence-aware).
-		expect(freshHashes[0]).not.toBe(freshHashes[2]);
+		// The error message should contain actionable guidance.
+		expect(caught!.message).toContain("Call read()");
 	});
 
 	it("rejects an ambiguous hash with [E_AMBIGUOUS_ANCHOR] (synthetic collision)", () => {

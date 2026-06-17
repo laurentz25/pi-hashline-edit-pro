@@ -67,14 +67,14 @@ describe("applyHashlineEdits — error handling", () => {
 		);
 	});
 
-	it("mismatch message exposes the file's current HASH:content snippets", () => {
+	it("mismatch message contains actionable guidance", () => {
 		expect(() =>
 			applyHashlineEdits("aaa", [
 				{
 					start: { hash: "ZZPM" }, end: { hash: "ZZPM" }, lines: ["bbb"],
 				} as any,
 			]),
-		).toThrow(/[A-Za-z0-9_\-]{4}│aaa/);
+		).toThrow(/Call read\(\) to get fresh anchors/);
 	});
 
 	it("rejects overlapping replace ranges in one request", () => {

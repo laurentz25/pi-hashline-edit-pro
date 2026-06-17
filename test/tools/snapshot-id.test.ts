@@ -157,9 +157,7 @@ describe("snapshotId surface (details-only after W2)", () => {
         }
 
         expect(errorMessage).toMatch(/^\[E_STALE_ANCHOR\]/);
-        expect(errorMessage).toContain(
-	          `>>> ${computeLineHash(2, "TWO!")}│TWO!`,
-        );
+        expect(errorMessage).toContain("Call read()");
       },
     );
   });
