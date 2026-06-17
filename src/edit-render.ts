@@ -1,5 +1,5 @@
 /**
- * TUI rendering helpers for the edit tool.
+ * TUI rendering helpers for the replace tool.
  *
  * Extracted from `src/edit.ts` to separate presentation (color themes, diff
  * formatting, Markdown rendering) from tool execution logic.
@@ -101,7 +101,7 @@ export function formatEditCall(
 		typeof path === "string" && path.length > 0
 			? theme.fg("accent", path)
 			: theme.fg("toolOutput", "...");
-	let text = `${theme.fg("toolTitle", theme.bold("edit"))} ${pathDisplay}`;
+	let text = `${theme.fg("toolTitle", theme.bold("replace"))} ${pathDisplay}`;
 
 	if (!state.preview) {
 		return text;

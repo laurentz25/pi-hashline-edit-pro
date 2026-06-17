@@ -196,7 +196,7 @@ export function registerReadTool(pi: ExtensionAPI): void {
 			throwIfAborted(signal);
 			const normalized = normalizeToLF(stripBom(file.text).text);
 			// Compute hashes once for the whole file so the per-line anchors the
-			// model sees here are byte-identical to what the edit tool will
+			// model sees here are byte-identical to what the replace tool will
 			// compute when it later validates against this file.
 			const fileHashes = computeLineHashes(normalized);
 			const preview = formatHashlineReadPreview(

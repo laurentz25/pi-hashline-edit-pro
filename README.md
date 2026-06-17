@@ -1,6 +1,6 @@
 # pi-hashline-edit-pro
 
-A [pi-coding-agent](https://github.com/badlogic/pi-mono/tree/main/packages/coding-agent) extension that replaces the built-in `read` and `edit` tools with a hash-anchored line-editing workflow. Strict semantics, no silent relocation, no autocorrection, no fuzzy fallback. 4-character content hashes over a 64-character URL-safe base64 alphabet give 24 bits of entropy per anchor, so collisions are effectively zero in any realistic file.
+A [pi-coding-agent](https://github.com/badlogic/pi-mono/tree/main/packages/coding-agent) extension that replaces the built-in `read` and `edit` tools with a hash-anchored line-replacing workflow. Strict semantics, no silent relocation, no autocorrection, no fuzzy fallback. 4-character content hashes over a 64-character URL-safe base64 alphabet give 24 bits of entropy per anchor, so collisions are effectively zero in any realistic file.
 
 Fork of [pi-hashline-edit](https://github.com/RimuruW/pi-hashline-edit) by RimuruW. The strict-semantics policy is unchanged. This fork extends the upstream design in two ways: a 4-character hash length and an occurrence-aware discriminator that makes identical content at different positions hash to different values.
 
@@ -55,11 +55,11 @@ Optional parameters:
 - `offset` -- start reading from this line number (1-indexed).
 - `limit` -- maximum number of lines to return.
 
-Images (JPEG, PNG, GIF, WebP) are passed through as attachments and do not participate in the hashline protocol. Binary and directory paths are rejected with a descriptive error. Empty files return an advisory suggesting using edit to insert content.
+Images (JPEG, PNG, GIF, WebP) are passed through as attachments and do not participate in the hashline protocol. Binary and directory paths are rejected with a descriptive error. Empty files return an advisory suggesting using replace to insert content.
 
-### `edit` -- hash-anchored modifications
+### `replace` -- hash-anchored modifications
 
-Edits use the `HASH│content` anchors from `read` output to target lines precisely:
+Replaces use the `HASH│content` anchors from `read` output to target lines precisely:
 
 ```json
 {
@@ -83,14 +83,14 @@ All edits in a single call validate against the same pre-edit snapshot and apply
 
 ### Chained edits
 
-After a successful edit, the result text contains an `--- Anchors ---` block with fresh `HASH│content` references for the changed region. These can be used directly in the next `edit` call on the same file without a full re-read, provided the next edit targets the same or nearby lines. For distant changes, use `read` first.
+After a successful replace, the result text contains an `--- Anchors ---` block with fresh `HASH│content` references for the changed region. These can be used directly in the next `replace` call on the same file without a full re-read, provided the next replace targets the same or nearby lines. For distant changes, use `read` first.
 
 ### Auto-read after write
 
 After a successful `write`, the extension automatically reads the file and appends a `--- Auto-read (hashline anchors) ---` block to the result. This gives the model immediate `HASH│content` anchors for the newly written file without requiring a separate `read` call. The workflow becomes:
 
 1. `write` a file, result includes hashline anchors
-2. `edit` using those anchors directly
+2. `replace` using those anchors directly
 
 For large files (>2000 lines), the auto-read output is truncated with a pagination hint. Use `read` with `offset` to see more.
 

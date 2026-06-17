@@ -13,7 +13,7 @@ describe("edit tool noop + warnings", () => {
     await withTempFile("sample.txt", "aaa\nbbb\nccc\n", async ({ cwd, path }) => {
       const { pi, getTool } = makeFakePiRegistry();
       register(pi);
-      const editTool = getTool("edit");
+      const editTool = getTool("replace");
 
       const result = await editTool.execute(
         "e1",
@@ -40,7 +40,7 @@ describe("edit tool noop + warnings", () => {
     await withTempFile("sample.txt", "aaa\nbbb\nccc\n", async ({ cwd, path }) => {
       const { pi, getTool } = makeFakePiRegistry();
       register(pi);
-      const editTool = getTool("edit");
+      const editTool = getTool("replace");
 
       const result = await editTool.execute(
         "e1",

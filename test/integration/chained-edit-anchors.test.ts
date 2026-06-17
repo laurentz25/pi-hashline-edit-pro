@@ -10,7 +10,7 @@ describe("chained edit anchors", () => {
       const ctx = { cwd, ui: { notify() {} } } as any;
 
       const readTool = getTool("read");
-      const editTool = getTool("edit");
+      const editTool = getTool("replace");
 
       const firstRead = await readTool.execute("r1", { path: "sample.ts" }, undefined, undefined, ctx);
       const betaRef = firstRead.content[0].text
@@ -58,7 +58,7 @@ describe("chained edit anchors", () => {
       const ctx = { cwd, ui: { notify() {} } } as any;
 
       const readTool = getTool("read");
-      const editTool = getTool("edit");
+      const editTool = getTool("replace");
 
       const firstRead = await readTool.execute("r1", { path: "big.ts" }, undefined, undefined, ctx);
       const line1Ref = firstRead.content[0].text
@@ -96,7 +96,7 @@ describe("chained edit anchors", () => {
       const ctx = { cwd, ui: { notify() {} } } as any;
 
       const readTool = getTool("read");
-      const editTool = getTool("edit");
+      const editTool = getTool("replace");
 
       const firstRead = await readTool.execute("r1", { path: "expand.ts" }, undefined, undefined, ctx);
       const targetRef = firstRead.content[0].text
@@ -126,7 +126,7 @@ describe("chained edit anchors", () => {
       const ctx = { cwd, ui: { notify() {} } } as any;
 
       const readTool = getTool("read");
-      const editTool = getTool("edit");
+      const editTool = getTool("replace");
 
       const firstRead = await readTool.execute("r1", { path: "stale.ts" }, undefined, undefined, ctx);
       const betaRef = firstRead.content[0].text

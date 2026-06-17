@@ -11,7 +11,7 @@ The strict-semantics policy of the original is preserved verbatim. This fork is 
 
 ## Project Structure & Module Organization
 
-- `index.ts` is the extension entrypoint; it registers the custom `read`/`edit` tools.
+- `index.ts` is the extension entrypoint; it registers the custom `read`/`replace` tools.
 - `src/` contains the implementation, split by responsibility: `read.ts`, `edit.ts`, `edit-normalize.ts`, `edit-diff.ts`, `edit-response.ts`, `edit-render.ts`, `file-kind.ts`, `fs-write.ts`, `snapshot.ts`, `utils.ts`, and small runtime/path helpers. The hashline engine is in `src/hashline/` with sub-modules: `hash.ts`, `parse.ts`, `resolve.ts`, `apply.ts`, and `index.ts` (re-exports).
 - `prompts/` holds the Markdown prompt text loaded by the tools at runtime.
 - `test/` mirrors the code layout: `core/` for hashline primitives, `tools/` for tool behavior, `extension/` for registration, `integration/` for end-to-end flows, and `support/fixtures.ts` for temp-file helpers.
@@ -21,7 +21,7 @@ The strict-semantics policy of the original is preserved verbatim. This fork is 
 
 - `npm install` — install dependencies.
 - `npm test` — run the full test suite with `vitest`.
-- `npm test -- test/tools` — run tool-facing tests while iterating on `read`/`edit` behavior.
+- `npm test -- test/tools` — run tool-facing tests while iterating on `read`/`replace` behavior.
 - `npm test -- test/integration/strict-hashline-loop.test.ts` — run the strict hashline integration scenario.
 - There is no separate build step today; Pi loads the TypeScript entrypoints directly from `index.ts`.
 
@@ -47,7 +47,7 @@ The strict-semantics policy of the original is preserved verbatim. This fork is 
 
 ## Architecture Guardrails
 
-- Keep `read`, `edit`, prompt text, and tests in sync whenever the hashline format changes.
+- Keep `read`, `replace`, prompt text, and tests in sync whenever the hashline format changes.
 - Do not bypass `src/fs-write.ts`; atomic writes are part of the extension's safety guarantees.
 - Preserve stale-anchor rejection semantics unless the change explicitly redesigns the protocol.
 - Pi's built-in `edit` tool uses `{ path, edits: [{ oldText, newText }] }` text matching; this extension overrides it with hashline anchors. Model dialects that follow the native contract — top-level `oldText`/`newText` (or `old_text`/`new_text`), `edits` serialized as a JSON string, `file_path` alias — are converged onto the canonical `{ path, edits: [{ op, ... }] }` shape in one place: `normalizeEditRequest` (`src/edit-normalize.ts`), wired as the tool's `prepareArguments` hook and re-applied at the top of `execute()` / `computeEditPreview()` so the normalization does not depend on the hook having run. Keep all dialect handling there; `assertEditRequest` validates the canonical shape only. The published schema therefore does not declare the native top-level fields — they no longer exist by validation time. Normalization rewrites field shape only; it never touches hashline diff semantics (anchors, ranges, boundaries, `lines`). Edit items with `oldText`/`newText` and no `op` are NOT folded — they reach validation and are rejected with `[E_LEGACY_SHAPE]` so the model learns the canonical shape on the next turn.

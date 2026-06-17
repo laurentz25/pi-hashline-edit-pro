@@ -10,7 +10,7 @@ describe("strict hashline tool loop", () => {
       const ctx = { cwd, ui: { notify() {} } } as any;
 
       const readTool = getTool("read");
-      const editTool = getTool("edit");
+      const editTool = getTool("replace");
 
       const firstRead = await readTool.execute("r1", { path: "sample.ts" }, undefined, undefined, ctx);
       const firstText = firstRead.content[0].text as string;
@@ -72,7 +72,7 @@ describe("CRLF line ending preservation", () => {
       const ctx = { cwd, ui: { notify() {} } } as any;
 
       const readTool = getTool("read");
-      const editTool = getTool("edit");
+      const editTool = getTool("replace");
 
       // Read and get anchor for beta
       const readResult = await readTool.execute("r1", { path: "crlf.ts" }, undefined, undefined, ctx);
@@ -106,7 +106,7 @@ describe("CRLF line ending preservation", () => {
       const ctx = { cwd, ui: { notify() {} } } as any;
 
       const readTool = getTool("read");
-      const editTool = getTool("edit");
+      const editTool = getTool("replace");
 
       const readResult = await readTool.execute("r1", { path: "lf.ts" }, undefined, undefined, ctx);
       const betaRef = readResult.content[0].text

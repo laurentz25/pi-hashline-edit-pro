@@ -12,7 +12,7 @@ describe("edit tool returnMode", () => {
     await withTempFile("sample.txt", "aaa\nbbb\nccc\n", async ({ cwd }) => {
       const { pi, getTool } = makeFakePiRegistry();
       register(pi);
-      const editTool = getTool("edit");
+      const editTool = getTool("replace");
 
       const result = await editTool.execute(
         "e1",
@@ -44,7 +44,7 @@ describe("edit tool returnMode", () => {
     await withTempFile("big.txt", lines, async ({ cwd }) => {
       const { pi, getTool } = makeFakePiRegistry();
       register(pi);
-      const editTool = getTool("edit");
+      const editTool = getTool("replace");
 
       const result = await editTool.execute(
         "e1",
@@ -73,7 +73,7 @@ describe("edit tool returnMode", () => {
     await withTempFile("sample.txt", "aaa\nbbb\nccc\nddd\n", async ({ cwd }) => {
       const { pi, getTool } = makeFakePiRegistry();
       register(pi);
-      const editTool = getTool("edit");
+      const editTool = getTool("replace");
 
       const result = await editTool.execute(
         "e1",
@@ -109,7 +109,7 @@ describe("edit tool returnMode", () => {
     await withTempFile("sample.txt", "aaa\nbbb\nccc\n", async ({ cwd }) => {
       const { pi, getTool } = makeFakePiRegistry();
       register(pi);
-      const editTool = getTool("edit");
+      const editTool = getTool("replace");
 
       const result = await editTool.execute(
         "e1",
@@ -137,7 +137,7 @@ describe("edit tool returnMode", () => {
     await withTempFile("sample.txt", "aaa\nbbb\nccc\n", async ({ cwd }) => {
       const { pi, getTool } = makeFakePiRegistry();
       register(pi);
-      const editTool = getTool("edit");
+      const editTool = getTool("replace");
 
       const result = await editTool.execute(
         "e1",

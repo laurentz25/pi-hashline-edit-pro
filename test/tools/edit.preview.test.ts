@@ -142,7 +142,7 @@ describe("computeEditPreview", () => {
         on() {},
       };
       registerEditTool(pi as any);
-      const tool = tools.get("edit");
+      const tool = tools.get("replace");
       if (!tool) throw new Error("Tool not registered: edit");
 
       const theme = {

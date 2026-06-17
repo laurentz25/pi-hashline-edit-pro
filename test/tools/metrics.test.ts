@@ -37,7 +37,7 @@ describe("details.metrics surface (Phase 2 C — host-only observability)", () =
     await withTempFile("a.txt", "alpha\nbeta\ngamma\n", async ({ cwd }) => {
       const { pi, getTool } = makeFakePiRegistry();
       register(pi);
-      const editTool = getTool("edit");
+      const editTool = getTool("replace");
 
       const result = await editTool.execute(
         "e1",
@@ -70,7 +70,7 @@ describe("details.metrics surface (Phase 2 C — host-only observability)", () =
     await withTempFile("b.txt", "alpha\nbeta\n", async ({ cwd }) => {
       const { pi, getTool } = makeFakePiRegistry();
       register(pi);
-      const editTool = getTool("edit");
+      const editTool = getTool("replace");
 
       const result = await editTool.execute(
         "e1",
@@ -101,7 +101,7 @@ describe("details.metrics surface (Phase 2 C — host-only observability)", () =
     await withTempFile("c.txt", "one\ntwo\nthree\n", async ({ cwd }) => {
       const { pi, getTool } = makeFakePiRegistry();
       register(pi);
-      const editTool = getTool("edit");
+      const editTool = getTool("replace");
 
       const result = await editTool.execute(
         "e1",
@@ -130,7 +130,7 @@ describe("details.metrics surface (Phase 2 C — host-only observability)", () =
     await withTempFile("d.txt", "alpha\nbeta\n", async ({ cwd }) => {
       const { pi, getTool } = makeFakePiRegistry();
       register(pi);
-      const editTool = getTool("edit");
+      const editTool = getTool("replace");
 
       const result = await editTool.execute(
         "e1",
@@ -157,7 +157,7 @@ describe("details.metrics surface (Phase 2 C — host-only observability)", () =
     await withTempFile("e.txt", "alpha\nbeta\n", async ({ cwd }) => {
       const { pi, getTool } = makeFakePiRegistry();
       register(pi);
-      const editTool = getTool("edit");
+      const editTool = getTool("replace");
 
       for (const returnMode of ["changed", "full", "ranges"] as const) {
         const result = await editTool.execute(

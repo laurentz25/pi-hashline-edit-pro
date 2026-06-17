@@ -77,14 +77,14 @@ describe("formatEditCall", () => {
 		const args = { path: "src/main.ts", edits: [] };
 		const state: EditRenderState = {};
 		const result = formatEditCall(args, state, false, mockFullTheme);
-		expect(result).toContain("edit");
+		expect(result).toContain("replace");
 		expect(result).toContain("src/main.ts");
 	});
 
 	it("shows placeholder when no path", () => {
 		const state: EditRenderState = {};
 		const result = formatEditCall(undefined, state, false, mockFullTheme);
-		expect(result).toContain("edit");
+		expect(result).toContain("replace");
 		expect(result).toContain("...");
 	});
 

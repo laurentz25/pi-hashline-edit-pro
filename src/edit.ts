@@ -176,18 +176,18 @@ export type HashlineEditToolDetails = {
 };
 
 const EDIT_DESC = readFileSync(
-	new URL("../prompts/edit.md", import.meta.url),
+	new URL("../prompts/replace.md", import.meta.url),
 	"utf-8",
 ).trim();
 
 const EDIT_PROMPT_SNIPPET = readFileSync(
-	new URL("../prompts/edit-snippet.md", import.meta.url),
+	new URL("../prompts/replace-snippet.md", import.meta.url),
 	"utf-8",
 ).trim();
 
 
 const EDIT_PROMPT_GUIDELINES = readFileSync(
-	new URL("../prompts/edit-guidelines.md", import.meta.url),
+	new URL("../prompts/replace-guidelines.md", import.meta.url),
 	"utf-8",
 )
 	.split("\n")
@@ -417,8 +417,8 @@ type EditToolDefinition = ToolDefinition<
 > & { renderShell?: "default" | "self" };
 
 const editToolDefinition: EditToolDefinition = {
-	name: "edit",
-	label: "Edit",
+	name: "replace",
+	label: "Replace",
 	description: EDIT_DESC,
 	parameters: hashlineEditToolSchema,
 	promptSnippet: EDIT_PROMPT_SNIPPET,

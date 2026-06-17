@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import register from "../../index";
 
 describe("extension registration", () => {
-  it("registers the read and edit tools", () => {
+  it("registers the read and replace tools", () => {
     const toolNames: string[] = [];
     const eventNames: string[] = [];
     const pi = {
@@ -16,7 +16,7 @@ describe("extension registration", () => {
 
     register(pi);
 
-    expect(toolNames.sort()).toEqual(["edit", "read"]);
+    expect(toolNames.sort()).toEqual(["read", "replace"]);
     // tool_result is registered for auto-read-after-write behavior
     expect(eventNames).toEqual(["tool_result"]);
 });

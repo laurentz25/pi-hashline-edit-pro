@@ -12,7 +12,7 @@ describe("edit tool text shape (token budget)", () => {
     await withTempFile("sample.ts", "aaa\nbbb\nccc\n", async ({ cwd }) => {
       const { pi, getTool } = makeFakePiRegistry();
       register(pi);
-      const editTool = getTool("edit");
+      const editTool = getTool("replace");
 
       const result = await editTool.execute(
         "e1",
@@ -48,7 +48,7 @@ describe("edit tool text shape (token budget)", () => {
     await withTempFile("sample.ts", "aaa\nbbb\nccc\n", async ({ cwd }) => {
       const { pi, getTool } = makeFakePiRegistry();
       register(pi);
-      const editTool = getTool("edit");
+      const editTool = getTool("replace");
 
       const result = await editTool.execute(
         "e1",
@@ -75,7 +75,7 @@ describe("edit tool text shape (token budget)", () => {
     await withTempFile("sample.txt", "aaa\nbbb\nccc\n", async ({ cwd }) => {
       const { pi, getTool } = makeFakePiRegistry();
       register(pi);
-      const editTool = getTool("edit");
+      const editTool = getTool("replace");
 
       const result = await editTool.execute(
         "e1",
@@ -112,7 +112,7 @@ describe("edit tool text shape (token budget)", () => {
     await withTempFile("sample.ts", source, async ({ cwd }) => {
       const { pi, getTool } = makeFakePiRegistry();
       register(pi);
-      const editTool = getTool("edit");
+      const editTool = getTool("replace");
 
       const result = await editTool.execute(
         "e1",
@@ -141,7 +141,7 @@ describe("edit tool text shape (token budget)", () => {
     await withTempFile("sample.txt", "aaa\nbbb\nccc\n", async ({ cwd }) => {
       const { pi, getTool } = makeFakePiRegistry();
       register(pi);
-      const editTool = getTool("edit");
+      const editTool = getTool("replace");
 
       const result = await editTool.execute(
         "e1",
@@ -170,7 +170,7 @@ describe("edit tool text shape (token budget)", () => {
     await withTempFile("sample.txt", "only\n", async ({ cwd }) => {
       const { pi, getTool } = makeFakePiRegistry();
       register(pi);
-      const editTool = getTool("edit");
+      const editTool = getTool("replace");
 
       await expect(
         editTool.execute(
@@ -195,7 +195,7 @@ describe("edit tool text shape (token budget)", () => {
     await withTempFile("sample.txt", `before\n${longLine}\nafter\n`, async ({ cwd }) => {
       const { pi, getTool } = makeFakePiRegistry();
       register(pi);
-      const editTool = getTool("edit");
+      const editTool = getTool("replace");
 
       const result = await editTool.execute(
         "e1",

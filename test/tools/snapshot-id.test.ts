@@ -33,7 +33,7 @@ describe("snapshotId surface (details-only after W2)", () => {
     await withTempFile("sample.txt", "alpha\nbeta\n", async ({ cwd, path }) => {
       const { pi, getTool } = makeFakePiRegistry();
       register(pi);
-      const editTool = getTool("edit");
+      const editTool = getTool("replace");
 
       let errorMessage = "";
       try {
@@ -69,7 +69,7 @@ describe("snapshotId surface (details-only after W2)", () => {
       async ({ cwd, path }) => {
         const { pi, getTool } = makeFakePiRegistry();
         register(pi);
-        const editTool = getTool("edit");
+        const editTool = getTool("replace");
 
         // External, unrelated change: line 2 mutated, line 4 still "four".
         await writeFile(path, "one\nTWO!\nthree\nfour\nfive\n", "utf-8");
@@ -101,7 +101,7 @@ describe("snapshotId surface (details-only after W2)", () => {
     await withTempFile("sample.txt", "alpha\nbeta\n", async ({ cwd }) => {
       const { pi, getTool } = makeFakePiRegistry();
       register(pi);
-      const editTool = getTool("edit");
+      const editTool = getTool("replace");
 
       const result = await editTool.execute(
         "e1",
@@ -131,7 +131,7 @@ describe("snapshotId surface (details-only after W2)", () => {
       async ({ cwd, path }) => {
         const { pi, getTool } = makeFakePiRegistry();
         register(pi);
-        const editTool = getTool("edit");
+        const editTool = getTool("replace");
 
         // External change: rewrite the line we are about to target.
         await writeFile(path, "one\nTWO!\nthree\n", "utf-8");

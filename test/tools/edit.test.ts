@@ -130,7 +130,7 @@ describe("registerEditTool", () => {
 		await withTempFile("sample.txt", "aaa\nbbb\n", async ({ cwd, path }) => {
 			const { pi, getTool } = makeFakePiRegistry();
 			register(pi);
-			const editTool = getTool("edit");
+			const editTool = getTool("replace");
 
 			await expect(
 				editTool.execute(
@@ -156,7 +156,7 @@ describe("registerEditTool", () => {
 	it("validates direct execute path before resolving mutation target", async () => {
 		const { pi, getTool } = makeFakePiRegistry();
 		register(pi);
-		const editTool = getTool("edit");
+		const editTool = getTool("replace");
 
 		await expect(
 			editTool.execute(
@@ -173,7 +173,7 @@ describe("registerEditTool", () => {
 		await withTempFile("sample.txt", "aaa\nbbb\nccc\n", async ({ cwd }) => {
 			const { pi, getTool } = makeFakePiRegistry();
 			register(pi);
-			const editTool = getTool("edit");
+			const editTool = getTool("replace");
 
 			const editArgs = {
 				path: "sample.txt",

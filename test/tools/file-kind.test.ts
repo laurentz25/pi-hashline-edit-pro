@@ -411,7 +411,7 @@ describe("file kind guards in tools", () => {
 			async ({ cwd, path }) => {
 				const { pi, getTool } = makeFakePiRegistry();
 				register(pi);
-				const editTool = getTool("edit");
+				const editTool = getTool("replace");
 
 				await editTool.execute(
 					"e1",
@@ -442,7 +442,7 @@ describe("file kind guards in tools", () => {
 			async ({ cwd }) => {
 				const { pi, getTool } = makeFakePiRegistry();
 				register(pi);
-				const editTool = getTool("edit");
+				const editTool = getTool("replace");
 
 				await expect(
 					editTool.execute(
@@ -471,7 +471,7 @@ describe("file kind guards in tools", () => {
 			async ({ cwd }) => {
 				const { pi, getTool } = makeFakePiRegistry();
 				register(pi);
-				const editTool = getTool("edit");
+				const editTool = getTool("replace");
 
 				await expect(
 					editTool.execute(

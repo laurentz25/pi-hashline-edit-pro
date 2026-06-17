@@ -2,7 +2,7 @@ import { readFileSync } from "fs";
 import { describe, expect, it } from "vitest";
 
 const editPrompt = readFileSync(
-	new URL("../../prompts/edit.md", import.meta.url),
+	new URL("../../prompts/replace.md", import.meta.url),
 	"utf-8",
 );
 
@@ -12,9 +12,9 @@ const editPrompt = readFileSync(
 // phrases, the model will silently lose guidance on the multi-region case or
 // the three conflict rules. Tighten the assertions in the same PR that
 // changes the prompt.
-describe("prompts/edit.md (model-facing contract)", () => {
+describe("prompts/replace.md (model-facing contract)", () => {
 	it("declares the single-call multi-region pattern", () => {
-		expect(editPrompt).toMatch(/single `edit` call/i);
+		expect(editPrompt).toMatch(/single `replace` call/i);
 		expect(editPrompt).toMatch(/Stack every region/i);
 		expect(editPrompt).toMatch(/same pre-edit read/i);
 	});
@@ -62,7 +62,7 @@ const readPrompt = readFileSync(
 
 // These assertions pin the model-facing surface of the read tool. The prompt
 // is the contract that tells the model how to interpret the HASH:content output
-// and how to feed those HASHes back into edit. If a future refactor drops one
+// and how to feed those HASHes back into replace. If a future refactor drops one
 // of these load-bearing phrases — especially the "-qkl"-style alphabet note or
 // the no-marker rule — the model will silently lose the input-side guidance.
 // Tighten the assertions in the same PR that changes the prompt.
@@ -92,7 +92,7 @@ describe("prompts/read.md (model-facing contract)", () => {
 		// The model sees "HASH|content" in read output but must pass back only
 		// the 4 chars before the "|". The wire format is bare HASH; no punctuation,
 		// no line content, no surrounding whitespace. The no-marker rule (don't paste
-		// "+", "-", or ">>>" markers) is documented in the edit prompt, not here.
+		// "+", "-", or ">>>" markers) is documented in the replace prompt, not here.
 		expect(readPrompt).toMatch(/Do not include the `|`, the line content/);
 		expect(readPrompt).toMatch(/wire format.*HASH only/i);
 	});
@@ -110,10 +110,10 @@ describe("prompts/read.md (model-facing contract)", () => {
 		expect(readPrompt).toContain("offset=nextOffset");
 	});
 
-	it("points to the post-edit Anchors block as a cheaper source of fresh hashes", () => {
-		// The --- Anchors --- block on a successful edit has fresh hashes for the
+	it("points to the post-replace Anchors block as a cheaper source of fresh hashes", () => {
+		// The --- Anchors --- block on a successful replace has fresh hashes for the
 		// changed region; using those instead of re-reading the whole file is a
-		// significant token saving on chained edits.
+		// significant token saving on chained replaces.
 		expect(readPrompt).toContain("--- Anchors ---");
 	});
 
