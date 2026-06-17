@@ -57,6 +57,7 @@ Rules:
 - Copy anchors from the most recent `read` of the file. Do not guess or construct them.
 - All edits in one call must be non-conflicting. The runtime rejects with `[E_EDIT_CONFLICT]` if two ranges overlap.
 - If `lines` matches current content, the replace is classified as `noop` (file unchanged).
+- The `start`/`end` range is inclusive — both anchors and every line between them are replaced. If your replacement content includes lines that already exist in the file (e.g. closing brackets), make sure those lines are within your range, otherwise they will appear twice.
 
 On success, the response contains an `--- Anchors ---` block with fresh HASH anchors for the changed region. Use those for nearby follow-up replaces instead of re-reading.
 
