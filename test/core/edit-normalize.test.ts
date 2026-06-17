@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { normalizeEditRequest } from "../../src/replace-normalize";
+import { normalizeReplaceRequest } from "../../src/replace-normalize";
 
-describe("normalizeEditRequest", () => {
+describe("normalizeReplaceRequest", () => {
 	it("returns non-object input unchanged", () => {
-		expect(normalizeEditRequest(null)).toBe(null);
-		expect(normalizeEditRequest(undefined)).toBe(undefined);
-		expect(normalizeEditRequest("string")).toBe("string");
-		expect(normalizeEditRequest(42)).toBe(42);
+		expect(normalizeReplaceRequest(null)).toBe(null);
+		expect(normalizeReplaceRequest(undefined)).toBe(undefined);
+		expect(normalizeReplaceRequest("string")).toBe("string");
+		expect(normalizeReplaceRequest(42)).toBe(42);
 	});
 
 	it("returns object input unchanged when no normalization needed", () => {
@@ -14,7 +14,7 @@ describe("normalizeEditRequest", () => {
 			path: "src/main.ts",
 			edits: [{ start: "aB3x", end: "aB3x", lines: ["new"] }],
 		};
-		const result = normalizeEditRequest(input);
+		const result = normalizeReplaceRequest(input);
 		expect(result).toEqual(input);
 	});
 
@@ -23,7 +23,7 @@ describe("normalizeEditRequest", () => {
 			file_path: "src/main.ts",
 			edits: [{ start: "aB3x", end: "aB3x", lines: ["new"] }],
 		};
-		const result = normalizeEditRequest(input) as Record<string, unknown>;
+		const result = normalizeReplaceRequest(input) as Record<string, unknown>;
 		expect(result.path).toBe("src/main.ts");
 		expect(result.file_path).toBeUndefined();
 	});
@@ -34,7 +34,7 @@ describe("normalizeEditRequest", () => {
 			file_path: "src/alias.ts",
 			edits: [{ start: "aB3x", end: "aB3x", lines: ["new"] }],
 		};
-		const result = normalizeEditRequest(input) as Record<string, unknown>;
+		const result = normalizeReplaceRequest(input) as Record<string, unknown>;
 		expect(result.path).toBe("src/real.ts");
 		// file_path is not deleted because path is already a string
 		expect(result.file_path).toBe("src/alias.ts");
@@ -45,7 +45,7 @@ describe("normalizeEditRequest", () => {
 			path: "src/main.ts",
 			file_path: "other.ts",
 		};
-		const result = normalizeEditRequest(input) as Record<string, unknown>;
+		const result = normalizeReplaceRequest(input) as Record<string, unknown>;
 		expect(result.path).toBe("src/main.ts");
 		expect(result.file_path).toBe("other.ts");
 	});
@@ -58,7 +58,7 @@ describe("normalizeEditRequest", () => {
 			path: "src/main.ts",
 			edits: JSON.stringify(editsArray),
 		};
-		const result = normalizeEditRequest(input) as Record<string, unknown>;
+		const result = normalizeReplaceRequest(input) as Record<string, unknown>;
 		expect(Array.isArray(result.edits)).toBe(true);
 		expect(result.edits).toEqual(editsArray);
 	});
@@ -71,7 +71,7 @@ describe("normalizeEditRequest", () => {
 			path: "src/main.ts",
 			edits: editsArray,
 		};
-		const result = normalizeEditRequest(input) as Record<string, unknown>;
+		const result = normalizeReplaceRequest(input) as Record<string, unknown>;
 		expect(result.edits).toBe(editsArray);
 	});
 
@@ -80,7 +80,7 @@ describe("normalizeEditRequest", () => {
 			path: "src/main.ts",
 			edits: "not valid json",
 		};
-		const result = normalizeEditRequest(input) as Record<string, unknown>;
+		const result = normalizeReplaceRequest(input) as Record<string, unknown>;
 		expect(result.edits).toBe("not valid json");
 	});
 
@@ -89,7 +89,7 @@ describe("normalizeEditRequest", () => {
 			path: "src/main.ts",
 			edits: '{"key": "value"}',
 		};
-		const result = normalizeEditRequest(input) as Record<string, unknown>;
+		const result = normalizeReplaceRequest(input) as Record<string, unknown>;
 		expect(result.edits).toBe('{"key": "value"}');
 	});
 
@@ -101,7 +101,7 @@ describe("normalizeEditRequest", () => {
 			file_path: "src/main.ts",
 			edits: JSON.stringify(editsArray),
 		};
-		const result = normalizeEditRequest(input) as Record<string, unknown>;
+		const result = normalizeReplaceRequest(input) as Record<string, unknown>;
 		expect(result.path).toBe("src/main.ts");
 		expect(result.file_path).toBeUndefined();
 		expect(Array.isArray(result.edits)).toBe(true);
@@ -115,7 +115,7 @@ describe("normalizeEditRequest", () => {
 			returnRanges: [{ start: 1, end: 5 }],
 			edits: [{ start: "aB3x", end: "aB3x", lines: ["x"] }],
 		};
-		const result = normalizeEditRequest(input) as Record<string, unknown>;
+		const result = normalizeReplaceRequest(input) as Record<string, unknown>;
 		expect(result.path).toBe("src/main.ts");
 		expect(result.returnMode).toBe("full");
 		expect(result.returnRanges).toEqual([{ start: 1, end: 5 }]);
@@ -128,7 +128,7 @@ describe("normalizeEditRequest", () => {
 		};
 		const originalFilePath = input.file_path;
 		const originalEdits = input.edits;
-		normalizeEditRequest(input);
+		normalizeReplaceRequest(input);
 		expect(input.file_path).toBe(originalFilePath);
 		expect(input.edits).toBe(originalEdits);
 	});

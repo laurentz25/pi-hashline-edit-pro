@@ -2,14 +2,14 @@ import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { readFile } from "fs/promises";
 import { join, isAbsolute } from "path";
 import { computeLineHashes, formatHashlineRegion } from "./src/hashline";
-import { registerEditTool } from "./src/replace";
+import { registerReplaceTool } from "./src/replace";
 import { registerReadTool } from "./src/read";
 import { normalizeToLF } from "./src/replace-diff";
 import { getVisibleLines } from "./src/utils";
 
 export default function (pi: ExtensionAPI): void {
   registerReadTool(pi);
-  registerEditTool(pi);
+  registerReplaceTool(pi);
 
   // Auto-read after write: append hashline read output to write results
   // so the model immediately has anchors for subsequent edits.

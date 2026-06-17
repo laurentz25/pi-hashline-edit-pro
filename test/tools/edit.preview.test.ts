@@ -1,6 +1,6 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { chmod } from "fs/promises";
-import { computeEditPreview } from "../../src/replace";
+import { computeReplacePreview } from "../../src/replace";
 import { computeLineHash } from "../../src/hashline";
 import { withTempFile } from "../support/fixtures";
 
@@ -11,7 +11,7 @@ vi.mock("../../src/file-kind", () => ({
 
 import * as fileKindMod from "../../src/file-kind";
 
-describe("computeEditPreview", () => {
+describe("computeReplacePreview", () => {
   beforeEach(() => {
     vi.mocked(fileKindMod.loadFileKindAndText).mockReset();
     vi.mocked(fileKindMod.classifyFileKind).mockReset();
@@ -22,7 +22,7 @@ describe("computeEditPreview", () => {
       vi.mocked(fileKindMod.loadFileKindAndText).mockResolvedValue({ kind: "text", text: "aaa\nbbb\nccc\n" });
 
       const betaRef = computeLineHash(2, "bbb");
-      const preview = await computeEditPreview(
+      const preview = await computeReplacePreview(
         {
           path: "sample.txt",
           edits: [{ start: betaRef, end: betaRef, lines: ["BBB"] }],
@@ -47,7 +47,7 @@ describe("computeEditPreview", () => {
       });
 
       const betaRef = computeLineHash(2, "beta");
-      const preview = await computeEditPreview(
+      const preview = await computeReplacePreview(
         {
           path: "sample.txt",
           edits: [{ start: betaRef, end: betaRef, lines: ["BETA"] }],
@@ -71,7 +71,7 @@ describe("computeEditPreview", () => {
       const betaRef = computeLineHash(2, "bbb");
 
       try {
-        const preview = await computeEditPreview(
+        const preview = await computeReplacePreview(
           {
             path: "sample.txt",
             edits: [{ start: betaRef, end: betaRef, lines: ["BBB"] }],
@@ -98,7 +98,7 @@ describe("computeEditPreview", () => {
       );
 
       const betaRef = computeLineHash(2, "bbb");
-      const preview = await computeEditPreview(
+      const preview = await computeReplacePreview(
         {
           path: "sample.txt",
           edits: [{ start: betaRef, end: betaRef, lines: ["BBB"] }],
@@ -132,8 +132,8 @@ describe("computeEditPreview", () => {
         edits: [{ start: betaRef, end: betaRef, lines: ["BBB"] }],
       };
 
-      // Import registerEditTool to set up the tool with its render methods
-      const { registerEditTool } = await import("../../src/replace");
+      // Import registerReplaceTool to set up the tool with its render methods
+      const { registerReplaceTool } = await import("../../src/replace");
       const tools = new Map<string, any>();
       const pi = {
         registerTool(tool: any) {
@@ -141,7 +141,7 @@ describe("computeEditPreview", () => {
         },
         on() {},
       };
-      registerEditTool(pi as any);
+      registerReplaceTool(pi as any);
       const tool = tools.get("replace");
       if (!tool) throw new Error("Tool not registered: edit");
 

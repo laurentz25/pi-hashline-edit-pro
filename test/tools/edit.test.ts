@@ -1,18 +1,18 @@
 import { describe, expect, it } from "vitest";
 import { readFile } from "fs/promises";
 import {
-	assertEditRequest,
+	assertReplaceRequest,
 	hashlineEditToolSchema,
-	registerEditTool,
+	registerReplaceTool,
 } from "../../src/replace";
 import { computeLineHash } from "../../src/hashline";
 import { makeFakePiRegistry, withTempFile } from "../support/fixtures";
 import register from "../../index";
 
-describe("assertEditRequest", () => {
+describe("assertReplaceRequest", () => {
 	it("rejects unknown or unsupported root fields", () => {
 		expect(() =>
-			assertEditRequest({ path: "a.ts", legacy_field: [] } as any),
+			assertReplaceRequest({ path: "a.ts", legacy_field: [] } as any),
 		).toThrow(/unknown or unsupported fields/i);
 	});
 
@@ -21,7 +21,7 @@ describe("assertEditRequest", () => {
 		// edits are the only path. The runtime throws a clear error pointing
 		// the model to the right shape on the next turn.
 		expect(() =>
-			assertEditRequest({
+			assertReplaceRequest({
 				path: "a.ts",
 				oldText: "before",
 				newText: "after",
@@ -31,7 +31,7 @@ describe("assertEditRequest", () => {
 
 	it("rejects top-level old_text/new_text with E_LEGACY_SHAPE", () => {
 		expect(() =>
-			assertEditRequest({
+			assertReplaceRequest({
 				path: "a.ts",
 				old_text: "before",
 				new_text: "after",
@@ -41,7 +41,7 @@ describe("assertEditRequest", () => {
 
 	it("requires returnRanges when returnMode is ranges", () => {
 		expect(() =>
-			assertEditRequest({
+			assertReplaceRequest({
 				path: "a.ts",
 				returnMode: "ranges",
 				edits: [{ start: "ZZPM", end: "ZZPM", lines: ["x"] }],
@@ -51,7 +51,7 @@ describe("assertEditRequest", () => {
 
 	it("rejects returnRanges outside ranges returnMode", () => {
 		expect(() =>
-			assertEditRequest({
+			assertReplaceRequest({
 				path: "a.ts",
 				returnMode: "changed",
 				returnRanges: [{ start: 1, end: 2 }],
@@ -61,7 +61,7 @@ describe("assertEditRequest", () => {
 	});
 });
 
-describe("registerEditTool", () => {
+describe("registerReplaceTool", () => {
 	it("publishes a schema with expected structure", () => {
 		const schema = hashlineEditToolSchema as any;
 
@@ -107,7 +107,7 @@ describe("registerEditTool", () => {
 			},
 		} as any;
 
-		registerEditTool(pi);
+		registerReplaceTool(pi);
 
 		expect(registered?.parameters).toEqual(hashlineEditToolSchema);
 		expect(typeof registered?.prepareArguments).toBe("function");

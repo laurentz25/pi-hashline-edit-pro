@@ -15,7 +15,7 @@ import {
 	restoreLineEndings,
 	stripBom,
 } from "./replace-diff";
-import { normalizeEditRequest } from "./replace-normalize";
+import { normalizeReplaceRequest } from "./replace-normalize";
 import { isRecord, hasOwn } from "./utils";
 import { resolveMutationTargetPath, writeFileAtomically } from "./fs-write";
 import {
@@ -33,7 +33,7 @@ import {
 	buildFullResponse,
 	buildNoopResponse,
 	buildRangesResponse,
-	type EditMeta,
+	type ReplaceMeta,
 	type ReturnMode,
 } from "./replace-response";
 import {
@@ -44,8 +44,8 @@ import {
 	getRenderablePreviewInput,
 	getRenderedEditTextContent,
 	isAppliedChangedResult,
-	type EditPreview,
-	type EditRenderState,
+	type ReplacePreview,
+	type ReplaceRenderState,
 } from "./replace-render";
 
 function stringEnumSchema<const Values extends readonly string[]>(
@@ -136,14 +136,14 @@ type FullContentPreview = {
 	nextOffset?: number;
 };
 
-export type EditRequestParams = {
+export type ReplaceRequestParams = {
 	path: string;
 	returnMode?: "changed" | "full" | "ranges";
 	returnRanges?: ReturnRange[];
 	edits?: HashlineToolEdit[];
 };
 
-type EditMetrics = {
+type ReplaceMetrics = {
 	edits_attempted: number;
 	edits_noop: number;
 	warnings: number;
@@ -154,7 +154,7 @@ type EditMetrics = {
 	removed_lines?: number;
 };
 
-export type HashlineEditToolDetails = {
+export type HashlineReplaceToolDetails = {
 	diff: string;
 	firstChangedLine?: number;
 	/**
@@ -172,7 +172,7 @@ export type HashlineEditToolDetails = {
 	 * Phase 2 C — opt-in observability surface for hosts. Never echoed in text.
 	 * Hosts can use it for adoption/regression dashboards.
 	 */
-	metrics?: EditMetrics;
+	metrics?: ReplaceMetrics;
 };
 
 const EDIT_DESC = readFileSync(
@@ -196,9 +196,9 @@ const EDIT_PROMPT_GUIDELINES = readFileSync(
 	.map((line) => line.slice(2));
 const ROOT_KEYS = new Set(["path", "returnMode", "returnRanges", "edits"]);
 
-export function assertEditRequest(
+export function assertReplaceRequest(
 	request: unknown,
-): asserts request is EditRequestParams {
+): asserts request is ReplaceRequestParams {
 	if (!isRecord(request)) {
 		throw new Error("[E_BAD_SHAPE] Edit request must be an object.");
 	}
@@ -307,8 +307,8 @@ async function executeEditPipeline(
 	lastChangedLine?: number;
 	originalHashes?: string[];
 }> {
-	const normalized = normalizeEditRequest(request);
-	assertEditRequest(normalized);
+	const normalized = normalizeReplaceRequest(request);
+	assertReplaceRequest(normalized);
 
 	const params = normalized;
 	const path = params.path;
@@ -387,10 +387,10 @@ async function executeEditPipeline(
 	};
 }
 
-export async function computeEditPreview(
+export async function computeReplacePreview(
 	request: unknown,
 	cwd: string,
-): Promise<EditPreview> {
+): Promise<ReplacePreview> {
 	try {
 		const { path, originalNormalized, result } = await executeEditPipeline(
 			request,
@@ -412,8 +412,8 @@ export async function computeEditPreview(
 
 type EditToolDefinition = ToolDefinition<
 	typeof hashlineEditToolSchema,
-	HashlineEditToolDetails,
-	EditRenderState
+	HashlineReplaceToolDetails,
+	ReplaceRenderState
 > & { renderShell?: "default" | "self" };
 
 const editToolDefinition: EditToolDefinition = {
@@ -424,7 +424,7 @@ const editToolDefinition: EditToolDefinition = {
 	promptSnippet: EDIT_PROMPT_SNIPPET,
 	promptGuidelines: EDIT_PROMPT_GUIDELINES,
 	prepareArguments: (args: unknown) =>
-		normalizeEditRequest(args) as EditRequestParams,
+		normalizeReplaceRequest(args) as ReplaceRequestParams,
 	renderShell: "default",
 	renderCall(args, theme, context) {
 		const previewInput = getRenderablePreviewInput(args);
@@ -445,7 +445,7 @@ const editToolDefinition: EditToolDefinition = {
 				context.state.preview = undefined;
 				const previewGeneration = (context.state.previewGeneration ?? 0) + 1;
 				context.state.previewGeneration = previewGeneration;
-				computeEditPreview(previewInput, context.cwd)
+				computeReplacePreview(previewInput, context.cwd)
 					.then((preview) => {
 						if (
 							context.state.argsKey === argsKey &&
@@ -473,7 +473,7 @@ const editToolDefinition: EditToolDefinition = {
 		text.setText(
 			formatEditCall(
 				getRenderablePreviewInput(args) ?? undefined,
-				context.state as EditRenderState,
+				context.state as ReplaceRenderState,
 				context.expanded,
 				theme,
 			),
@@ -491,11 +491,11 @@ const editToolDefinition: EditToolDefinition = {
 
 		const typedResult = result as {
 			content?: Array<{ type: string; text?: string }>;
-			details?: HashlineEditToolDetails;
+			details?: HashlineReplaceToolDetails;
 		};
 		const renderedText = getRenderedEditTextContent(typedResult);
 
-		const renderState = context.state as EditRenderState | undefined;
+		const renderState = context.state as ReplaceRenderState | undefined;
 		const previewBeforeResult = renderState?.preview;
 		if (renderState) {
 			renderState.preview = undefined;
@@ -545,8 +545,8 @@ const editToolDefinition: EditToolDefinition = {
 	},
 
 	async execute(_toolCallId, params, signal, _onUpdate, ctx) {
-		const normalized = normalizeEditRequest(params);
-		assertEditRequest(normalized);
+		const normalized = normalizeReplaceRequest(params);
+		assertReplaceRequest(normalized);
 		const normalizedParams = normalized;
 		const path = normalizedParams.path;
 		const absolutePath = resolveToCwd(path, ctx.cwd);
@@ -609,7 +609,7 @@ const editToolDefinition: EditToolDefinition = {
 			const updatedSnapshotId = (await getFileSnapshot(absolutePath))
 				.snapshotId;
 
-			const editMeta: EditMeta = {
+			const editMeta: ReplaceMeta = {
 				editsAttempted,
 				noopEditsCount: noopEdits?.length ?? 0,
 				firstChangedLine,
@@ -635,6 +635,6 @@ const editToolDefinition: EditToolDefinition = {
 	},
 };
 
-export function registerEditTool(pi: ExtensionAPI): void {
+export function registerReplaceTool(pi: ExtensionAPI): void {
 	pi.registerTool(editToolDefinition);
 }

@@ -14,7 +14,7 @@ function coerceEditsArray(edits: unknown): unknown {
 }
 
 
-export function normalizeEditRequest(input: unknown): unknown {
+export function normalizeReplaceRequest(input: unknown): unknown {
 	if (!isRecord(input)) {
 		return input;
 	}

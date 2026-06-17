@@ -37,7 +37,7 @@ export type FullContentPreview = {
 	nextOffset?: number;
 };
 
-export type EditMetrics = {
+export type ReplaceMetrics = {
 	edits_attempted: number;
 	edits_noop: number;
 	warnings: number;
@@ -53,7 +53,7 @@ export type ReadMetrics = {
 	next_offset?: number;
 };
 
-export type EditMeta = {
+export type ReplaceMeta = {
 	editsAttempted: number;
 	noopEditsCount: number;
 	firstChangedLine?: number;
@@ -75,7 +75,7 @@ export interface NoopResponseInput {
 	noopEdits: NoopEditEntry[] | undefined;
 	originalNormalized: string;
 	snapshotId: string;
-	editMeta: EditMeta;
+	editMeta: ReplaceMeta;
 	warnings: string[] | undefined;
 }
 
@@ -92,7 +92,7 @@ export interface SuccessResponseInput {
 	resultHashes?: string[];
 	warnings: string[] | undefined;
 	snapshotId: string;
-	editMeta: EditMeta;
+	editMeta: ReplaceMeta;
 }
 
 // ─── Helpers ────────────────────────────────────────────────────────────
@@ -122,8 +122,8 @@ function buildMetrics(args: {
 	lastChangedLine?: number;
 	addedLines?: number;
 	removedLines?: number;
-}): EditMetrics {
-	const metrics: EditMetrics = {
+}): ReplaceMetrics {
+	const metrics: ReplaceMetrics = {
 		edits_attempted: args.editsAttempted,
 		edits_noop: args.noopEditsCount,
 		warnings: args.warningsCount,

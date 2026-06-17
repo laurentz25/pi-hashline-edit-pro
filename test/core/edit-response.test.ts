@@ -6,11 +6,11 @@ import {
 	buildChangedResponse,
 	type NoopResponseInput,
 	type SuccessResponseInput,
-	type EditMeta,
+	type ReplaceMeta,
 } from "../../src/replace-response";
 import { computeLineHash } from "../../src/hashline";
 
-const baseEditMeta: EditMeta = {
+const baseReplaceMeta: ReplaceMeta = {
 	editsAttempted: 1,
 	noopEditsCount: 0,
 };
@@ -24,7 +24,7 @@ describe("buildNoopResponse", () => {
 			noopEdits: undefined,
 			originalNormalized: "line1\nline2\n",
 			snapshotId: "v1|test|123|456",
-			editMeta: baseEditMeta,
+			editMeta: baseReplaceMeta,
 			warnings: undefined,
 		};
 		const result = buildNoopResponse(input);
@@ -41,7 +41,7 @@ describe("buildNoopResponse", () => {
 			noopEdits: undefined,
 			originalNormalized: "line1\nline2\n",
 			snapshotId: "v1|test|123|456",
-			editMeta: baseEditMeta,
+			editMeta: baseReplaceMeta,
 			warnings: undefined,
 		};
 		const result = buildNoopResponse(input);
@@ -64,7 +64,7 @@ describe("buildNoopResponse", () => {
 			],
 			originalNormalized: "line1\nline2\n",
 			snapshotId: "v1|test|123|456",
-			editMeta: { ...baseEditMeta, noopEditsCount: 1 },
+			editMeta: { ...baseReplaceMeta, noopEditsCount: 1 },
 			warnings: undefined,
 		};
 		const result = buildNoopResponse(input);
@@ -80,7 +80,7 @@ describe("buildNoopResponse", () => {
 			noopEdits: undefined,
 			originalNormalized: "line1\n",
 			snapshotId: "v1|test|123|456",
-			editMeta: baseEditMeta,
+			editMeta: baseReplaceMeta,
 			warnings: ["Test warning"],
 		};
 		const result = buildNoopResponse(input);
@@ -96,7 +96,7 @@ describe("buildNoopResponse", () => {
 			noopEdits: undefined,
 			originalNormalized: "line1\n",
 			snapshotId: "v1|test|123|456",
-			editMeta: baseEditMeta,
+			editMeta: baseReplaceMeta,
 			warnings: undefined,
 		};
 		const result = buildNoopResponse(input);
@@ -117,7 +117,7 @@ describe("buildChangedResponse", () => {
 			warnings: undefined,
 			snapshotId: "v1|test|123|456",
 			editMeta: {
-				...baseEditMeta,
+				...baseReplaceMeta,
 				firstChangedLine: 2,
 				lastChangedLine: 2,
 			},
@@ -137,7 +137,7 @@ describe("buildChangedResponse", () => {
 			warnings: undefined,
 			snapshotId: "v1|test|123|456",
 			editMeta: {
-				...baseEditMeta,
+				...baseReplaceMeta,
 				firstChangedLine: 2,
 				lastChangedLine: 2,
 			},
@@ -159,7 +159,7 @@ describe("buildChangedResponse", () => {
 			warnings: undefined,
 			snapshotId: "v1|test|123|456",
 			editMeta: {
-				...baseEditMeta,
+				...baseReplaceMeta,
 				firstChangedLine: 2,
 				lastChangedLine: 2,
 			},
@@ -184,7 +184,7 @@ describe("buildChangedResponse", () => {
 			warnings: undefined,
 			snapshotId: "v1|test|123|456",
 			editMeta: {
-				...baseEditMeta,
+				...baseReplaceMeta,
 				firstChangedLine: 51,
 				lastChangedLine: 51,
 			},
@@ -207,7 +207,7 @@ describe("buildFullResponse", () => {
 			warnings: undefined,
 			snapshotId: "v1|test|123|456",
 			editMeta: {
-				...baseEditMeta,
+				...baseReplaceMeta,
 				firstChangedLine: 2,
 				lastChangedLine: 2,
 			},
@@ -228,7 +228,7 @@ describe("buildFullResponse", () => {
 			warnings: undefined,
 			snapshotId: "v1|test|123|456",
 			editMeta: {
-				...baseEditMeta,
+				...baseReplaceMeta,
 				firstChangedLine: 1,
 				lastChangedLine: 3,
 			},
@@ -247,7 +247,7 @@ describe("buildFullResponse", () => {
 			warnings: undefined,
 			snapshotId: "v1|test|123|456",
 			editMeta: {
-				...baseEditMeta,
+				...baseReplaceMeta,
 				firstChangedLine: 1,
 				lastChangedLine: 1,
 			},
@@ -269,7 +269,7 @@ describe("buildRangesResponse", () => {
 			warnings: undefined,
 			snapshotId: "v1|test|123|456",
 			editMeta: {
-				...baseEditMeta,
+				...baseReplaceMeta,
 				firstChangedLine: 1,
 				lastChangedLine: 1,
 			},
@@ -290,7 +290,7 @@ describe("buildRangesResponse", () => {
 			warnings: undefined,
 			snapshotId: "v1|test|123|456",
 			editMeta: {
-				...baseEditMeta,
+				...baseReplaceMeta,
 				firstChangedLine: 1,
 				lastChangedLine: 3,
 			},
@@ -309,7 +309,7 @@ describe("buildRangesResponse", () => {
 			warnings: undefined,
 			snapshotId: "v1|test|123|456",
 			editMeta: {
-				...baseEditMeta,
+				...baseReplaceMeta,
 				firstChangedLine: 1,
 				lastChangedLine: 1,
 			},

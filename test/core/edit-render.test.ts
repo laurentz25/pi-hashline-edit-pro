@@ -9,11 +9,11 @@ import {
 	isAppliedChangedResult,
 	buildAppliedChangedResultText,
 	formatRenderedEditResultMarkdown,
-	type EditPreview,
-	type EditRenderState,
+	type ReplacePreview,
+	type ReplaceRenderState,
 	type FgTheme,
 } from "../../src/replace-render";
-import type { HashlineEditToolDetails } from "../../src/replace";
+import type { HashlineReplaceToolDetails } from "../../src/replace";
 
 // Mock theme for testing
 const mockTheme: FgTheme = {
@@ -75,14 +75,14 @@ describe("formatResultDiff", () => {
 describe("formatEditCall", () => {
 	it("formats edit call with path", () => {
 		const args = { path: "src/main.ts", edits: [] };
-		const state: EditRenderState = {};
+		const state: ReplaceRenderState = {};
 		const result = formatEditCall(args, state, false, mockFullTheme);
 		expect(result).toContain("replace");
 		expect(result).toContain("src/main.ts");
 	});
 
 	it("shows placeholder when no path", () => {
-		const state: EditRenderState = {};
+		const state: ReplaceRenderState = {};
 		const result = formatEditCall(undefined, state, false, mockFullTheme);
 		expect(result).toContain("replace");
 		expect(result).toContain("...");
@@ -90,7 +90,7 @@ describe("formatEditCall", () => {
 
 	it("shows error preview", () => {
 		const args = { path: "src/main.ts", edits: [] };
-		const state: EditRenderState = {
+		const state: ReplaceRenderState = {
 			preview: { error: "File not found" },
 		};
 		const result = formatEditCall(args, state, false, mockFullTheme);
@@ -99,7 +99,7 @@ describe("formatEditCall", () => {
 
 	it("shows diff preview when available", () => {
 		const args = { path: "src/main.ts", edits: [] };
-		const state: EditRenderState = {
+		const state: ReplaceRenderState = {
 			preview: { diff: "+added\n-removed" },
 		};
 		const result = formatEditCall(args, state, false, mockFullTheme);
@@ -151,7 +151,7 @@ describe("extractRenderedWarnings", () => {
 
 describe("isAppliedChangedResult", () => {
 	it("returns true for applied changed result", () => {
-		const details: HashlineEditToolDetails = {
+		const details: HashlineReplaceToolDetails = {
 			diff: "+added",
 			metrics: {
 				edits_attempted: 1,
@@ -167,7 +167,7 @@ describe("isAppliedChangedResult", () => {
 	});
 
 	it("returns false for noop result", () => {
-		const details: HashlineEditToolDetails = {
+		const details: HashlineReplaceToolDetails = {
 			diff: "",
 			classification: "noop",
 		};
@@ -175,7 +175,7 @@ describe("isAppliedChangedResult", () => {
 	});
 
 	it("returns false for full mode result", () => {
-		const details: HashlineEditToolDetails = {
+		const details: HashlineReplaceToolDetails = {
 			diff: "+added",
 			metrics: {
 				edits_attempted: 1,
@@ -225,7 +225,7 @@ describe("formatRenderedEditResultMarkdown", () => {
 describe("buildAppliedChangedResultText", () => {
 	it("builds text with diff when different from preview", () => {
 		const text = "--- Anchors ---\naB3x:line1";
-		const details: HashlineEditToolDetails = {
+		const details: HashlineReplaceToolDetails = {
 			diff: "+new line\n-old line",
 			metrics: {
 				edits_attempted: 1,
@@ -237,7 +237,7 @@ describe("buildAppliedChangedResultText", () => {
 				removed_lines: 1,
 			},
 		};
-		const preview: EditPreview = { diff: "different diff" };
+		const preview: ReplacePreview = { diff: "different diff" };
 		const result = buildAppliedChangedResultText(text, details, preview, mockTheme);
 		expect(result).toContain("+new line");
 		expect(result).toContain("-old line");
@@ -245,7 +245,7 @@ describe("buildAppliedChangedResultText", () => {
 
 	it("returns undefined when no diff and no warnings", () => {
 		const text = "--- Anchors ---\naB3x:line1";
-		const details: HashlineEditToolDetails = {
+		const details: HashlineReplaceToolDetails = {
 			diff: "",
 			metrics: {
 				edits_attempted: 1,
@@ -263,7 +263,7 @@ describe("buildAppliedChangedResultText", () => {
 
 	it("includes warnings when present", () => {
 		const text = "--- Anchors ---\naB3x:line1\n\nWarnings:\nTest warning";
-		const details: HashlineEditToolDetails = {
+		const details: HashlineReplaceToolDetails = {
 			diff: "",
 			metrics: {
 				edits_attempted: 1,

@@ -6,8 +6,8 @@
  */
 
 import type { Theme } from "@earendil-works/pi-coding-agent";
-import { normalizeEditRequest } from "./replace-normalize";
-import type { EditRequestParams, HashlineEditToolDetails } from "./replace";
+import { normalizeReplaceRequest } from "./replace-normalize";
+import type { ReplaceRequestParams, HashlineReplaceToolDetails } from "./replace";
 import { isRecord } from "./utils";
 
 // ─── Theme type aliases ─────────────────────────────────────────────────
@@ -21,11 +21,11 @@ export type RenderedMarkdownTheme = Pick<
 
 // ─── Render state ───────────────────────────────────────────────────────
 
-export type EditPreview = { diff: string } | { error: string };
+export type ReplacePreview = { diff: string } | { error: string };
 
-export type EditRenderState = {
+export type ReplaceRenderState = {
 	argsKey?: string;
-	preview?: EditPreview;
+	preview?: ReplacePreview;
 	previewGeneration?: number;
 };
 
@@ -34,10 +34,10 @@ export type EditRenderState = {
 
 export function getRenderablePreviewInput(
 	args: unknown,
-): EditRequestParams | null {
+): ReplaceRequestParams | null {
 	let normalized: unknown;
 	try {
-		normalized = normalizeEditRequest(args);
+		normalized = normalizeReplaceRequest(args);
 	} catch {
 		return null;
 	}
@@ -45,7 +45,7 @@ export function getRenderablePreviewInput(
 		return null;
 	}
 
-	const request: EditRequestParams = { path: normalized.path };
+	const request: ReplaceRequestParams = { path: normalized.path };
 	if (Array.isArray(normalized.edits)) {
 		request.edits = normalized.edits as any;
 	}
@@ -91,8 +91,8 @@ export function formatResultDiff(diff: string, theme: FgTheme): string {
 // ─── Edit call formatting ───────────────────────────────────────────────
 
 export function formatEditCall(
-	args: EditRequestParams | undefined,
-	state: EditRenderState,
+	args: ReplaceRequestParams | undefined,
+	state: ReplaceRenderState,
 	expanded: boolean,
 	theme: CallTheme,
 ): string {
@@ -139,7 +139,7 @@ export function extractRenderedWarnings(
 // ─── Result classification ──────────────────────────────────────────────
 
 export function isAppliedChangedResult(
-	details: HashlineEditToolDetails | undefined,
+	details: HashlineReplaceToolDetails | undefined,
 ): boolean {
 	const metrics = details?.metrics;
 	return (
@@ -152,8 +152,8 @@ export function isAppliedChangedResult(
 
 export function buildAppliedChangedResultText(
 	text: string | undefined,
-	details: HashlineEditToolDetails | undefined,
-	preview: EditPreview | undefined,
+	details: HashlineReplaceToolDetails | undefined,
+	preview: ReplacePreview | undefined,
 	theme: FgTheme,
 ): string | undefined {
 	const previewDiff =
