@@ -1,3 +1,2 @@
-- Use read before replace when you do not have current HASH anchors for the file.
 - Copy exactly the HASH (the 4 characters before the `│`); never include the `│` or line content in `start`/`end`.
 - A HASH may contain `-` as a normal alphabet character.

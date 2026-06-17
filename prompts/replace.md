@@ -62,6 +62,10 @@ Rules:
 
 On success (`changed` mode, default), the response text contains an `--- Anchors ---` block with fresh `HASH│content` for the changed region (2 lines of context, capped at ~12 lines / 50 KB). Use those for nearby follow-up replaces instead of re-reading. If the response says `Anchors omitted; use read for subsequent replaces`, the region was too large — call `read` again. For distant follow-ups, or on any error, call `read` again. `full` and `ranges` modes put previews in `details`; the model only needs what's in the text.
 
+Error recovery:
+- `[E_STALE_ANCHOR]` — the file changed since your last read. The error includes fresh `>>> HASH│content` lines; copy the HASH portion (the 4 chars before `│`) and retry.
+- `[E_BAD_REF]` — malformed HASH. Re-read and try again with a valid HASH anchor (e.g. `aB3x`).
+
 Errors are text starting with a bracketed code (e.g. `[E_BAD_SHAPE]`, `[E_STALE_ANCHOR]`, `[E_BAD_OP]`, `[E_INVALID_PATCH]`, `[E_LEGACY_SHAPE]`, `[E_EDIT_CONFLICT]`, `[E_BAD_REF]`, `[E_AMBIGUOUS_ANCHOR]`, `[E_BARE_HASH_PREFIX]`, `[E_WOULD_EMPTY]`). The message tells you what to retry; stale-anchor errors include `>>> HASH│content` lines, ready to copy.
 
 The legacy `oldText`/`newText` shape (top-level) is rejected with `[E_LEGACY_SHAPE]`. Use hash-anchored replaces instead.

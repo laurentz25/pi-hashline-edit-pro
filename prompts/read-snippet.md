@@ -1,1 +1,1 @@
-Read a text file with HASH│content anchors for replace (copy the HASH into `start`/`end`)
+Read a text file with HASH│content anchors for edit

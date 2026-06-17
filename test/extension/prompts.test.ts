@@ -1,12 +1,12 @@
 import { readFileSync } from "fs";
 import { describe, expect, it } from "vitest";
 
-const editPrompt = readFileSync(
+const replacePrompt = readFileSync(
 	new URL("../../prompts/replace.md", import.meta.url),
 	"utf-8",
 );
 
-// These assertions pin the model-facing surface of the edit tool. The prompt
+// These assertions pin the model-facing surface of the replace tool. The prompt
 // is the contract that tells the model how to express multi-region and
 // non-conflicting edits. If a future refactor drops one of these load-bearing
 // phrases, the model will silently lose guidance on the multi-region case or
@@ -14,44 +14,72 @@ const editPrompt = readFileSync(
 // changes the prompt.
 describe("prompts/replace.md (model-facing contract)", () => {
 	it("declares the single-call multi-region pattern", () => {
-		expect(editPrompt).toMatch(/single `replace` call/i);
-		expect(editPrompt).toMatch(/Stack every region/i);
-		expect(editPrompt).toMatch(/same pre-edit read/i);
+		expect(replacePrompt).toMatch(/single `replace` call/i);
+		expect(replacePrompt).toMatch(/Stack every region/i);
+		expect(replacePrompt).toMatch(/same pre-edit read/i);
 	});
 
 	it("includes a worked multi-region example", () => {
 		// The third example shows a delete + delete in one edits array.
 		// The shape `replace ... lines: []` is the deletion form; the model
 		// must see this end-to-end to use it confidently.
-		expect(editPrompt).toMatch(/Multiple regions in one call/i);
-		expect(editPrompt).toContain('"lines": []');
+		expect(replacePrompt).toMatch(/Multiple regions in one call/i);
+		expect(replacePrompt).toContain('"lines": []');
 	});
 
 	it("requires both start and end for replace", () => {
 		// The runtime rejects replace ops that omit start or end.
 		// The prompt must declare both required.
-		expect(editPrompt).toMatch(/`start` and `end` are required/i);
+		expect(replacePrompt).toMatch(/`start` and `end` are required/i);
 	});
 
 	it("lists conflict rules under [E_EDIT_CONFLICT]", () => {
 		// The runtime enforces overlap rules in assertNoConflictingSpans; the
 		// prompt must declare them so the model discovers the constraint by
 		// reading, not by trial-and-error.
-		expect(editPrompt).toContain("[E_EDIT_CONFLICT]");
-		expect(editPrompt).toMatch(/two `replace` ranges overlap/);
+		expect(replacePrompt).toContain("[E_EDIT_CONFLICT]");
+		expect(replacePrompt).toMatch(/two `replace` ranges overlap/);
 	});
 
 	it("warns about the anchor budget and how to recover from it", () => {
 		// The 12-line / 50KB cap triggers "Anchors omitted; use read..."; the
 		// model needs to know to call read again when it sees that.
-		expect(editPrompt).toMatch(/Anchors omitted; use read/i);
+		expect(replacePrompt).toMatch(/Anchors omitted; use read/i);
 	});
 
 	it("documents the noop classification (no error on identical content)", () => {
 		// When lines matches current content, the edit is classified noop and
 		// the file is not modified. The model must not interpret this as an
 		// error.
-		expect(editPrompt).toMatch(/Classification: noop/);
+		expect(replacePrompt).toMatch(/Classification: noop/);
+	});
+
+	it("tells the model the wire format is bare HASH only (no |, no content, no whitespace)", () => {
+		// The model sees "HASH|content" in read output but must pass back only
+		// the 4 chars before the "|". The wire format is bare HASH; no punctuation,
+		// no line content, no surrounding whitespace.
+		expect(replacePrompt).toMatch(/wire format.*anchor only/i);
+	});
+
+	it("points to the post-replace Anchors block as a cheaper source of fresh hashes", () => {
+		// The --- Anchors --- block on a successful replace has fresh hashes for the
+		// changed region; using those instead of re-reading the whole file is a
+		// significant token saving on chained replaces.
+		expect(replacePrompt).toContain("--- Anchors ---");
+	});
+
+	it("documents the [E_STALE_ANCHOR] recovery path", () => {
+		// The error response includes fresh `>>> HASH|content` lines; the model
+		// must copy the HASH portion (not the `>>>` framing) and retry.
+		expect(replacePrompt).toContain("[E_STALE_ANCHOR]");
+		expect(replacePrompt).toMatch(/>>> HASH|content/);
+	});
+
+	it("documents auto-read after write", () => {
+		// After a successful write, the extension auto-reads and provides
+		// hashline anchors so the model can immediately use replace.
+		expect(replacePrompt).toContain("--- Auto-read (hashline anchors) ---");
+		expect(replacePrompt).toMatch(/seamless write → replace/);
 	});
 });
 
@@ -61,11 +89,9 @@ const readPrompt = readFileSync(
 );
 
 // These assertions pin the model-facing surface of the read tool. The prompt
-// is the contract that tells the model how to interpret the HASH:content output
-// and how to feed those HASHes back into replace. If a future refactor drops one
-// of these load-bearing phrases — especially the "-qkl"-style alphabet note or
-// the no-marker rule — the model will silently lose the input-side guidance.
-// Tighten the assertions in the same PR that changes the prompt.
+// is the contract that tells the model how to interpret the HASH:content output.
+// If a future refactor drops one of these load-bearing phrases — especially the
+// "-qkl"-style alphabet note — the model will silently lose the input-side guidance.
 describe("prompts/read.md (model-facing contract)", () => {
 	it("declares the HASH|content output format and the 4-char anchor", () => {
 		expect(readPrompt).toMatch(/`HASH|content`/);
@@ -88,40 +114,11 @@ describe("prompts/read.md (model-facing contract)", () => {
 		);
 	});
 
-	it("tells the model the wire format is bare HASH only (no |, no content, no whitespace)", () => {
-		// The model sees "HASH|content" in read output but must pass back only
-		// the 4 chars before the "|". The wire format is bare HASH; no punctuation,
-		// no line content, no surrounding whitespace. The no-marker rule (don't paste
-		// "+", "-", or ">>>" markers) is documented in the replace prompt, not here.
-		expect(readPrompt).toMatch(/Do not include the `|`, the line content/);
-		expect(readPrompt).toMatch(/wire format.*HASH only/i);
-	});
-
-	it("tells the model that HASH goes into start/end for replace", () => {
-		// The model must know that a HASH from read goes into "start"/"end" for
-		// replace. The wire format is the same (a bare 4-char hash).
-		expect(readPrompt).toMatch(/start.*end/i);
-	});
-
 	it("documents pagination via offset and nextOffset", () => {
 		// Large files return a truncated preview plus a nextOffset; the model needs
 		// to know to call read again with offset=nextOffset to continue.
 		expect(readPrompt).toContain("nextOffset");
 		expect(readPrompt).toContain("offset=nextOffset");
-	});
-
-	it("points to the post-replace Anchors block as a cheaper source of fresh hashes", () => {
-		// The --- Anchors --- block on a successful replace has fresh hashes for the
-		// changed region; using those instead of re-reading the whole file is a
-		// significant token saving on chained replaces.
-		expect(readPrompt).toContain("--- Anchors ---");
-	});
-
-	it("documents the [E_STALE_ANCHOR] recovery path", () => {
-		// The error response includes fresh `>>> HASH|content` lines; the model
-		// must copy the HASH portion (not the `>>>` framing) and retry.
-		expect(readPrompt).toContain("[E_STALE_ANCHOR]");
-		expect(readPrompt).toMatch(/>>> HASH|content/);
 	});
 
 	it("documents file-kind handling (text, image, binary, directory)", () => {
