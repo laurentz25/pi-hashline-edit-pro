@@ -11,19 +11,10 @@ export default function (pi: ExtensionAPI): void {
   registerReadTool(pi);
   registerReplaceTool(pi);
 
-  // Override the built-in `edit` tool with a stub that redirects to `replace`.
-  // This prevents the model from using the oldText/newText workflow.
-  pi.registerTool({
-    name: "edit",
-    label: "Edit (disabled)",
-    description: "This tool is disabled. Use the `replace` tool instead with HASH anchors from `read`.",
-    parameters: { type: "object", properties: {} },
-    async execute() {
-      throw new Error(
-        "The `edit` tool is disabled. Use the `replace` tool instead. " +
-        "Call `read` first to get HASH anchors, then use `replace` with `{start, end, lines}`."
-      );
-    },
+  // Disable the built-in `edit` tool so the model uses `replace` instead.
+  pi.on("session_start", async (_event, ctx) => {
+    const active = pi.getActiveTools();
+    pi.setActiveTools(active.filter((t) => t !== "edit"));
   });
 
   // Auto-read after write: append hashline read output to write results
