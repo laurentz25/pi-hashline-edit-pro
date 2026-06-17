@@ -52,7 +52,8 @@ Rules:
 - `start` and `end` are required. A single-line replace is `start=X, end=X`.
 - To delete a range, use `lines: []`.
 - `start`, `end` are HASH anchors only (e.g. `aB3x`). Do not include `│` or line content.
-- `lines` is literal file content. No `HASH│` prefix, no `+`/`-` diff markers.
+- `lines` is literal file content — each string becomes exactly one line in the file. No `HASH│` prefix, no `+`/`-` diff markers.
+- Don't add `""` for spacing unless you actually want a new blank line.
 - Copy anchors from the most recent `read` of the file. Do not guess or construct them.
 - All edits in one call must be non-conflicting. The runtime rejects with `[E_EDIT_CONFLICT]` if two ranges overlap.
 - If `lines` matches current content, the replace is classified as `noop` (file unchanged).
