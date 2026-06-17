@@ -118,7 +118,7 @@ Hashes are occurrence-aware: a discriminator prefix is mixed into the xxHash inp
 - `}` on line 5 and `}` on line 17 hash differently (1st vs 2nd occurrence of `}`).
 - `import { foo } from 'bar';` on line 3 and the same string on line 47 hash differently (1st vs 2nd occurrence).
 
-The runtime always precomputes the full per-line hash array for a file via `computeLineHashes(content)`, then looks up by line number during validation and during `read` / `edit` response formatting. There is no per-line recomputation that could disagree with what the model saw in its last read.
+The runtime always precomputes the full per-line hash array for a file via `computeLineHashes(content)`, then looks up by line number during validation and during `read` / `replace` response formatting. There is no per-line recomputation that could disagree with what the model saw in its last read.
 
 `HASH_LENGTH` and `HASH_ALPHABET` are constants at the top of `src/hashline/hash.ts`; bump the length to 5 if you ever need even more entropy.
 

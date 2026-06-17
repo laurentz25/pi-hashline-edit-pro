@@ -12,7 +12,7 @@ The strict-semantics policy of the original is preserved verbatim. This fork is 
 ## Project Structure & Module Organization
 
 - `index.ts` is the extension entrypoint; it registers the custom `read`/`replace` tools.
-- `src/` contains the implementation, split by responsibility: `read.ts`, `edit.ts`, `edit-normalize.ts`, `edit-diff.ts`, `edit-response.ts`, `edit-render.ts`, `file-kind.ts`, `fs-write.ts`, `snapshot.ts`, `utils.ts`, and small runtime/path helpers. The hashline engine is in `src/hashline/` with sub-modules: `hash.ts`, `parse.ts`, `resolve.ts`, `apply.ts`, and `index.ts` (re-exports).
+- `src/` contains the implementation, split by responsibility: `read.ts`, `replace.ts`, `replace-normalize.ts`, `replace-diff.ts`, `replace-response.ts`, `replace-render.ts`, `file-kind.ts`, `fs-write.ts`, `snapshot.ts`, `utils.ts`, and small runtime/path helpers. The hashline engine is in `src/hashline/` with sub-modules: `hash.ts`, `parse.ts`, `resolve.ts`, `apply.ts`, and `index.ts` (re-exports).
 - `prompts/` holds the Markdown prompt text loaded by the tools at runtime.
 - `test/` mirrors the code layout: `core/` for hashline primitives, `tools/` for tool behavior, `extension/` for registration, `integration/` for end-to-end flows, and `support/fixtures.ts` for temp-file helpers.
 - `assets/` is documentation media only.
@@ -28,7 +28,7 @@ The strict-semantics policy of the original is preserved verbatim. This fork is 
 ## Coding Style & Naming Conventions
 
 - Use TypeScript with ESM imports, two-space indentation, double quotes, and semicolons to match the existing codebase.
-- Keep modules narrow and named by responsibility (`fs-write.ts`, `edit-normalize.ts`).
+- Keep modules narrow and named by responsibility (`fs-write.ts`, `replace-normalize.ts`).
 - Export typed functions and use specific error paths; avoid broad refactors or speculative abstractions.
 - No ESLint or Prettier config is checked in, so preserve local style and keep diffs tight.
 
@@ -50,7 +50,7 @@ The strict-semantics policy of the original is preserved verbatim. This fork is 
 - Keep `read`, `replace`, prompt text, and tests in sync whenever the hashline format changes.
 - Do not bypass `src/fs-write.ts`; atomic writes are part of the extension's safety guarantees.
 - Preserve stale-anchor rejection semantics unless the change explicitly redesigns the protocol.
-- Pi's built-in `edit` tool uses `{ path, edits: [{ oldText, newText }] }` text matching; this extension overrides it with hashline anchors. Model dialects that follow the native contract — top-level `oldText`/`newText` (or `old_text`/`new_text`), `edits` serialized as a JSON string, `file_path` alias — are converged onto the canonical `{ path, edits: [{ op, ... }] }` shape in one place: `normalizeReplaceRequest` (`src/edit-normalize.ts`), wired as the tool's `prepareArguments` hook and re-applied at the top of `execute()` / `computeEditPreview()` so the normalization does not depend on the hook having run. Keep all dialect handling there; `assertReplaceRequest` validates the canonical shape only. The published schema therefore does not declare the native top-level fields — they no longer exist by validation time. Normalization rewrites field shape only; it never touches hashline diff semantics (anchors, ranges, boundaries, `lines`). Edit items with `oldText`/`newText` and no `op` are NOT folded — they reach validation and are rejected with `[E_LEGACY_SHAPE]` so the model learns the canonical shape on the next turn.
+- Pi's built-in `edit` tool uses `{ path, edits: [{ oldText, newText }] }` text matching; this extension disables it and provides `replace` with hashline anchors. Model dialects that follow the native contract — top-level `oldText`/`newText` (or `old_text`/`new_text`), `edits` serialized as a JSON string, `file_path` alias — are converged onto the canonical `{ path, edits: [{ start, end, lines }] }` shape in one place: `normalizeReplaceRequest` (`src/replace-normalize.ts`), wired as the tool's `prepareArguments` hook and re-applied at the top of `execute()` / `computeReplacePreview()` so the normalization does not depend on the hook having run. Keep all dialect handling there; `assertReplaceRequest` validates the canonical shape only. The published schema therefore does not declare the native top-level fields — they no longer exist by validation time. Normalization rewrites field shape only; it never touches hashline diff semantics (anchors, ranges, boundaries, `lines`).
 
 ## Strict semantics — non-negotiable
 
@@ -72,7 +72,7 @@ The hash length, alphabet, and occurrence-aware discriminator are the divergence
 - **Occurrence-aware discriminator.** Every hash mixes a discriminator into the xxHash input: `C${occurrence}:` is prepended, where `occurrence` is the running count of that canonical content earlier in the file. The first `import {...}` line and the second hash to different values. Symbol-only lines (lone `}`, etc.) are no longer treated differently — they use the same occurrence-based discrimination as content lines.
   - The discriminator goes into the *input* to xxHash32, not into the seed.
 - `computeLineHashes(content)` is the single source of truth for the hash array. It returns `string[]` indexed 0-based (so line N is at index N-1). Every other entry point (read preview, edit validation, mismatch retry block, diff preview, response builders) goes through this array. Never re-hash per line at a call site — that would produce a different answer than what the model saw in its last read.
-- `computeLineHash(idx, line)` is a backward-compat single-line helper that treats the input as a 1st-occurrence content line. It is used only by `edit-diff.ts` for diff-preview formatting where the surrounding file context is not available. Production validation never calls it.
+- `computeLineHash(idx, line)` is a backward-compat single-line helper that treats the input as a 1st-occurrence content line. It is used only by `replace-diff.ts` for diff-preview formatting where the surrounding file context is not available. Production validation never calls it.
 - If you bump `HASH_LENGTH`, update every test that constructs a fixture hash (grep for `toHaveLength(4)`, `[A-Za-z0-9_\\-]{4}`, and the test bodies in `test/core/hashline.parse.test.ts` and `test/core/hashline.resolve.test.ts`). The test suite is the contract for the wire format.
 - If you change the discriminator scheme, you also need to update the test for "occurrence-aware hashline" in `test/core/hashline.hash.test.ts`, which exercises the per-occurrence uniqueness property.
 - If you change the alphabet (e.g. to drop the `-` for some reason), grep for the literal alphabet in regex contexts: any test that does `expect(hash).toMatch(/^[A-Za-z0-9_\\-]{4}$/)` needs to be updated.
