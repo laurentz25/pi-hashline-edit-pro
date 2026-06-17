@@ -59,7 +59,7 @@ Images (JPEG, PNG, GIF, WebP) are passed through as attachments and do not parti
 
 ### `replace` -- hash-anchored modifications
 
-Replaces use the `HASH│content` anchors from `read` output to target lines precisely:
+Replaces using the `HASH│content` anchors from `read` output to target lines precisely:
 
 ```json
 {
