@@ -44,7 +44,7 @@ describe("assertEditRequest", () => {
 			assertEditRequest({
 				path: "a.ts",
 				returnMode: "ranges",
-				edits: [{ op: "replace", start: "ZZPM", end: "ZZPM", lines: ["x"] }],
+				edits: [{ start: "ZZPM", end: "ZZPM", lines: ["x"] }],
 			} as any),
 		).toThrow(/returnRanges/i);
 	});
@@ -55,7 +55,7 @@ describe("assertEditRequest", () => {
 				path: "a.ts",
 				returnMode: "changed",
 				returnRanges: [{ start: 1, end: 2 }],
-				edits: [{ op: "replace", start: "ZZPM", end: "ZZPM", lines: ["x"] }],
+				edits: [{ start: "ZZPM", end: "ZZPM", lines: ["x"] }],
 			} as any),
 		).toThrow(/returnRanges/i);
 	});
@@ -118,11 +118,11 @@ describe("registerEditTool", () => {
 		// and be rejected with E_LEGACY_SHAPE.
 		const result = registered?.prepareArguments?.({
 			path: "a.ts",
-			edits: [{ op: "replace", start: "ZZPM", end: "ZZPM", lines: ["x"] }],
+			edits: [{ start: "ZZPM", end: "ZZPM", lines: ["x"] }],
 		});
 		expect(result).toEqual({
 			path: "a.ts",
-			edits: [{ op: "replace", start: "ZZPM", end: "ZZPM", lines: ["x"] }],
+			edits: [{ start: "ZZPM", end: "ZZPM", lines: ["x"] }],
 		});
 	});
 
@@ -139,7 +139,7 @@ describe("registerEditTool", () => {
 						path: "sample.txt",
 						edits: [
 							{
-								op: "replace", start: `${computeLineHash(1, "aaa")}:aaa`, end: `${computeLineHash(1, "aaa")}:aaa`, lines: null,
+								start: `${computeLineHash(1, "aaa")}:aaa`, end: `${computeLineHash(1, "aaa")}:aaa`, lines: null,
 							},
 						],
 					},
@@ -161,7 +161,7 @@ describe("registerEditTool", () => {
 		await expect(
 			editTool.execute(
 				"e1",
-				{ edits: [{ op: "append", lines: ["x"] }] },
+					{ edits: [{ start: "aB3x", end: "aB3x", lines: ["x"] }] },
 				undefined,
 				undefined,
 				{ cwd: process.cwd() } as any,
@@ -179,7 +179,7 @@ describe("registerEditTool", () => {
 				path: "sample.txt",
 				edits: [
 					{
-						op: "replace", start: computeLineHash(2, "bbb"), end: computeLineHash(2, "bbb"), lines: ["BBB"],
+						start: computeLineHash(2, "bbb"), end: computeLineHash(2, "bbb"), lines: ["BBB"],
 					},
 				],
 			};

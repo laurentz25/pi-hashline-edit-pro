@@ -45,7 +45,7 @@ describe("details.metrics surface (Phase 2 C — host-only observability)", () =
           path: "a.txt",
           edits: [
             {
-              op: "replace", start: `${computeLineHash(2, "beta")}`, end: `${computeLineHash(2, "beta")}`, lines: ["BETA"],
+              start: `${computeLineHash(2, "beta")}`, end: `${computeLineHash(2, "beta")}`, lines: ["BETA"],
             },
           ],
         },
@@ -78,7 +78,7 @@ describe("details.metrics surface (Phase 2 C — host-only observability)", () =
           path: "b.txt",
           edits: [
             {
-              op: "replace", start: `${computeLineHash(2, "beta")}`, end: `${computeLineHash(2, "beta")}`, lines: ["beta"],
+              start: `${computeLineHash(2, "beta")}`, end: `${computeLineHash(2, "beta")}`, lines: ["beta"],
             },
           ],
         },
@@ -109,7 +109,7 @@ describe("details.metrics surface (Phase 2 C — host-only observability)", () =
           path: "c.txt",
           edits: [
             {
-              op: "replace", start: `${computeLineHash(2, "two")}`, end: `${computeLineHash(2, "two")}`, lines: ["TWO"],
+              start: `${computeLineHash(2, "two")}`, end: `${computeLineHash(2, "two")}`, lines: ["TWO"],
             },
           ],
         },
@@ -139,7 +139,7 @@ describe("details.metrics surface (Phase 2 C — host-only observability)", () =
           returnMode: "full",
           edits: [
             {
-              op: "replace", start: `${computeLineHash(2, "beta")}`, end: `${computeLineHash(2, "beta")}`, lines: ["BETA"],
+              start: `${computeLineHash(2, "beta")}`, end: `${computeLineHash(2, "beta")}`, lines: ["BETA"],
             },
           ],
         },
@@ -168,7 +168,7 @@ describe("details.metrics surface (Phase 2 C — host-only observability)", () =
             ...(returnMode === "ranges" ? { returnRanges: [{ start: 1, end: 2 }] } : {}),
             edits: [
               {
-                op: "replace", start: `${computeLineHash(2, "beta")}`, end: `${computeLineHash(2, "beta")}`, lines: ["beta"],
+                start: `${computeLineHash(2, "beta")}`, end: `${computeLineHash(2, "beta")}`, lines: ["beta"],
               },
             ],
           },

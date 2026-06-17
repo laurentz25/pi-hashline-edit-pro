@@ -49,7 +49,7 @@ describe("formatHashlineReadPreview", () => {
 	it("returns an advisory for empty files instead of a synthetic empty-line anchor", () => {
 		const result = formatHashlineReadPreview("", { offset: 1 });
 		expect(result.text).toContain("File is empty");
-		expect(result.text).toContain("prepend or append");
+		expect(result.text).toContain("Use edit to insert content");
 		expect(result.text).not.toMatch(/^\d/m);
 	});
 

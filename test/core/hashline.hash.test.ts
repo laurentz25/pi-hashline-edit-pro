@@ -57,7 +57,7 @@ describe("strict hashline contract", () => {
 		// semantics: we throw, we never silently relocate to a "close enough"
 		// line by content.
 		const stale = {
-			op: "replace", start: { hash: "ZZZZ" }, end: { hash: "ZZZZ" }, lines: ["updated"],
+			start: { hash: "ZZZZ" }, end: { hash: "ZZZZ" }, lines: ["updated"],
 		} as any;
 
 		expect(() => applyHashlineEdits(content, [stale])).toThrow(/stale anchor/);
@@ -108,7 +108,7 @@ describe("occurrence-aware hashline", () => {
 		const hashes = computeLineHashes(file);
 		// Edit only the second occurrence of "const x = 1;" (line 3, not line 1).
 		const result = applyHashlineEdits(file, [
-			{ op: "replace", start: { hash: hashes[2]! }, end: { hash: hashes[2]! }, lines: ["const x = 999;"] },
+			{ start: { hash: hashes[2]! }, end: { hash: hashes[2]! }, lines: ["const x = 999;"] },
 		]);
 		expect(result.content).toBe("const x = 1;\nconst y = 2;\nconst x = 999;");
 	});
@@ -121,7 +121,7 @@ describe("occurrence-aware hashline", () => {
 		let caught: Error | undefined;
 		try {
 			applyHashlineEdits(file, [
-				{ op: "replace", start: { hash: staleHash }, end: { hash: staleHash }, lines: ["X"] },
+				{ start: { hash: staleHash }, end: { hash: staleHash }, lines: ["X"] },
 			]);
 		} catch (e) {
 			caught = e as Error;
@@ -157,7 +157,7 @@ describe("occurrence-aware hashline", () => {
 			applyHashlineEdits(
 				file,
 				[
-					{ op: "replace", start: { hash: sharedHash }, end: { hash: sharedHash }, lines: ["X"] },
+					{ start: { hash: sharedHash }, end: { hash: sharedHash }, lines: ["X"] },
 				],
 				undefined,
 				forgedHashes,

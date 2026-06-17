@@ -55,7 +55,7 @@ Optional parameters:
 - `offset` -- start reading from this line number (1-indexed).
 - `limit` -- maximum number of lines to return.
 
-Images (JPEG, PNG, GIF, WebP) are passed through as attachments and do not participate in the hashline protocol. Binary and directory paths are rejected with a descriptive error. Empty files return an advisory suggesting `prepend`/`append` instead of a synthetic anchor.
+Images (JPEG, PNG, GIF, WebP) are passed through as attachments and do not participate in the hashline protocol. Binary and directory paths are rejected with a descriptive error. Empty files return an advisory suggesting using edit to insert content.
 
 ### `edit` -- hash-anchored modifications
 
@@ -65,19 +65,19 @@ Edits use the `HASH│content` anchors from `read` output to target lines precis
 {
   "path": "src/main.ts",
   "edits": [
-    { "op": "replace", "start": "ve7o", "end": "ve7o", "lines": ["  console.log('hashline');"] }
+    { "start": "ve7o", "end": "ve7o", "lines": ["  console.log('hashline');"] }
   ]
 }
 ```
 
-| Op | Purpose | Fields |
-|---|---|---|
-| `replace` | Replace the inclusive range `start`..`end`. To replace a single line, set `start` = `end`. | `start` required, `end` required, `lines` |
-| `append` | Insert lines after `pos`. Omit `pos` to append at EOF. | `pos` optional, `lines` |
-| `prepend` | Insert lines before `pos`. Omit `pos` to prepend at BOF. | `pos` optional, `lines` |
+| Field | Purpose |
+|---|---|
+| `start` | Range-start anchor (required). |
+| `end` | Range-end anchor (required). Single-line replace: set `start` = `end`. |
+| `lines` | Replacement content (one string per line). Use `[]` to delete. |
 
 - **Request structure validation.** The request envelope (path, edits, returnMode, returnRanges) and individual edit items are validated before any file I/O. Unknown fields, missing required fields, invalid types, and malformed anchors are rejected with `[E_BAD_SHAPE]` or `[E_BAD_OP]`.
-- **Legacy dialect rejected.** The native top-level `oldText`/`newText` (and `old_text`/`new_text`) dialect and `op: "replace_text"` are rejected with `[E_LEGACY_SHAPE]`. The error message tells the model to call `read` first and send `{op:"replace", start:"<HASH>", end:"<HASH>", lines:[...]}` (or `append`/`prepend` with `pos`).
+- **Legacy dialect rejected.** The native top-level `oldText`/`newText` (and `old_text`/`new_text`) dialect is rejected with `[E_LEGACY_SHAPE]`. The error message tells the model to call `read` first and send `{start:"<HASH>", end:"<HASH>", lines:[...]}`.
 
 All edits in a single call validate against the same pre-edit snapshot and apply bottom-up, so line numbers stay consistent across operations.
 
@@ -103,7 +103,7 @@ The post-edit diff (with `+`/`-` markers and new `HASH│content` anchors) is ex
 - **Stale anchors fail.** A hash mismatch means the file has changed since the last `read`. The error includes fresh `>>> HASH│content` lines for the affected region. The model copies the HASH portion and retries.
 - **No fallback relocation.** Mismatched anchors are never silently relocated to a "close enough" line. This trades convenience for correctness.
 - **Strict patch content.** If `lines` contains `+HASH│` display prefixes (or `-N   ` diff rows), the edit is rejected with `[E_INVALID_PATCH]`. Bare `HASH│` content (the first 5 chars of a `lines` entry looking like 4 base64 chars + `│`) is also rejected with `[E_BARE_HASH_PREFIX]`. When the suspect's prefix happens to match a real file-line anchor, the error message flags that as strong evidence the model copied an anchor from the read output.
-- **Legacy dialect rejected.** The native top-level `oldText`/`newText` (and `old_text`/`new_text`) dialect and `op: "replace_text"` are rejected with `[E_LEGACY_SHAPE]`. The error message tells the model to call `read` first and send `{op:"replace", start:"<HASH>", end:"<HASH>", lines:[...]}` (or `append`/`prepend` with `pos`).
+- **Legacy dialect rejected.** The native top-level `oldText`/`newText` (and `old_text`/`new_text`) dialect is rejected with `[E_LEGACY_SHAPE]`. The error message tells the model to call `read` first and send `{start:"<HASH>", end:"<HASH>", lines:[...]}`.
 - **Atomic writes.** Files are written via temp-file-then-rename to avoid corruption from interrupted writes. Symlink chains are resolved so the target file is updated without replacing the symlink. Hard-linked files are updated in place to preserve the shared inode. File permissions are preserved across atomic renames.
 - **Per-file mutation queue.** Edits queue by the canonical write target, so concurrent edits through different symlink paths still serialize onto the same underlying file.
 

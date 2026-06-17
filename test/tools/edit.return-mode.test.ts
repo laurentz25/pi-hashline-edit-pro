@@ -21,7 +21,7 @@ describe("edit tool returnMode", () => {
           returnMode: "full",
           edits: [
             {
-              op: "replace", start: `${computeLineHash(2, "bbb")}`, end: `${computeLineHash(2, "bbb")}`, lines: ["BBB"],
+              start: `${computeLineHash(2, "bbb")}`, end: `${computeLineHash(2, "bbb")}`, lines: ["BBB"],
             },
           ],
         },
@@ -53,7 +53,7 @@ describe("edit tool returnMode", () => {
           returnMode: "full",
           edits: [
             {
-              op: "replace", start: `${computeLineHash(1, "line-1")}`, end: `${computeLineHash(1, "line-1")}`, lines: ["LINE-1"],
+              start: `${computeLineHash(1, "line-1")}`, end: `${computeLineHash(1, "line-1")}`, lines: ["LINE-1"],
             },
           ],
         },
@@ -86,7 +86,7 @@ describe("edit tool returnMode", () => {
           ],
           edits: [
             {
-              op: "replace", start: `${computeLineHash(2, "bbb")}`, end: `${computeLineHash(2, "bbb")}`, lines: ["BBB"],
+              start: `${computeLineHash(2, "bbb")}`, end: `${computeLineHash(2, "bbb")}`, lines: ["BBB"],
             },
           ],
         },
@@ -119,7 +119,7 @@ describe("edit tool returnMode", () => {
           returnRanges: [{ start: 2, end: 5 }],
           edits: [
             {
-              op: "replace", start: `${computeLineHash(2, "bbb")}`, end: `${computeLineHash(2, "bbb")}`, lines: ["BBB"],
+              start: `${computeLineHash(2, "bbb")}`, end: `${computeLineHash(2, "bbb")}`, lines: ["BBB"],
             },
           ],
         },
@@ -147,7 +147,7 @@ describe("edit tool returnMode", () => {
           returnRanges: [{ start: 10, end: 12 }],
           edits: [
             {
-              op: "replace", start: `${computeLineHash(2, "bbb")}`, end: `${computeLineHash(2, "bbb")}`, lines: ["BBB"],
+              start: `${computeLineHash(2, "bbb")}`, end: `${computeLineHash(2, "bbb")}`, lines: ["BBB"],
             },
           ],
         },

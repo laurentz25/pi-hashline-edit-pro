@@ -18,7 +18,7 @@ describe("strict edit input (no autocorrection)", () => {
 		const file = "foo\nbar";
 		const hashes = computeLineHashes(file);
 		const toolEdits: HashlineToolEdit[] = [
-			{ op: "replace", start: hashes[0]!, end: hashes[0]!, lines: [`${hashes[0]!}│foo`] },
+			{ start: hashes[0]!, end: hashes[0]!, lines: [`${hashes[0]!}│foo`] },
 		];
 		let caught: Error | undefined;
 		try {
@@ -41,7 +41,7 @@ describe("strict edit input (no autocorrection)", () => {
 		const hashes = computeLineHashes(file);
 		const toolEdits: HashlineToolEdit[] = [
 			{
-				op: "replace", start: hashes[0]!, end: hashes[0]!, lines: `+${hashes[0]!}:foo`,
+				start: hashes[0]!, end: hashes[0]!, lines: `+${hashes[0]!}:foo`,
 			} as unknown as HashlineToolEdit,
 		];
 		expect(() => resolveEditAnchors(toolEdits)).toThrow(
@@ -53,7 +53,7 @@ describe("strict edit input (no autocorrection)", () => {
 		const file = "foo\nbar";
 		const hashes = computeLineHashes(file);
 		const toolEdits: HashlineToolEdit[] = [
-			{ op: "replace", start: hashes[0]!, end: hashes[0]!, lines: ["-1    foo"] },
+			{ start: hashes[0]!, end: hashes[0]!, lines: ["-1    foo"] },
 		];
 		expect(() => resolveEditAnchors(toolEdits)).toThrow(/^\[E_INVALID_PATCH\]/);
 	});
@@ -62,29 +62,21 @@ describe("strict edit input (no autocorrection)", () => {
 		const file = "foo\nbar";
 		const hashes = computeLineHashes(file);
 		const toolEdits: HashlineToolEdit[] = [
-			{ op: "replace", start: hashes[0]!, end: hashes[0]!, lines: ["bar"] },
+			{ start: hashes[0]!, end: hashes[0]!, lines: ["bar"] },
 		];
 		const resolved = resolveEditAnchors(toolEdits);
 		expect(resolved).toHaveLength(1);
-		if (resolved[0]?.op === "replace") {
-			expect(resolved[0].lines).toEqual(["bar"]);
-		} else {
-			throw new Error("expected replace");
-		}
+		expect(resolved[0]!.lines).toEqual(["bar"]);
 	});
 
 	it("preserves '#' comment lines that do not match the strict prefix", () => {
 		const file = "foo\nbar";
 		const hashes = computeLineHashes(file);
 		const toolEdits: HashlineToolEdit[] = [
-			{ op: "replace", start: hashes[0]!, end: hashes[0]!, lines: ["# keep me"] },
+			{ start: hashes[0]!, end: hashes[0]!, lines: ["# keep me"] },
 		];
 		const resolved = resolveEditAnchors(toolEdits);
-		if (resolved[0]?.op === "replace") {
-			expect(resolved[0].lines).toEqual(["# keep me"]);
-		} else {
-			throw new Error("expected replace");
-		}
+		expect(resolved[0]!.lines).toEqual(["# keep me"]);
 	});
 });
 
@@ -111,7 +103,7 @@ describe("partial hash prefixes copied into content (issue #24)", () => {
 		let caught: Error | undefined;
 		try {
 			applyTool([
-				{ op: "replace", start: anchor, end: anchor, lines: [`${betaHash}│### heading`, "real content"] },
+				{ start: anchor, end: anchor, lines: [`${betaHash}│### heading`, "real content"] },
 			]);
 		} catch (e) {
 			caught = e as Error;
@@ -129,7 +121,7 @@ describe("partial hash prefixes copied into content (issue #24)", () => {
 		let caught: Error | undefined;
 		try {
 			applyTool([
-				{ op: "replace", start: anchor, end: anchor, lines: [`${gammaHash}│text`] },
+				{ start: anchor, end: anchor, lines: [`${gammaHash}│text`] },
 			]);
 		} catch (e) {
 			caught = e as Error;
@@ -151,7 +143,7 @@ describe("partial hash prefixes copied into content (issue #24)", () => {
 		let caught: Error | undefined;
 		try {
 			applyTool([
-				{ op: "replace", start: anchor, end: anchor, lines: ["ZZZZ│one", "ZZZP│two"] },
+				{ start: anchor, end: anchor, lines: ["ZZZZ│one", "ZZZP│two"] },
 			]);
 		} catch (e) {
 			caught = e as Error;
@@ -167,7 +159,7 @@ describe("partial hash prefixes copied into content (issue #24)", () => {
 	it("accepts a single legit 'TS: TypeScript' line without warning", () => {
 		// "TS:" is 2 chars — too short to match the 4-char bare-prefix detector.
 		const result = applyTool([
-			{ op: "replace", start: anchor, end: anchor, lines: ["TS: TypeScript"] },
+			{ start: anchor, end: anchor, lines: ["TS: TypeScript"] },
 		]);
 		expect(result.warnings ?? []).toEqual([]);
 		expect(result.content).toContain("TS: TypeScript");
@@ -179,7 +171,7 @@ describe("partial hash prefixes copied into content (issue #24)", () => {
 		// replacement here so the unrelated "single-anchor replace got multiple
 		// lines" warning does not fire and pollute the assertion.
 		const result = applyTool([
-			{ op: "replace", start: anchor, end: anchor, lines: ["# heading"] },
+			{ start: anchor, end: anchor, lines: ["# heading"] },
 		]);
 		expect(result.warnings ?? []).toEqual([]);
 	});
@@ -199,7 +191,7 @@ describe("Python .py file bare-prefix behavior", () => {
 		// the detector. But a line like aB3x|content would trigger it.
 		// the detector. But a line like #aB3x:content would trigger it.
 		const result = applyToolPy([
-			{ op: "replace", start: anchor, end: anchor, lines: ["aB3x│do_something"] },
+			{ start: anchor, end: anchor, lines: ["aB3x│do_something"] },
 		]);
 		expect(result.content).toContain("aB3x│do_something");
 		expect(result.warnings?.some((w) => w.includes("[W_BARE_HASH_PREFIX]"))).toBe(true);
@@ -209,7 +201,7 @@ describe("Python .py file bare-prefix behavior", () => {
 		let caught: Error | undefined;
 		try {
 			applyHashlineEdits(file, resolveEditAnchors([
-				{ op: "replace", start: anchor, end: anchor, lines: ["aB3x│do_something"] },
+				{ start: anchor, end: anchor, lines: ["aB3x│do_something"] },
 			]), undefined, undefined, "test.ts");
 		} catch (e) {
 			caught = e as Error;

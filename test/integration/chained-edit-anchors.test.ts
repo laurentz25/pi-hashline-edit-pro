@@ -20,7 +20,7 @@ describe("chained edit anchors", () => {
 
       const editResult = await editTool.execute(
         "e1",
-        { path: "sample.ts", edits: [{ op: "replace", start: betaRef, end: betaRef, lines: ["BETA"] }] },
+        { path: "sample.ts", edits: [{ start: betaRef, end: betaRef, lines: ["BETA"] }] },
         undefined,
         undefined,
         ctx,
@@ -38,7 +38,7 @@ describe("chained edit anchors", () => {
       // Second edit using the returned anchor (no intermediate read).
       const editResult2 = await editTool.execute(
         "e2",
-        { path: "sample.ts", edits: [{ op: "replace", start: freshRef, end: freshRef, lines: ["BETA-CHAINED"] }] },
+        { path: "sample.ts", edits: [{ start: freshRef, end: freshRef, lines: ["BETA-CHAINED"] }] },
         undefined,
         undefined,
         ctx,
@@ -76,7 +76,7 @@ describe("chained edit anchors", () => {
         "e1",
         {
           path: "big.ts",
-          edits: [{ op: "replace", start: line1Ref, end: line15Ref, lines: newLines }],
+          edits: [{ start: line1Ref, end: line15Ref, lines: newLines }],
         },
         undefined,
         undefined,
@@ -88,90 +88,6 @@ describe("chained edit anchors", () => {
       expect(editResult.content[0].text).toContain("Anchors omitted; use read");
     });
   });
-
-  it("returns anchors for append operation", async () => {
-    await withTempFile("app.ts", "existing\n", async ({ cwd }) => {
-      const { pi, getTool } = makeFakePiRegistry();
-      register(pi);
-      const ctx = { cwd, ui: { notify() {} } } as any;
-
-      const readTool = getTool("read");
-      const editTool = getTool("edit");
-
-      const firstRead = await readTool.execute("r1", { path: "app.ts" }, undefined, undefined, ctx);
-      const existingRef = firstRead.content[0].text
-        .split("\n")
-	        .find((line: string) => line.includes("│existing"))!
-	        .split("│")[0]!;
-
-      const editResult = await editTool.execute(
-        "e1",
-        { path: "app.ts", edits: [{ op: "append", pos: existingRef, lines: ["appended"] }] },
-        undefined,
-        undefined,
-        ctx,
-      );
-
-      expect(editResult.content[0].text).toContain("--- Anchors");
-	      expect(editResult.content[0].text).toContain("│appended");
-    });
-  });
-
-  it("returns anchors for prepend at BOF", async () => {
-    await withTempFile("pre.ts", "existing\n", async ({ cwd }) => {
-      const { pi, getTool } = makeFakePiRegistry();
-      register(pi);
-      const ctx = { cwd, ui: { notify() {} } } as any;
-
-      const editTool = getTool("edit");
-
-      const editResult = await editTool.execute(
-        "e1",
-        { path: "pre.ts", edits: [{ op: "prepend", lines: ["prepended"] }] },
-        undefined,
-        undefined,
-        ctx,
-      );
-
-      expect(editResult.content[0].text).toContain("--- Anchors");
-	      expect(editResult.content[0].text).toContain("│prepended");
-    });
-  });
-
-  it("does not leak terminal-newline sentinel in anchors for append on newline-terminated file", async () => {
-    await withTempFile("sentinel.ts", "existing\n", async ({ cwd }) => {
-      const { pi, getTool } = makeFakePiRegistry();
-      register(pi);
-      const ctx = { cwd, ui: { notify() {} } } as any;
-
-      const readTool = getTool("read");
-      const editTool = getTool("edit");
-
-      const firstRead = await readTool.execute("r1", { path: "sentinel.ts" }, undefined, undefined, ctx);
-      const existingRef = firstRead.content[0].text
-        .split("\n")
-	        .find((line: string) => line.includes("│existing"))!
-	        .split("│")[0]!;
-
-      const editResult = await editTool.execute(
-        "e1",
-        { path: "sentinel.ts", edits: [{ op: "append", pos: existingRef, lines: ["appended"] }] },
-        undefined,
-        undefined,
-        ctx,
-      );
-
-      // Should have anchors, but none should be an empty sentinel like "3#XX:"
-      expect(editResult.content[0].text).toContain("--- Anchors");
-      const anchorLines = editResult.content[0].text
-        .split("\n")
-        .filter((line: string) => line.match(/^\s*#[A-Za-z0-9_\-]{4}:.*/));
-      for (const line of anchorLines) {
-        expect(line).not.toMatch(/^\s*#[A-Za-z0-9_\-]{4}:$/);
-      }
-    });
-  });
-
   it("omits anchors when single-line replace expands beyond budget", async () => {
     // Replace 1 line with 11 new lines: span=11, +4 context = 15 > 12 budget.
     await withTempFile("expand.ts", "before\ntarget\nafter\n", async ({ cwd }) => {
@@ -191,7 +107,7 @@ describe("chained edit anchors", () => {
       const newLines = Array.from({ length: 11 }, (_, i) => `EXPANDED ${i + 1}`);
       const editResult = await editTool.execute(
         "e1",
-        { path: "expand.ts", edits: [{ op: "replace", start: targetRef, end: targetRef, lines: newLines }] },
+        { path: "expand.ts", edits: [{ start: targetRef, end: targetRef, lines: newLines }] },
         undefined,
         undefined,
         ctx,
@@ -225,7 +141,7 @@ describe("chained edit anchors", () => {
       // First edit changes beta.
       await editTool.execute(
         "e1",
-        { path: "stale.ts", edits: [{ op: "replace", start: betaRef, end: betaRef, lines: ["BETA"] }] },
+        { path: "stale.ts", edits: [{ start: betaRef, end: betaRef, lines: ["BETA"] }] },
         undefined,
         undefined,
         ctx,
@@ -235,7 +151,7 @@ describe("chained edit anchors", () => {
       await expect(
         editTool.execute(
           "e2-stale",
-          { path: "stale.ts", edits: [{ op: "replace", start: betaRef, end: betaRef, lines: ["BETA-AGAIN"] }] },
+          { path: "stale.ts", edits: [{ start: betaRef, end: betaRef, lines: ["BETA-AGAIN"] }] },
           undefined,
           undefined,
           ctx,
@@ -245,7 +161,7 @@ describe("chained edit anchors", () => {
       // But alphaRef (unchanged line) should still work.
       const alphaEdit = await editTool.execute(
         "e3",
-        { path: "stale.ts", edits: [{ op: "replace", start: alphaRef, end: alphaRef, lines: ["ALPHA"] }] },
+        { path: "stale.ts", edits: [{ start: alphaRef, end: alphaRef, lines: ["ALPHA"] }] },
         undefined,
         undefined,
         ctx,

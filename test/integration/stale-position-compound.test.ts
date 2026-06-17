@@ -14,22 +14,48 @@ function makeTag(content: string, line: number) {
 }
 
 describe("stale-position compound edits", () => {
-	it("tracks correct final coordinates for prepend + replace applied bottom-up", () => {
+	it("rejects stale anchors after a replace", () => {
+		// After a replace, the original line anchor should no longer be valid
+		// at the same position (its content changed).
+		const originalLines = Array.from({ length: 10 }, (_, i) => `line${i + 1}`);
+		const content = originalLines.join("\n");
+
+		const line5Hash = makeTag(content, 5).hash;
+		const edits: HashlineEdit[] = [
+			{ start: { hash: line5Hash }, end: { hash: line5Hash }, lines: ["NEW_LINE_5"] },
+		];
+
+		const result = applyHashlineEdits(content, edits);
+		expect(result.content.split("\n")[4]).toBe("NEW_LINE_5"); // line 5 in final doc
+
+		// Attempting to use the OLD hash (for the original line 5) on the
+		// result should fail because the line at that hash no longer exists.
+		expect(() => {
+			applyHashlineEdits(result.content, [
+				{ start: { hash: line5Hash }, end: { hash: line5Hash }, lines: ["ANOTHER"] },
+			]);
+		}).toThrow(/stale anchor/);
+
+		// The correct anchor uses the fresh hash for "NEW_LINE_5" in the new
+		// file.
+		const freshHash = computeLineHashes(result.content)[4]!;
+		const result2 = applyHashlineEdits(result.content, [
+			{ start: { hash: freshHash }, end: { hash: freshHash }, lines: ["UPDATED_LINE_5"] },
+		]);
+		expect(result2.content.split("\n")[4]).toBe("UPDATED_LINE_5");
+	});
+
+	it("tracks correct final coordinates for a range replace", () => {
 		// 10-line file
 		const originalLines = Array.from({ length: 10 }, (_, i) => `line${i + 1}`);
 		const content = originalLines.join("\n");
 
-		// Two edits provided in bottom-up order (as the model would send them):
-		// 1. Replace line 5 ("line5") with new content
-		// 2. Prepend 3 lines at BOF
-		const line5Hash = makeTag(content, 5).hash;
+		// Replace lines 2-4 with 3 new lines
+		const line2Hash = makeTag(content, 2).hash;
+		const line4Hash = makeTag(content, 4).hash;
 		const toolEdits: HashlineToolEdit[] = [
 			{
-				op: "replace", start: line5Hash, end: line5Hash, lines: ["NEW_LINE_5"],
-			},
-			{
-				op: "prepend",
-				lines: ["header-1", "header-2", "header-3"],
+				start: line2Hash, end: line4Hash, lines: ["NEW_2", "NEW_3", "NEW_4"],
 			},
 		];
 
@@ -41,14 +67,11 @@ describe("stale-position compound edits", () => {
 
 		// ── Verify final content ──
 		const expectedLines = [
-			"header-1",
-			"header-2",
-			"header-3",
 			"line1",
-			"line2",
-			"line3",
-			"line4",
-			"NEW_LINE_5",
+			"NEW_2",
+			"NEW_3",
+			"NEW_4",
+			"line5",
 			"line6",
 			"line7",
 			"line8",
@@ -57,13 +80,12 @@ describe("stale-position compound edits", () => {
 		];
 		expect(result.content).toBe(expectedLines.join("\n"));
 
-		// ── Verify firstChangedLine and lastChangedLine in final-document coordinates ──
-		// Prepend inserted at lines 1-3, replace shifted by +3 → NEW_LINE_5 at line 8.
-		expect(result.firstChangedLine).toBe(1);
-		expect(result.lastChangedLine).toBe(8);
+		// ── Verify firstChangedLine and lastChangedLine ──
+		expect(result.firstChangedLine).toBe(2);
+		expect(result.lastChangedLine).toBe(4);
 
 		// ── Verify line count ──
-		expect(result.content.split("\n").length).toBe(13);
+		expect(result.content.split("\n").length).toBe(10);
 
 		// ── Verify computeAffectedLineRange works with the tracked bounds ──
 		const anchorRange = computeAffectedLineRange({
@@ -72,68 +94,27 @@ describe("stale-position compound edits", () => {
 			resultLineCount: expectedLines.length,
 		});
 		expect(anchorRange).not.toBeNull();
-		// changed span 1-8 + 2 context each side = min(13, 8+2) = 10, fits 12-line budget
-		expect(anchorRange!.start).toBe(1);
-		expect(anchorRange!.end).toBe(10); // min(13, 8 + 2)
 
 		// ── Verify formatHashlineRegion produces valid anchors ──
 		const resultLines = expectedLines.slice(anchorRange!.start - 1, anchorRange!.end);
 		const resultHashes = computeLineHashes(result.content);
 		const regionHashes = resultHashes.slice(anchorRange!.start - 1, anchorRange!.end);
 		const region = formatHashlineRegion(regionHashes, resultLines);
-		expect(region).toContain("header-1");
-		expect(region).toContain("NEW_LINE_5");
-		// Range ends at line 10 of final doc (8 + 2 context), which is "line7"
-		// (original line10 shifted to line 13, beyond the 12-line budget)
-		expect(region).toContain("line7");
+		expect(region).toContain("line1");
+		expect(region).toContain("NEW_2");
 	});
 
-	it("tracks correct coordinates when replace shrinks and prepends shift upward", () => {
-		// Replace 2 lines with 1 (shrink), plus prepend at BOF.
-		// The prepend's computeOffset must reflect the shrink delta.
+	it("tracks correct coordinates when replace shrinks lines", () => {
+		// Replace 2 lines with 1 (shrink).
 		const content = "a\nb\nc\nd\ne";
 		const edits: HashlineEdit[] = [
-			{ op: "replace", start: makeTag(content, 3), end: makeTag(content, 4), lines: ["C_D"] },
-			{ op: "prepend", lines: ["P1", "P2"] },
+			{ start: makeTag(content, 3), end: makeTag(content, 4), lines: ["C_D"] },
 		];
 		const result = applyHashlineEdits(content, edits);
 
-		// Final doc: P1, P2, a, b, C_D, e  (6 lines)
-		expect(result.content).toBe("P1\nP2\na\nb\nC_D\ne");
-		expect(result.firstChangedLine).toBe(1);
-		// Replace at original 3-4 → final 5 (shifted by +2 prepend). Shrunk to 1 line.
-		expect(result.lastChangedLine).toBe(5);
-	});
-
-	it("rejects stale anchors after compound edits shift content", () => {
-		// After a prepend + replace compound edit, the original line 5 anchor
-		// should no longer be valid at the same position (its content moved).
-		const originalLines = Array.from({ length: 10 }, (_, i) => `line${i + 1}`);
-		const content = originalLines.join("\n");
-
-		const line5Hash = makeTag(content, 5).hash;
-		const edits: HashlineEdit[] = [
-			{ op: "replace", start: { hash: line5Hash }, end: { hash: line5Hash }, lines: ["NEW_LINE_5"] },
-			{ op: "prepend", lines: ["header-1", "header-2", "header-3"] },
-		];
-
-		const result = applyHashlineEdits(content, edits);
-		expect(result.content.split("\n")[7]).toBe("NEW_LINE_5"); // line 8 in final doc
-
-		// Attempting to use the OLD hash (for the original line 5) on the
-		// result should fail because the line at that hash no longer exists.
-		expect(() => {
-			applyHashlineEdits(result.content, [
-				{ op: "replace", start: { hash: line5Hash }, end: { hash: line5Hash }, lines: ["ANOTHER"] },
-			]);
-		}).toThrow(/stale anchor/);
-
-		// The correct anchor uses the fresh hash for "NEW_LINE_5" in the new
-		// file.
-		const freshHash = computeLineHashes(result.content)[7]!;
-		const result2 = applyHashlineEdits(result.content, [
-			{ op: "replace", start: { hash: freshHash }, end: { hash: freshHash }, lines: ["UPDATED_LINE_5"] },
-		]);
-		expect(result2.content.split("\n")[7]).toBe("UPDATED_LINE_5");
+		// Final doc: a, b, C_D, e  (4 lines)
+		expect(result.content).toBe("a\nb\nC_D\ne");
+		expect(result.firstChangedLine).toBe(3);
+		expect(result.lastChangedLine).toBe(3);
 	});
 });

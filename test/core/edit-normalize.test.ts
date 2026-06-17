@@ -12,7 +12,7 @@ describe("normalizeEditRequest", () => {
 	it("returns object input unchanged when no normalization needed", () => {
 		const input = {
 			path: "src/main.ts",
-			edits: [{ op: "replace", start: "aB3x", end: "aB3x", lines: ["new"] }],
+			edits: [{ start: "aB3x", end: "aB3x", lines: ["new"] }],
 		};
 		const result = normalizeEditRequest(input);
 		expect(result).toEqual(input);
@@ -21,7 +21,7 @@ describe("normalizeEditRequest", () => {
 	it("normalizes file_path to path", () => {
 		const input = {
 			file_path: "src/main.ts",
-			edits: [{ op: "replace", start: "aB3x", end: "aB3x", lines: ["new"] }],
+			edits: [{ start: "aB3x", end: "aB3x", lines: ["new"] }],
 		};
 		const result = normalizeEditRequest(input) as Record<string, unknown>;
 		expect(result.path).toBe("src/main.ts");
@@ -32,7 +32,7 @@ describe("normalizeEditRequest", () => {
 		const input = {
 			path: "src/real.ts",
 			file_path: "src/alias.ts",
-			edits: [{ op: "replace", start: "aB3x", end: "aB3x", lines: ["new"] }],
+			edits: [{ start: "aB3x", end: "aB3x", lines: ["new"] }],
 		};
 		const result = normalizeEditRequest(input) as Record<string, unknown>;
 		expect(result.path).toBe("src/real.ts");
@@ -52,7 +52,7 @@ describe("normalizeEditRequest", () => {
 
 	it("coerces JSON-string edits to array", () => {
 		const editsArray = [
-			{ op: "replace", start: "aB3x", end: "aB3x", lines: ["new"] },
+			{ start: "aB3x", end: "aB3x", lines: ["new"] },
 		];
 		const input = {
 			path: "src/main.ts",
@@ -65,7 +65,7 @@ describe("normalizeEditRequest", () => {
 
 	it("returns edits unchanged when already an array", () => {
 		const editsArray = [
-			{ op: "replace", start: "aB3x", end: "aB3x", lines: ["new"] },
+			{ start: "aB3x", end: "aB3x", lines: ["new"] },
 		];
 		const input = {
 			path: "src/main.ts",
@@ -95,7 +95,7 @@ describe("normalizeEditRequest", () => {
 
 	it("handles both file_path and JSON-string edits together", () => {
 		const editsArray = [
-			{ op: "append", lines: ["line1"] },
+			{ start: "aB3x", end: "aB3x", lines: ["line1"] },
 		];
 		const input = {
 			file_path: "src/main.ts",
@@ -113,7 +113,7 @@ describe("normalizeEditRequest", () => {
 			file_path: "src/main.ts",
 			returnMode: "full",
 			returnRanges: [{ start: 1, end: 5 }],
-			edits: [{ op: "append", lines: ["x"] }],
+			edits: [{ start: "aB3x", end: "aB3x", lines: ["x"] }],
 		};
 		const result = normalizeEditRequest(input) as Record<string, unknown>;
 		expect(result.path).toBe("src/main.ts");
@@ -124,7 +124,7 @@ describe("normalizeEditRequest", () => {
 	it("does not mutate the original input", () => {
 		const input = {
 			file_path: "src/main.ts",
-			edits: JSON.stringify([{ op: "append", lines: ["x"] }]),
+			edits: JSON.stringify([{ start: "aB3x", end: "aB3x", lines: ["x"] }]),
 		};
 		const originalFilePath = input.file_path;
 		const originalEdits = input.edits;

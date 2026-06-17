@@ -20,36 +20,25 @@ describe("prompts/edit.md (model-facing contract)", () => {
 	});
 
 	it("includes a worked multi-region example", () => {
-		// The third example shows a delete + delete + prepend in one edits array.
+		// The third example shows a delete + delete in one edits array.
 		// The shape `replace ... lines: []` is the deletion form; the model
 		// must see this end-to-end to use it confidently.
 		expect(editPrompt).toMatch(/Multiple regions in one call/i);
-		expect(editPrompt).toContain('"op": "replace"');
 		expect(editPrompt).toContain('"lines": []');
-		expect(editPrompt).toContain('"op": "prepend"');
 	});
 
-	it("requires both start and end for replace (rejects single-anchor)", () => {
-		// The runtime rejects replace ops that omit end or use the old `pos` field.
+	it("requires both start and end for replace", () => {
+		// The runtime rejects replace ops that omit start or end.
 		// The prompt must declare both required.
-		expect(editPrompt).toMatch(/both anchors are required/i);
-		expect(editPrompt).toMatch(/do NOT use the `pos` field/i);
+		expect(editPrompt).toMatch(/`start` and `end` are required/i);
 	});
 
-	it("lists all three conflict rules under [E_EDIT_CONFLICT]", () => {
-		// The runtime enforces three rules in assertNoConflictingSpans; the
-		// discover-by-error.
+	it("lists conflict rules under [E_EDIT_CONFLICT]", () => {
+		// The runtime enforces overlap rules in assertNoConflictingSpans; the
+		// prompt must declare them so the model discovers the constraint by
+		// reading, not by trial-and-error.
 		expect(editPrompt).toContain("[E_EDIT_CONFLICT]");
 		expect(editPrompt).toMatch(/two `replace` ranges overlap/);
-		expect(editPrompt).toMatch(/same insertion boundary/);
-		expect(editPrompt).toMatch(/falls inside a `replace` range/);
-	});
-
-	it("clarifies prepend for insert-between-lines", () => {
-		// `prepend` at anchor N is the only op that inserts between N-1 and N.
-		// Models coming from oldText/newText often try to express this as
-		// "replace N with [new, old]" which is rejected; preempt that here.
-		expect(editPrompt).toMatch(/between line N-1 and N/i);
 	});
 
 	it("warns about the anchor budget and how to recover from it", () => {
@@ -64,6 +53,8 @@ describe("prompts/edit.md (model-facing contract)", () => {
 		// error.
 		expect(editPrompt).toMatch(/Classification: noop/);
 	});
+});
+
 const readPrompt = readFileSync(
 	new URL("../../prompts/read.md", import.meta.url),
 	"utf-8",
@@ -92,8 +83,6 @@ describe("prompts/read.md (model-facing contract)", () => {
 		// The runtime accepts any 4-char input from the alphabet, including hashes
 		// that start with "-". Without this clarification, the model can mistake a
 		// leading "-" for a diff-remove marker and refuse to pass the hash back.
-		// that start with "-". Without this clarification, the model can mistake a
-		// leading "-" for a diff-remove marker and refuse to pass the hash back.
 		expect(readPrompt).toMatch(
 			/URL-safe base64 alphabet/
 		);
@@ -104,18 +93,15 @@ describe("prompts/read.md (model-facing contract)", () => {
 		// the 4 chars before the "|". The wire format is bare HASH; no punctuation,
 		// no line content, no surrounding whitespace. The no-marker rule (don't paste
 		// "+", "-", or ">>>" markers) is documented in the edit prompt, not here.
-		// the 4 chars before the ":". The wire format is bare HASH; no punctuation,
-		// no line content, no surrounding whitespace. The no-marker rule (don't paste
-		// "+", "-", or ">>>" markers) is documented in the edit prompt, not here.
 		expect(readPrompt).toMatch(/Do not include the `|`, the line content/);
 		expect(readPrompt).toMatch(/wire format.*HASH only/i);
 	});
+
+	it("tells the model that HASH goes into start/end for replace", () => {
 		// The model must know that a HASH from read goes into "start"/"end" for
-		// replace and "pos" for append/prepend. The wire format is the same (a
-		// bare 4-char hash) but the field name differs.
-		expect(readPrompt).toMatch(/start.*end.*for `replace`/i);
-		expect(readPrompt).toMatch(/`pos`.*for `append`\/`prepend`/i);
-});
+		// replace. The wire format is the same (a bare 4-char hash).
+		expect(readPrompt).toMatch(/start.*end/i);
+	});
 
 	it("documents pagination via offset and nextOffset", () => {
 		// Large files return a truncated preview plus a nextOffset; the model needs
@@ -133,7 +119,6 @@ describe("prompts/read.md (model-facing contract)", () => {
 
 	it("documents the [E_STALE_ANCHOR] recovery path", () => {
 		// The error response includes fresh `>>> HASH|content` lines; the model
-		// must copy the HASH portion (not the `>>>` framing) and retry.
 		// must copy the HASH portion (not the `>>>` framing) and retry.
 		expect(readPrompt).toContain("[E_STALE_ANCHOR]");
 		expect(readPrompt).toMatch(/>>> HASH|content/);

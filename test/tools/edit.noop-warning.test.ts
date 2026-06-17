@@ -21,7 +21,7 @@ describe("edit tool noop + warnings", () => {
           path: "sample.txt",
           edits: [
             {
-              op: "replace", start: `${computeLineHash(2, "bbb")}`, end: `${computeLineHash(2, "bbb")}`, lines: ["bbb"],
+              start: `${computeLineHash(2, "bbb")}`, end: `${computeLineHash(2, "bbb")}`, lines: ["bbb"],
             },
           ],
         },
@@ -48,7 +48,7 @@ describe("edit tool noop + warnings", () => {
           path: "sample.txt",
           edits: [
             {
-              op: "replace", start: `${computeLineHash(2, "bbb")}`, end: `${computeLineHash(2, "bbb")}`, lines: ["BBB", "ccc"],
+              start: `${computeLineHash(2, "bbb")}`, end: `${computeLineHash(2, "bbb")}`, lines: ["BBB", "ccc"],
             },
           ],
         },

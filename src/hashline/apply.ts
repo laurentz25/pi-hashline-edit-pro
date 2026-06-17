@@ -42,14 +42,12 @@ export function buildLineIndex(content: string): LineIndex {
 
 
 type ResolvedEditSpan = {
-	kind: "replace" | "insert";
+	kind: "replace";
 	index: number;
 	label: string;
 	start: number;
 	end: number;
 	replacement: string;
-	boundary?: number;
-	insertMode?: "append-empty-origin" | "prepend-empty-origin";
 };
 
 function assertDoesNotEmptyFile(originalContent: string, result: string): void {
@@ -71,27 +69,6 @@ function throwEditConflict(
 	);
 }
 
-function computeInsertionBoundary(
-	edit: Extract<ResolvedHashlineEdit, { op: "append" | "prepend" }>,
-	lineIndex: LineIndex,
-): number {
-	switch (edit.op) {
-		case "append": {
-			const fileLineCount = lineIndex.fileLines.length;
-			const eofBoundary =
-				lineIndex.hasTerminalNewline && fileLineCount > 0
-					? fileLineCount - 1
-					: fileLineCount;
-			return edit.pos
-				? lineIndex.hasTerminalNewline && edit.pos.line === fileLineCount
-					? eofBoundary
-					: edit.pos.line
-				: eofBoundary;
-		}
-		case "prepend":
-			return edit.pos ? edit.pos.line - 1 : 0;
-	}
-}
 
 function resolveEditToSpan(
 	edit: ResolvedHashlineEdit,
@@ -102,155 +79,64 @@ function resolveEditToSpan(
 ): ResolvedEditSpan | null {
 	const { fileLines, lineStarts, hasTerminalNewline } = lineIndex;
 
-	switch (edit.op) {
-		case "replace": {
-			const startLine = edit.start.line;
-			const endLine = edit.end.line;
-			const originalLines = fileLines.slice(startLine - 1, endLine);
-			if (
-				originalLines.length === edit.lines.length &&
-				originalLines.every(
-					(line, lineIndex) => line === edit.lines[lineIndex],
-				)
-			) {
-				noopEdits.push({
-					editIndex: index,
-					loc: edit.start.hash,
-					currentContent: originalLines.join("\n"),
-				});
-				return null;
-			}
-
-			if (edit.lines.length > 0) {
-				return {
-					kind: "replace",
-					index,
-					label: describeEdit(edit),
-					start: lineStarts[startLine - 1]!,
-					end: lineStarts[endLine - 1]! + fileLines[endLine - 1]!.length,
-					replacement: edit.lines.join("\n"),
-				};
-			}
-
-			if (startLine === 1 && endLine === fileLines.length) {
-				return {
-					kind: "replace",
-					index,
-					label: describeEdit(edit),
-					start: 0,
-					end: content.length,
-					replacement: "",
-				};
-			}
-
-			if (endLine < fileLines.length) {
-				return {
-					kind: "replace",
-					index,
-					label: describeEdit(edit),
-					start: lineStarts[startLine - 1]!,
-					end: lineStarts[endLine]!,
-					replacement: "",
-				};
-			}
-
-			return {
-				kind: "replace",
-				index,
-				label: describeEdit(edit),
-				start: Math.max(0, lineStarts[startLine - 1]! - 1),
-				end: lineStarts[endLine - 1]! + fileLines[endLine - 1]!.length,
-				replacement: "",
-			};
-		}
-		case "append": {
-			if (edit.lines.length === 0) {
-				noopEdits.push({
-					editIndex: index,
-					loc: edit.pos ? edit.pos.hash : "EOF",
-					currentContent: edit.pos
-						? (fileLines[edit.pos.line - 1] ?? "")
-						: "",
-				});
-				return null;
-			}
-
-			const insertedText = edit.lines.join("\n");
-			if (content.length === 0) {
-				return {
-					kind: "insert",
-					index,
-					label: describeEdit(edit),
-					start: 0,
-					end: 0,
-					replacement: insertedText,
-					boundary: computeInsertionBoundary(edit, lineIndex),
-					insertMode: "append-empty-origin",
-				};
-			}
-
-			if (!edit.pos) {
-				return {
-					kind: "insert",
-					index,
-					label: describeEdit(edit),
-					start: content.length,
-					end: content.length,
-					replacement: hasTerminalNewline
-						? `${insertedText}\n`
-						: `\n${insertedText}`,
-					boundary: computeInsertionBoundary(edit, lineIndex),
-				};
-			}
-
-			const isSentinelAppend =
-				hasTerminalNewline && edit.pos.line === fileLines.length;
-			return {
-				kind: "insert",
-				index,
-				label: describeEdit(edit),
-				start: isSentinelAppend
-					? content.length
-					: lineStarts[edit.pos.line - 1]! +
-						fileLines[edit.pos.line - 1]!.length,
-				end: isSentinelAppend
-					? content.length
-					: lineStarts[edit.pos.line - 1]! +
-						fileLines[edit.pos.line - 1]!.length,
-				replacement: isSentinelAppend
-					? `${insertedText}\n`
-					: `\n${insertedText}`,
-				boundary: computeInsertionBoundary(edit, lineIndex),
-			};
-		}
-		case "prepend": {
-			if (edit.lines.length === 0) {
-				noopEdits.push({
-					editIndex: index,
-					loc: edit.pos ? edit.pos.hash : "BOF",
-					currentContent: edit.pos
-						? (fileLines[edit.pos.line - 1] ?? "")
-						: "",
-				});
-				return null;
-			}
-			const insertedText = edit.lines.join("\n");
-			const start = edit.pos ? lineStarts[edit.pos.line - 1]! : 0;
-			return {
-				kind: "insert",
-				index,
-				label: describeEdit(edit),
-				start,
-				end: start,
-				replacement:
-					content.length === 0 ? insertedText : `${insertedText}\n`,
-				boundary: computeInsertionBoundary(edit, lineIndex),
-				...(content.length === 0
-					? { insertMode: "prepend-empty-origin" as const }
-					: {}),
-			};
-		}
+	const startLine = edit.start.line;
+	const endLine = edit.end.line;
+	const originalLines = fileLines.slice(startLine - 1, endLine);
+	if (
+		originalLines.length === edit.lines.length &&
+		originalLines.every(
+			(line, lineIndex) => line === edit.lines[lineIndex],
+		)
+	) {
+		noopEdits.push({
+			editIndex: index,
+			loc: edit.start.hash,
+			currentContent: originalLines.join("\n"),
+		});
+		return null;
 	}
+
+	if (edit.lines.length > 0) {
+		return {
+			kind: "replace",
+			index,
+			label: describeEdit(edit),
+			start: lineStarts[startLine - 1]!,
+			end: lineStarts[endLine - 1]! + fileLines[endLine - 1]!.length,
+			replacement: edit.lines.join("\n"),
+		};
+	}
+
+	if (startLine === 1 && endLine === fileLines.length) {
+		return {
+			kind: "replace",
+			index,
+			label: describeEdit(edit),
+			start: 0,
+			end: content.length,
+			replacement: "",
+		};
+	}
+
+	if (endLine < fileLines.length) {
+		return {
+			kind: "replace",
+			index,
+			label: describeEdit(edit),
+			start: lineStarts[startLine - 1]!,
+			end: lineStarts[endLine]!,
+			replacement: "",
+		};
+	}
+
+	return {
+		kind: "replace",
+		index,
+		label: describeEdit(edit),
+		start: Math.max(0, lineStarts[startLine - 1]! - 1),
+		end: lineStarts[endLine - 1]! + fileLines[endLine - 1]!.length,
+		replacement: "",
+	};
 }
 
 function assertNoConflictingSpans(spans: ResolvedEditSpan[]): void {
@@ -263,38 +149,11 @@ function assertNoConflictingSpans(spans: ResolvedEditSpan[]): void {
 		) {
 			const right = spans[rightIndex]!;
 
-			if (left.kind === "insert" && right.kind === "insert") {
-				if (left.boundary === right.boundary) {
-					throwEditConflict(
-						left,
-						right,
-						"target the same insertion boundary",
-					);
-				}
-				continue;
-			}
-
-			if (left.kind === "replace" && right.kind === "replace") {
-				if (left.start < right.end && right.start < left.end) {
-					throwEditConflict(
-						left,
-						right,
-						"overlap on the same original line range",
-					);
-				}
-				continue;
-			}
-
-			const replaceSpan = left.kind === "replace" ? left : right;
-			const insertSpan = left.kind === "insert" ? left : right;
-			if (
-				insertSpan.start >= replaceSpan.start &&
-				insertSpan.start < replaceSpan.end
-			) {
+			if (left.start < right.end && right.start < left.end) {
 				throwEditConflict(
 					left,
 					right,
-					"cannot be applied together because one inserts inside a replaced original range",
+					"overlap on the same original line range",
 				);
 			}
 		}
@@ -324,9 +183,7 @@ function resolveEditSpans(
 		}
 
 		const spanKey =
-			span.kind === "insert"
-				? `insert:${span.boundary}:${span.replacement}`
-				: `replace:${span.start}:${span.end}:${span.replacement}`;
+				`replace:${span.start}:${span.end}:${span.replacement}`;
 		if (seenSpanKeys.has(spanKey)) {
 			continue;
 		}
@@ -335,19 +192,9 @@ function resolveEditSpans(
 	}
 
 	assertNoConflictingSpans(resolvedSpans);
-
 	return [...resolvedSpans].sort((left, right) => {
 		if (right.end !== left.end) {
 			return right.end - left.end;
-		}
-		if (left.kind !== right.kind) {
-			return left.kind === "replace" ? -1 : 1;
-		}
-		if (left.kind === "insert" && right.kind === "insert") {
-			return (
-				(right.boundary ?? -1) - (left.boundary ?? -1) ||
-				left.index - right.index
-			);
 		}
 		return left.index - right.index;
 	});
@@ -361,18 +208,8 @@ function assembleEditResult(
 	let result = content;
 	for (const span of spans) {
 		throwIfAborted(signal);
-		const replacement =
-			span.insertMode === "append-empty-origin"
-				? result.length === 0
-					? span.replacement
-					: `\n${span.replacement}`
-				: span.insertMode === "prepend-empty-origin"
-					? result.length === 0
-						? span.replacement
-						: `${span.replacement}\n`
-					: span.replacement;
 		result =
-			result.slice(0, span.start) + replacement + result.slice(span.end);
+			result.slice(0, span.start) + span.replacement + result.slice(span.end);
 	}
 	return result;
 }
@@ -401,7 +238,6 @@ export function applyHashlineEdits(
 
 	// Normalize lines: [""] to lines: [] for deletion.
 	edits = edits.map((edit) =>
-		edit.op === "replace" &&
 		edit.lines.length === 1 &&
 		edit.lines[0] === ""
 			? { ...edit, lines: [] }

@@ -20,7 +20,7 @@ describe("edit tool text shape (token budget)", () => {
           path: "sample.ts",
           edits: [
             {
-              op: "replace", start: `${computeLineHash(2, "bbb")}`, end: `${computeLineHash(2, "bbb")}`, lines: ["BBB"],
+              start: `${computeLineHash(2, "bbb")}`, end: `${computeLineHash(2, "bbb")}`, lines: ["BBB"],
             },
           ],
         },
@@ -56,7 +56,7 @@ describe("edit tool text shape (token budget)", () => {
           path: "sample.ts",
           edits: [
             {
-              op: "replace", start: `${computeLineHash(2, "bbb")}`, end: `${computeLineHash(2, "bbb")}`, lines: ["BBB"],
+              start: `${computeLineHash(2, "bbb")}`, end: `${computeLineHash(2, "bbb")}`, lines: ["BBB"],
             },
           ],
         },
@@ -84,7 +84,7 @@ describe("edit tool text shape (token budget)", () => {
           returnMode: "full",
           edits: [
             {
-              op: "replace", start: `${computeLineHash(2, "bbb")}`, end: `${computeLineHash(2, "bbb")}`, lines: ["BBB"],
+              start: `${computeLineHash(2, "bbb")}`, end: `${computeLineHash(2, "bbb")}`, lines: ["BBB"],
             },
           ],
         },
@@ -121,7 +121,7 @@ describe("edit tool text shape (token budget)", () => {
           returnMode: "full",
           edits: [
             {
-              op: "replace", start: `${computeLineHash(3, "  return 1;")}`, end: `${computeLineHash(3, "  return 1;")}`, lines: ["  return 2;"],
+              start: `${computeLineHash(3, "  return 1;")}`, end: `${computeLineHash(3, "  return 1;")}`, lines: ["  return 2;"],
             },
           ],
         },
@@ -150,7 +150,7 @@ describe("edit tool text shape (token budget)", () => {
           returnMode: "full",
           edits: [
             {
-              op: "replace", start: `${computeLineHash(2, "bbb")}`, end: `${computeLineHash(2, "bbb")}`, lines: ["bbb"],
+              start: `${computeLineHash(2, "bbb")}`, end: `${computeLineHash(2, "bbb")}`, lines: ["bbb"],
             },
           ],
         },
@@ -179,7 +179,7 @@ describe("edit tool text shape (token budget)", () => {
             path: "sample.txt",
             edits: [
               {
-                op: "replace", start: `${computeLineHash(1, "only")}`, end: `${computeLineHash(1, "only")}`, lines: [],
+                start: `${computeLineHash(1, "only")}`, end: `${computeLineHash(1, "only")}`, lines: [],
               },
             ],
           },
@@ -203,7 +203,7 @@ describe("edit tool text shape (token budget)", () => {
           path: "sample.txt",
           edits: [
             {
-              op: "replace", start: `${computeLineHash(2, longLine)}`, end: `${computeLineHash(2, longLine)}`, lines: [`b${longLine.slice(1)}`],
+              start: `${computeLineHash(2, longLine)}`, end: `${computeLineHash(2, longLine)}`, lines: [`b${longLine.slice(1)}`],
             },
           ],
         },

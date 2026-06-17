@@ -82,29 +82,16 @@ const returnRangeSchema = Type.Object(
 
 const hashlineEditItemSchema = Type.Object(
 	{
-		op: stringEnumSchema(
-			["replace", "append", "prepend"] as const,
-			{
-				description:
-					'edit operation. "replace" requires "start" + "end" (inclusive range); "append"/"prepend" take an optional "pos" anchor. Every edit must set op. The legacy "replace_text" op is no longer supported; use a hash-anchored "replace" instead.',
-			},
-		),
 		start: Type.Optional(
 			Type.String({
 				description:
-					"required range-start anchor for op \"replace\" (hash anchor like \"aB3x\" copied from read output); no content may follow the anchor",
+					"required range-start anchor (hash anchor like \"aB3x\" copied from read output); no content may follow the anchor",
 			}),
 		),
 		end: Type.Optional(
 			Type.String({
 				description:
-					"required range-end anchor for op \"replace\" (hash anchor like \"aB3x\"). To replace a single line, set start = end = the line's anchor",
-			}),
-		),
-		pos: Type.Optional(
-			Type.String({
-				description:
-					"anchor for op \"append\" or \"prepend\" (hash anchor like \"aB3x\"). Omit for file-boundary insertion (EOF/BOF).",				
+					"required range-end anchor (hash anchor like \"aB3x\"). To replace a single line, set start = end = the line's anchor",
 			}),
 		),
 		lines: Type.Optional(hashlineEditLinesSchema),
@@ -219,7 +206,7 @@ export function assertEditRequest(
 	for (const legacyKey of ["oldText", "newText", "old_text", "new_text"]) {
 		if (hasOwn(request, legacyKey)) {
 			throw new Error(
-				`[E_LEGACY_SHAPE] "${legacyKey}" is not supported. Use {op:"replace", start:"<HASH>", end:"<HASH", lines:[...]}.`
+				`[E_LEGACY_SHAPE] "${legacyKey}" is not supported. Use {start:"<HASH>", end:"<HASH>", lines:[...]}.`
 			);
 		}
 	}

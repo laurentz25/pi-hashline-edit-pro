@@ -55,7 +55,7 @@ describe("edit tool file mutation queue", () => {
           path: "race.ts",
           edits: [
             {
-              op: "replace", start: `${computeLineHash(1, "alpha")}`, end: `${computeLineHash(1, "alpha")}`, lines: ["ALPHA"],
+              start: `${computeLineHash(1, "alpha")}`, end: `${computeLineHash(1, "alpha")}`, lines: ["ALPHA"],
             },
           ],
         },
@@ -69,7 +69,7 @@ describe("edit tool file mutation queue", () => {
           path: "race.ts",
           edits: [
             {
-              op: "replace", start: `${computeLineHash(2, "beta")}`, end: `${computeLineHash(2, "beta")}`, lines: ["BETA"],
+              start: `${computeLineHash(2, "beta")}`, end: `${computeLineHash(2, "beta")}`, lines: ["BETA"],
             },
           ],
         },
@@ -101,7 +101,7 @@ describe("edit tool file mutation queue", () => {
           path: "race.ts",
           edits: [
             {
-              op: "replace", start: `${computeLineHash(1, "alpha")}`, end: `${computeLineHash(1, "alpha")}`, lines: ["ALPHA"],
+              start: `${computeLineHash(1, "alpha")}`, end: `${computeLineHash(1, "alpha")}`, lines: ["ALPHA"],
             },
           ],
         },
@@ -115,7 +115,7 @@ describe("edit tool file mutation queue", () => {
           path: "linked-race.ts",
           edits: [
             {
-              op: "replace", start: `${computeLineHash(2, "beta")}`, end: `${computeLineHash(2, "beta")}`, lines: ["BETA"],
+              start: `${computeLineHash(2, "beta")}`, end: `${computeLineHash(2, "beta")}`, lines: ["BETA"],
             },
           ],
         },
@@ -147,7 +147,7 @@ describe("edit tool file mutation queue", () => {
           path: "race.ts",
           edits: [
             {
-              op: "replace", start: `${computeLineHash(1, "alpha")}`, end: `${computeLineHash(1, "alpha")}`, lines: ["ALPHA"],
+              start: `${computeLineHash(1, "alpha")}`, end: `${computeLineHash(1, "alpha")}`, lines: ["ALPHA"],
             },
           ],
         },
@@ -161,7 +161,7 @@ describe("edit tool file mutation queue", () => {
           path: "aliasdir/race.ts",
           edits: [
             {
-              op: "replace", start: `${computeLineHash(2, "beta")}`, end: `${computeLineHash(2, "beta")}`, lines: ["BETA"],
+              start: `${computeLineHash(2, "beta")}`, end: `${computeLineHash(2, "beta")}`, lines: ["BETA"],
             },
           ],
         },

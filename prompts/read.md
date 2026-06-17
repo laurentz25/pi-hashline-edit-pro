@@ -1,17 +1,17 @@
-Read a text file. Each line is returned as `HASH│content`. The HASH is 4 base64 characters; the content after the `│` separator is the line verbatim. Pass the HASH (e.g. `aB3x`) into `edit`'s `start`/`end` (for `replace`) or `pos` (for `append`/`prepend`) — never include the line content.
+Read a text file. Each line is returned as `HASH│content`. The HASH is 4 base64 characters; the content after the `│` separator is the line verbatim. Pass the HASH (e.g. `aB3x`) into `edit`'s `start`/`end` — never include the line content.
 
 HASH shape:
 - 4 characters from the URL-safe base64 alphabet `A-Za-z0-9-_` (e.g. `aB3x`, `4yN-`, `-qkl`).
 - The line number is not part of the wire format. Anchor by HASH, never by reading a line number off the rendered output.
 
 HASH → edit:
-- Copy the full 4-character HASH. Use that HASH as `start` or `end` (for `replace`) or `pos` (for `append`/`prepend`) in the next `edit` call.
-- Do not include the `│`, the line content, or surrounding whitespace. The wire format for `start`/`end`/`pos` is the HASH only.
+- Copy the full 4-character HASH. Use that HASH as `start` or `end` in the next `edit` call.
+- Do not include the `│`, the line content, or surrounding whitespace. The wire format for `start`/`end` is the HASH only.
 
 Pagination:
 - Large files return a truncated preview with a `nextOffset` line. Call `read` again with `offset=nextOffset` to continue.
 - For nearby follow-up edits, prefer the `--- Anchors ---` block from a previous `edit` call — fresh HASHes, cheaper than re-reading.
-- Empty files return an advisory suggesting `prepend`/`append` instead of a synthetic anchor.
+- Empty files return an advisory suggesting using edit to insert content.
 
 Error recovery:
 - `[E_STALE_ANCHOR]` — the file changed since your last read. The error includes fresh `>>> HASH│content` lines; copy the HASH portion (the 4 chars before `│`) and retry.
@@ -23,7 +23,7 @@ File kinds:
 - Binary files and directories are rejected with a descriptive error.
 
 Non-UTF-8 bytes:
-- Non-UTF-8 bytes are decoded as U+FFFD. The output is flagged when this happens; editing such a file rewrites it as UTF-8. Recover the original encoding with `iconv` afterwards if it must survive.
+- Non-UTF-8 bytes are decoded as U+FFFD. The output is flagged when this happens; editing such a file rewrites the file as UTF-8. Recover the original encoding with `iconv` afterwards if it must survive.
 
 Auto-read after write:
 - After a successful `write`, the result includes a `--- Auto-read (hashline anchors) ---` block with `HASH│content` for the written file.

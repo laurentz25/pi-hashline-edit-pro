@@ -471,7 +471,7 @@ export function buildChangedResponse(input: SuccessResponseInput): ToolResult {
 					: "Anchors omitted; use read for subsequent edits.";
 			})()
 		: resultLines.length === 0
-			? "File is empty. Use edit with prepend or append and omit pos to insert content."
+			? "File is empty. Use edit to insert content."
 			: "Anchors omitted; use read for subsequent edits.";
 
 	const text = [anchorsBlock, warningsBlock.trimStart()]

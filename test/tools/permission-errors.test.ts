@@ -69,7 +69,7 @@ describe.skipIf(isRoot || isWindows)("permission errors", () => {
             "e1",
             {
               path: filePath,
-              edits: [{ op: "replace", start: "abcD", end: "abcD", lines: ["new content"] }],
+              edits: [{ start: "abcD", end: "abcD", lines: ["new content"] }],
             },
             undefined,
             undefined,
