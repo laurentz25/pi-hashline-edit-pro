@@ -46,10 +46,6 @@ describe("strict hashline contract", () => {
 
 	it("rejects stale anchors instead of relocating by hash", () => {
 		const content = ["a", "INSERTED", "b", "target", "c"].join("\n");
-		// The model hands us a hash that doesn't appear in the current file —
-		// either it was copied from a previous read or fabricated. Strict
-		// semantics: we throw, we never silently relocate to a "close enough"
-		// line by content.
 		const stale = {
 			start: { hash: "ZZZZ" }, end: { hash: "ZZZZ" }, lines: ["updated"],
 		} as any;
@@ -108,8 +104,6 @@ describe("perfect hashing", () => {
 	});
 
 	it("stale-anchor error shows the file's current state for context", () => {
-		// The model wrote line 3's anchor with a stale hash. The error must show
-		// the file's current hashes so the model can refresh.
 		const file = ["const x = 1;", "const y = 2;", "const x = 1;"].join("\n");
 		const staleHash = "ZZZZ";
 		let caught: Error | undefined;
@@ -122,18 +116,12 @@ describe("perfect hashing", () => {
 		}
 		expect(caught).toBeDefined();
 		expect(caught!.message).toMatch(/E_STALE_ANCHOR/);
-		// The error message should contain actionable guidance.
 		expect(caught!.message).toContain("Call read()");
 	});
 
 	it("rejects an ambiguous hash with [E_AMBIGUOUS_ANCHOR] (synthetic collision)", () => {
-		// Two genuinely different content lines happen to produce the same hash
-		// extremely rarely at 24 bits (probability ~1/16M per pair). We can't
-		// realistically force a collision with xxHash32, so we inject a
-		// precomputed hash array via applyHashlineEdits's `precomputedHashes`
-		// parameter — the same hook the read tool uses to thread the hash array it
-		// showed the model through validation. We replace line 3's hash with line 1's,
-		// so the resolver sees two distinct lines sharing one hash.
+		// We can't force a real collision with xxHash32, so we inject
+		// a precomputed hash array to simulate two lines sharing one hash.
 		const file = "alpha\nbeta\ngamma\ndelta";
 		const realHashes = computeLineHashes(file);
 		const forgedHashes = [...realHashes];
@@ -156,9 +144,6 @@ describe("perfect hashing", () => {
 		}
 		expect(caught).toBeDefined();
 		expect(caught!.message).toMatch(/E_AMBIGUOUS_ANCHOR/);
-		// The error must list both candidate line numbers so the model can
-		// disambiguate by re-reading — the wire format does not accept a content
-		// disambiguator on the anchor.
 		expect(caught!.message).toMatch(/matches lines 1, 3/);
 		expect(caught!.message).toContain(`${realHashes[0]!}│alpha`);
 		expect(caught!.message).toContain(`${realHashes[0]!}│gamma`);
