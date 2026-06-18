@@ -11,7 +11,7 @@ The strict-semantics policy of the original is preserved verbatim. This fork is 
 
 ## Project Structure & Module Organization
 
-- `index.ts` is the extension entrypoint; it registers the custom `read`/`replace` tools.
+- `index.ts` is the extension entrypoint; it registers the custom `read`/`replace` tools, disables the built-in `edit` tool, and registers the `/toggle-auto-read` command. It also contains the auto-read-after-write handler (disabled by default; controlled by `PI_HASHLINE_AUTO_READ` env var or the `/toggle-auto-read` command).
 - `src/` contains the implementation, split by responsibility: `read.ts`, `replace.ts`, `replace-normalize.ts`, `replace-diff.ts`, `replace-response.ts`, `replace-render.ts`, `file-kind.ts`, `fs-write.ts`, `snapshot.ts`, `utils.ts`, and small runtime/path helpers. The hashline engine is in `src/hashline/` with sub-modules: `hash.ts`, `parse.ts`, `resolve.ts`, `apply.ts`, and `index.ts` (re-exports).
 - `prompts/` holds the Markdown prompt text loaded by the tools at runtime.
 - `test/` mirrors the code layout: `core/` for hashline primitives, `tools/` for tool behavior, `extension/` for registration, `integration/` for end-to-end flows, and `support/fixtures.ts` for temp-file helpers.

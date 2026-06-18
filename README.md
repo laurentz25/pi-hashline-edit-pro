@@ -89,10 +89,12 @@ After a successful replace, the result text contains an `--- Anchors ---` block 
 
 ### Auto-read after write
 
-After a successful `write`, the extension automatically reads the file and appends a `--- Auto-read (hashline anchors) ---` block to the result. This gives the model immediate `HASH│content` anchors for the newly written file without requiring a separate `read` call. The workflow becomes:
+Auto-read is **disabled by default**. When enabled, after a successful `write` the extension automatically reads the file and appends a `--- Auto-read (hashline anchors) ---` block to the result. This gives the model immediate `HASH│content` anchors for the newly written file without requiring a separate `read` call. The workflow becomes:
 
 1. `write` a file, result includes hashline anchors
 2. `replace` using those anchors directly
+
+Toggle at runtime with the `/toggle-auto-read` command. The current state persists for the session.
 
 For large files (>2000 lines), the auto-read output is truncated with a pagination hint. Use `read` with `offset` to see more.
 
@@ -140,6 +142,8 @@ npm test
 ```
 
 Set `PI_HASHLINE_DEBUG=1` to show an "active" notification at session start.
+
+Set `PI_HASHLINE_AUTO_READ=1` to enable auto-read after write by default (can still be toggled at runtime with `/toggle-auto-read`).
 
 ## Credits
 
