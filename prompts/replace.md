@@ -8,15 +8,15 @@ How to use:
 ```
 read({ path: "src/main.ts" })
 // Returns:
-// MQXV│const x = 1;
-// ZPMQ│const y = 2;
-// VRWS│const z = 3;
+// MQX│const x = 1;
+// ZPM│const y = 2;
+// VRW│const z = 3;
 ```
 
-2. Copy the 4-character HASH (before `│`) into `start`/`end`:
+2. Copy the 3-character HASH (before `│`) into `start`/`end`:
 ```json
 { "path": "src/main.ts", "edits": [
-  { "start": "MQXV", "end": "MQXV", "lines": ["const x = 99;"] }
+  { "start": "MQX", "end": "MQX", "lines": ["const x = 99;"] }
 ] }
 ```
 
@@ -25,14 +25,14 @@ Examples:
 1. Single line replace:
 ```json
 { "path": "src/main.ts", "edits": [
-  { "start": "MQXV", "end": "MQXV", "lines": ["const x = 1;"] }
+  { "start": "MQX", "end": "MQX", "lines": ["const x = 1;"] }
 ] }
 ```
 
 2. Range replace (3 lines → 3 new lines):
 ```json
 { "path": "src/main.ts", "edits": [
-  { "start": "ZPMQ", "end": "VRWS", "lines": [
+  { "start": "ZPM", "end": "VRW", "lines": [
     "function greet(name) {",
     "  return `Hello, ${name}`;",
     "}"
@@ -43,15 +43,15 @@ Examples:
 3. Multiple regions in one call (delete two non-adjacent ranges):
 ```json
 { "path": "src/server.ts", "edits": [
-  { "start": "aB3x", "end": "xY7q", "lines": [] },
-  { "start": "MQXV", "end": "ZPMQ", "lines": [] }
+  { "start": "aB3", "end": "xY7", "lines": [] },
+  { "start": "MQX", "end": "ZPM", "lines": [] }
 ] }
 ```
 
 Rules:
 - `start` and `end` are required. A single-line replace is `start=X, end=X`.
 - To delete a range, use `lines: []`.
-- `start`, `end` are HASH anchors only (e.g. `aB3x`). Do not include `│` or line content.
+- `start`, `end` are HASH anchors only (e.g. `aB3`). Do not include `│` or line content.
 - `lines` is literal file content — each string becomes exactly one line in the file. No `HASH│` prefix, no `+`/`-` diff markers.
 - Don't add `""` for spacing unless you actually want a new blank line.
 - Copy anchors from the most recent `read` of the file. Do not guess or construct them.

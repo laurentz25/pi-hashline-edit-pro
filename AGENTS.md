@@ -4,7 +4,7 @@
 
 A fork of [pi-hashline-edit](https://github.com/RimuruW/pi-hashline-edit) (MIT) that preserves the strict semantics of the original and makes two compounding changes:
 
-1. **Hash format: 4 characters.** Combined with the alphabet change below, this gives 24 bits of entropy per anchor (16 777 216 buckets), up from 8 bits (256 buckets) in upstream. The 4-character anchors are compact and efficient.
+1. **Hash format: 3 characters with perfect hashing.** Combined with the alphabet change below, this gives 18 bits of entropy per anchor (262,144 buckets), up from 8 bits (256 buckets) in upstream. The 3-character anchors use collision resolution: if a computed hash collides with an already-assigned hash, it increments until a unique hash is found. This ensures every line in a file gets a unique anchor.
 2. **Alphabet: 16-char hand-curated → 64-char URL-safe base64.** The original alphabet excluded hex digits, vowels, and visually confusable letters to be friendly to a human reader. The consumer here is an LLM that tokenizes, not a human that squints at pixel glyphs — so the human-readability heuristics don't apply and the full 64 chars give max entropy per position.
 
 The strict-semantics policy of the original is preserved verbatim. This fork is a parameter change, not a philosophy change.
@@ -60,30 +60,31 @@ The design intent of this fork is identical to the original. If a change starts 
 - **No fallback relocation.** Stale anchors fail loudly. We do not search for "close enough" lines, we do not accept any content after the hash on the wire, and we do not relocate anchors within a window. A mismatch is `[E_STALE_ANCHOR]` and the runtime returns fresh anchors for the affected lines; the model retries.
 - **No legacy shape, no fuzzy fallback, no auto-upgrade.** The top-level `oldText`/`newText` dialect is rejected with `[E_LEGACY_SHAPE]` in `assertReplaceRequest`. There is no flag to re-enable the legacy path. If the model falls back to its training-time default and emits the legacy shape, the error message tells it exactly what to do: call `read` first, copy the HASH anchor into `start` and `end` of a `{start, end, lines}` entry, and put the new content in `lines`.
 - **Request and edit-item validation use `[E_BAD_SHAPE]`.** Structural errors in the request envelope (unknown fields, missing required fields, invalid types) and in individual edit items (unknown fields, wrong field types) are rejected with `[E_BAD_SHAPE]`. This is distinct from `[E_BAD_OP]` (invalid operation value) and `[E_BAD_REF]` (malformed hash anchor). The error messages include the specific field or constraint that failed.
-- **Wire format: `replace` uses `start` + `end`.** The `start` and `end` fields form an inclusive line range. Both anchors are required (a single-line replace is `start=X, end=X`). The anchor (e.g. `aB3x`) is the entire wire format: no line number, no `│content`, no disambiguator. Passing a `HASH│content` form is rejected with `[E_BAD_REF]` — the model must re-read and copy just the anchor.
+- **Wire format: `replace` uses `start` + `end`.** The `start` and `end` fields form an inclusive line range. Both anchors are required (a single-line replace is `start=X, end=X`). The anchor (e.g. `aB3`) is the entire wire format: no line number, no `│content`, no disambiguator. Passing a `HASH│content` form is rejected with `[E_BAD_REF]` — the model must re-read and copy just the anchor.
 - **One documented normalization: `lines: [""]` → `lines: []` for `replace`.** Models commonly emit `lines: [""]` to mean "delete this line" instead of the strictly correct `lines: []`. The non-empty-l span branch preserves the trailing newline of the last replaced line, so a single-element empty array would leave that newline behind as an extra blank line. The runtime normalizes this to `lines: []` (a true deletion) in `applyHashlineEdits` (and again in `resolveEditAnchors` for clarity at the tool layer). Multi-element empty arrays (e.g. `["", ""]`) are NOT collapsed — they legitimately mean "insert blank lines". This is the only input rewrite, and it has a single narrow trigger.
 
 ## Hash format — non-negotiable
 
-The hash length, alphabet, and occurrence-aware discriminator are the divergence from the upstream fork, and they're the *point* of this fork. Treat them as a contract.
+The hash length, alphabet, occurrence-aware discriminator, and perfect hashing are the divergence from the upstream fork, and they're the *point* of this fork. Treat them as a contract.
 
-- `HASH_LENGTH` in `src/hashline/hash.ts` is the single source of truth for the hash body length (4 chars). `ANCHOR_LENGTH` (4) is the total wire-format length.
+- `HASH_LENGTH` in `src/hashline/hash.ts` is the single source of truth for the hash body length (3 chars). `ANCHOR_LENGTH` (3) is the total wire-format length.
 - `HASH_ALPHABET` is the URL-safe base64 alphabet: `A-Za-z0-9-_`. 64 distinct chars, 6 bits per position. The `-` is escaped when interpolated into a regex character class (`HASH_ALPHABET_REGEX_SAFE`) so it doesn't form an unintended range with the preceding digit.
 - **Occurrence-aware discriminator.** Every hash mixes a discriminator into the xxHash input: `C${occurrence}:` is prepended, where `occurrence` is the running count of that canonical content earlier in the file. The first `import {...}` line and the second hash to different values. Symbol-only lines (lone `}`, etc.) are no longer treated differently — they use the same occurrence-based discrimination as content lines.
   - The discriminator goes into the *input* to xxHash32, not into the seed.
+- **Perfect hashing (collision resolution).** When computing hashes for a file, if a line's base hash collides with an already-assigned hash, the hash is incremented (using a retry counter in the discriminator: `C${occurrence}:R${retry}`) until a unique hash is found. This ensures every line in a file gets a unique anchor, even with the shorter 3-character hash space.
 - `computeLineHashes(content)` is the single source of truth for the hash array. It returns `string[]` indexed 0-based (so line N is at index N-1). Every other entry point (read preview, edit validation, mismatch retry block, diff preview, response builders) goes through this array. Never re-hash per line at a call site — that would produce a different answer than what the model saw in its last read.
 - `computeLineHash(idx, line)` is a backward-compat single-line helper that treats the input as a 1st-occurrence content line. It is used only by `replace-diff.ts` for diff-preview formatting where the surrounding file context is not available. Production validation never calls it.
-- If you bump `HASH_LENGTH`, update every test that constructs a fixture hash (grep for `toHaveLength(4)`, `[A-Za-z0-9_\\-]{4}`, and the test bodies in `test/core/hashline.parse.test.ts` and `test/core/hashline.resolve.test.ts`). The test suite is the contract for the wire format.
+- If you bump `HASH_LENGTH`, update every test that constructs a fixture hash (grep for `toHaveLength(3)`, `[A-Za-z0-9_\\-]{3}`, and the test bodies in `test/core/hashline.parse.test.ts` and `test/core/hashline.resolve.test.ts`). The test suite is the contract for the wire format.
 - If you change the discriminator scheme, you also need to update the test for "occurrence-aware hashline" in `test/core/hashline.hash.test.ts`, which exercises the per-occurrence uniqueness property.
-- If you change the alphabet (e.g. to drop the `-` for some reason), grep for the literal alphabet in regex contexts: any test that does `expect(hash).toMatch(/^[A-Za-z0-9_\\-]{4}$/)` needs to be updated.
+- If you change the alphabet (e.g. to drop the `-` for some reason), grep for the literal alphabet in regex contexts: any test that does `expect(hash).toMatch(/^[A-Za-z0-9_\\-]{3}$/)` needs to be updated.
 
 ### Trade-off: the bare-prefix detector
 
-The bare-prefix detector (`HASHLINE_BARE_PREFIX_RE`) rejects any edit line whose first 5 characters (after optional leading whitespace) are 4 alphabet chars + `│`. The `│` delimiter is distinctive and eliminates false positives from common code patterns like `init:`, `data:`, `else:`, etc. The error code `[E_BARE_HASH_PREFIX]` is distinct from `[E_INVALID_PATCH]` (which still catches the unambiguous `+HASH│` and `-N   ` diff-row forms at the parse stage). When a suspect's prefix happens to match a real file-line anchor, the error message calls that out — strong evidence the model was reading a `HASH│content` line and copied only the prefix.
+The bare-prefix detector (`HASHLINE_BARE_PREFIX_RE`) rejects any edit line whose first 4 characters (after optional leading whitespace) are 3 alphabet chars + `│`. The `│` delimiter is distinctive and eliminates false positives from common code patterns like `init:`, `data:`, `else:`, etc. The error code `[E_BARE_HASH_PREFIX]` is distinct from `[E_INVALID_PATCH]` (which still catches the unambiguous `+HASH│` and `-N   ` diff-row forms at the parse stage). When a suspect's prefix happens to match a real file-line anchor, the error message calls that out — strong evidence the model was reading a `HASH│content` line and copied only the prefix.
 
 ## Tool output token-efficiency
 
-The 4-character anchors are compact and efficient. Each anchor costs 4 characters of overhead per line — that adds up on large files but is the price of the collision resistance and unambiguous format.
+The 3-character anchors are compact and efficient. Each anchor costs 3 characters of overhead per line — that adds up on large files but is the price of the collision resistance and unambiguous format.
 
 Rules:
 
@@ -96,9 +97,9 @@ Rules:
 
 This fork is not a strict improvement for every workload. The original 2-char, content-only hash is a better fit if:
 
-- You mostly work with files under ~50 lines.
+- You mostly work with files under ~100 lines.
 - Token efficiency in `read` output is more important than collision resistance.
 - You would rather see the model re-read a few times than pay the per-line token tax.
 - You need wire compatibility with another tool that expects the upstream hash values.
 
-If that matches your workflow, install [pi-hashline-edit](https://github.com/RimuruW/pi-hashline-edit) instead. The protocol shapes are identical; only the hash length and the occurrence-aware discriminator differ. The prompts and tests in this repo are written for the 4-char + occurrence-aware format.
+If that matches your workflow, install [pi-hashline-edit](https://github.com/RimuruW/pi-hashline-edit) instead. The protocol shapes are identical; only the hash length and the occurrence-aware discriminator differ. The prompts and tests in this repo are written for the 3-char + occurrence-aware + perfect-hashing format.

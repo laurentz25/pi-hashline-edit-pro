@@ -136,14 +136,14 @@ describe("partial hash prefixes copied into content (issue #24)", () => {
 		// count-based trigger fired on basically every multi-line code edit
 		// (let:, var:, 200:, 404:, ...), and the strong-signal gate only
 		// warned on prefix-in-file-hash. The detector now rejects on shape
-		// alone, so even "ZZZZ:one" and "ZZZP:two" (no match in the file)
+		// alone, so even "ZZZ:one" and "ZZP:two" (no match in the file)
 		// are blocked. The error message is different: it tells the model
 		// the prefix does not match any line hash, hinting that the content
-		// might be a 4-char identifier that needs rephrasing.
+		// might be a 3-char identifier that needs rephrasing.
 		let caught: Error | undefined;
 		try {
 			applyTool([
-				{ start: anchor, end: anchor, lines: ["ZZZZ│one", "ZZZP│two"] },
+			{ start: anchor, end: anchor, lines: ["ZZZ│one", "ZZP│two"] },
 			]);
 		} catch (e) {
 			caught = e as Error;
@@ -157,7 +157,7 @@ describe("partial hash prefixes copied into content (issue #24)", () => {
 	});
 
 	it("accepts a single legit 'TS: TypeScript' line without warning", () => {
-		// "TS:" is 2 chars — too short to match the 4-char bare-prefix detector.
+		// "TS:" is 2 chars — too short to match the 3-char bare-prefix detector.
 		const result = applyTool([
 			{ start: anchor, end: anchor, lines: ["TS: TypeScript"] },
 		]);

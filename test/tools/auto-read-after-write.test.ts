@@ -87,8 +87,8 @@ describe("auto-read after write", () => {
       // Second element contains the auto-read with hashline anchors
       const autoReadText = writeResult!.content![1]!.text!;
       expect(autoReadText).toContain("--- Auto-read (hashline anchors) ---");
-	      expect(autoReadText).toMatch(/[A-Za-z0-9_-]{4}│hello/);
-	      expect(autoReadText).toMatch(/[A-Za-z0-9_-]{4}│world/);
+	      expect(autoReadText).toMatch(/[A-Za-z0-9_-]{3}│hello/);
+	      expect(autoReadText).toMatch(/[A-Za-z0-9_-]{3}│world/);
     } finally {
       await rm(cwd, { recursive: true, force: true });
     }
@@ -234,7 +234,7 @@ describe("auto-read after write", () => {
 
       // Verify hashline format: each line should be HASH:content
       const lines = autoReadText.split("\n");
-	      const hashlinePattern = /^[A-Za-z0-9_-]{4}│/;
+	      const hashlinePattern = /^[A-Za-z0-9_-]{3}│/;
 
       // Find lines after the header
       const headerIndex = lines.findIndex((l) =>

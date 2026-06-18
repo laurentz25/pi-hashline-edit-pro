@@ -1,7 +1,7 @@
 Read a text file. Each line is returned as `HASH│content`.
 
 HASH format:
-- The HASH is 4 characters from the URL-safe base64 alphabet `A-Za-z0-9-_` (e.g. `aB3x`, `4yN-`, `-qkl`).
+- The HASH is 3 characters from the URL-safe base64 alphabet `A-Za-z0-9-_` (e.g. `aB3`, `4yN`, `-qk`).
 - The content after the `│` separator is the line verbatim.
 - The line number is not part of the output. Use the HASH to reference lines.
 

@@ -8,7 +8,7 @@ import {
 describe("resolveEditAnchors", () => {
 	it("resolves replace with start + end", () => {
 		const edits: HashlineToolEdit[] = [
-			{ start: "ZZPM", end: "PPWV", lines: ["a", "b"] },
+			{ start: "ZZP", end: "PPW", lines: ["a", "b"] },
 		];
 		const resolved = resolveEditAnchors(edits);
 		expect(resolved).toHaveLength(1);
@@ -18,7 +18,7 @@ describe("resolveEditAnchors", () => {
 
 	it("resolves a 1-line replace (start == end)", () => {
 		const edits: HashlineToolEdit[] = [
-			{ start: "MQXV", end: "MQXV", lines: ["new"] },
+			{ start: "MQX", end: "MQX", lines: ["new"] },
 		];
 		const resolved = resolveEditAnchors(edits);
 		expect(resolved).toHaveLength(1);
@@ -27,13 +27,13 @@ describe("resolveEditAnchors", () => {
 			end: Anchor;
 			lines: string[];
 		};
-		expect(r.start.hash).toBe("MQXV");
-		expect(r.end.hash).toBe("MQXV");
+		expect(r.start.hash).toBe("MQX");
+		expect(r.end.hash).toBe("MQX");
 	});
 
 	it("rejects replace with end but no start", () => {
 		const edits: HashlineToolEdit[] = [
-			{ end: "MQXV", lines: ["new"] },
+			{ end: "MQX", lines: ["new"] },
 		];
 		expect(() => resolveEditAnchors(edits)).toThrow(
 			/requires a "start" anchor/i,
@@ -49,7 +49,7 @@ describe("resolveEditAnchors", () => {
 
 	it("rejects replace with start but no end", () => {
 		const edits: HashlineToolEdit[] = [
-			{ start: "MQXV", lines: ["new"] },
+			{ start: "MQX", lines: ["new"] },
 		];
 		expect(() => resolveEditAnchors(edits)).toThrow(
 			/requires an "end" anchor/i,
@@ -65,7 +65,7 @@ describe("resolveEditAnchors", () => {
 
 	it("throws on malformed end for replace with valid start", () => {
 		const edits: HashlineToolEdit[] = [
-			{ start: "MQXV", end: "garbage", lines: ["x"] },
+			{ start: "MQX", end: "garbage", lines: ["x"] },
 		];
 		expect(() => resolveEditAnchors(edits)).toThrow(/Invalid anchor/);
 	});
@@ -73,8 +73,8 @@ describe("resolveEditAnchors", () => {
 	it("rejects string lines input", () => {
 		const edits: HashlineToolEdit[] = [
 			{
-				start: "ZZPM",
-				end: "ZZPM",
+				start: "ZZP",
+				end: "ZZP",
 				lines: "hello\nworld\n",
 			} as unknown as HashlineToolEdit,
 		];
@@ -86,8 +86,8 @@ describe("resolveEditAnchors", () => {
 	it("rejects null lines input", () => {
 		const edits: HashlineToolEdit[] = [
 			{
-				start: "ZZPM",
-				end: "ZZPM",
+				start: "ZZP",
+				end: "ZZP",
 				lines: null,
 			} as unknown as HashlineToolEdit,
 		];
@@ -97,14 +97,14 @@ describe("resolveEditAnchors", () => {
 	});
 
 	it("rejects unknown fields", () => {
-		const edits = [{ start: "ZZPM", end: "ZZPM", lines: ["x"], extra: true }] as any;
+		const edits = [{ start: "ZZP", end: "ZZP", lines: ["x"], extra: true }] as any;
 		expect(() => resolveEditAnchors(edits)).toThrow(
 			/unknown or unsupported fields/i,
 		);
 	});
 
 	it("rejects missing lines", () => {
-		const edits = [{ start: "ZZPM", end: "ZZPM" }] as any;
+		const edits = [{ start: "ZZP", end: "ZZP" }] as any;
 		expect(() => resolveEditAnchors(edits)).toThrow(
 			/requires a "lines" field/i,
 		);

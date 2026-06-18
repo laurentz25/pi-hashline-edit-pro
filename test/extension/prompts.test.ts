@@ -9,7 +9,7 @@ const replacePrompt = readFileSync(
 describe("prompts/replace.md (model-facing contract)", () => {
 	it("shows the end-to-end workflow with read", () => {
 		expect(replacePrompt).toMatch(/Call `read` to get HASH anchors/);
-		expect(replacePrompt).toMatch(/Copy the 4-character HASH/);
+		expect(replacePrompt).toMatch(/Copy the 3-character HASH/);
 	});
 
 	it("includes worked examples", () => {
@@ -54,7 +54,7 @@ const readPrompt = readFileSync(
 describe("prompts/read.md (model-facing contract)", () => {
 	it("declares the HASH|content output format", () => {
 		expect(readPrompt).toMatch(/`HASH|content`/);
-		expect(readPrompt).toMatch(/4 characters/);
+		expect(readPrompt).toMatch(/3 characters/);
 	});
 
 	it("specifies the URL-safe base64 alphabet", () => {

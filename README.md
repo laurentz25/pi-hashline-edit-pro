@@ -1,8 +1,8 @@
 # pi-hashline-edit-pro
 
-A [pi-coding-agent](https://github.com/badlogic/pi-mono/tree/main/packages/coding-agent) extension that replaces the built-in `read` and `edit` tools with a hash-anchored line-replacing workflow. Strict semantics, no silent relocation, no autocorrection, no fuzzy fallback. 4-character content hashes over a 64-character URL-safe base64 alphabet give 24 bits of entropy per anchor, so collisions are effectively zero in any realistic file.
+A [pi-coding-agent](https://github.com/badlogic/pi-mono/tree/main/packages/coding-agent) extension that replaces the built-in `read` and `edit` tools with a hash-anchored line-replacing workflow. Strict semantics, no silent relocation, no autocorrection, no fuzzy fallback. 3-character content hashes over a 64-character URL-safe base64 alphabet give 18 bits of entropy per anchor, with perfect hashing (collision resolution) ensuring every line gets a unique anchor.
 
-Fork of [pi-hashline-edit](https://github.com/RimuruW/pi-hashline-edit) by RimuruW. The strict-semantics policy is unchanged. This fork extends the upstream design in two ways: a 4-character hash length and an occurrence-aware discriminator that makes identical content at different positions hash to different values.
+Fork of [pi-hashline-edit](https://github.com/RimuruW/pi-hashline-edit) by RimuruW. The strict-semantics policy is unchanged. This fork extends the upstream design in three ways: a 3-character hash length with perfect hashing, an occurrence-aware discriminator that makes identical content at different positions hash to different values, and collision resolution that ensures unique anchors for every line in a file.
 
 Every line returned by `read` carries a short content hash. Edits reference those hashes instead of raw text, so the tool can detect stale context and reject outdated changes before they reach the file.
 
@@ -10,10 +10,12 @@ Every line returned by `read` carries a short content hash. Edits reference thos
 
 The original uses 2-character hashes of a 16-character alphabet, with the hash being a pure function of line content. That's 8 bits / 256 buckets, and two byte-identical lines (e.g. repeated `import` statements, repeated `}`) always share a hash because the hash is `xxHash32(content)`.
 
-This fork makes two changes that compound:
+This fork makes three changes that compound:
 
-1. **Bump hash length to 4 characters** of the 64-char URL-safe base64 alphabet. That gives 24 bits / 16 777 216 buckets. Birthday-paradox collisions are effectively nullified for any realistic file.
+1. **Bump hash length to 3 characters** of the 64-char URL-safe base64 alphabet. That gives 18 bits / 262,144 buckets. With perfect hashing (collision resolution), every line in a file gets a unique anchor.
 2. **Make the hash occurrence-aware.** The hash for line N is `xxHash32("C{occurrence}:{content}")` where `occurrence` is the running count of that content string earlier in the file. Two `import {...}` statements at different positions now hash to different values, so the model can target a specific occurrence without resorting to `offset` + a small `limit` window. All lines — including symbol-only lines like `}` — use the same occurrence-based discrimination.
+3. **Perfect hashing (collision resolution).** When computing hashes for a file, if a line's base hash collides with an already-assigned hash, the hash is incremented (using a retry counter in the discriminator: `C{occurrence}:R{retry}`) until a unique hash is found. This ensures every line in a file gets a unique anchor, even with the shorter 3-character hash space.
+
 ## Installation
 
 From npm:
@@ -32,7 +34,7 @@ pi install /path/to/pi-hashline-edit-pro
 
 ### `read` -- tagged line output
 
-Text files are returned with a `HASH│content` prefix on every line. The line number is not part of the wire format, only the 4-character hash followed by the `│` separator and the line content. Example output for the source below:
+Text files are returned with a `HASH│content` prefix on every line. The line number is not part of the wire format, only the 3-character hash followed by the `│` separator and the line content. Example output for the source below:
 
 ```js
 function hello() {
@@ -43,12 +45,12 @@ function hello() {
 would be returned as:
 
 ```text
-0qH3│function hello() {
-szJr│  console.log("world");
-_zlP│}
+0qH│function hello() {
+szJ│  console.log("world");
+_zl│}
 ```
 
-- `HASH` is a 4-character content hash from the URL-safe base64 alphabet `A-Za-z0-9-_` (e.g. `aB3x`).
+- `HASH` is a 3-character content hash from the URL-safe base64 alphabet `A-Za-z0-9-_` (e.g. `aB3`).
 
 Optional parameters:
 
@@ -65,7 +67,7 @@ Replaces using the `HASH│content` anchors from `read` output to target lines p
 {
   "path": "src/main.ts",
   "edits": [
-    { "start": "ve7o", "end": "ve7o", "lines": ["  console.log('hashline');"] }
+    { "start": "ve7", "end": "ve7", "lines": ["  console.log('hashline');"] }
   ]
 }
 ```
@@ -100,16 +102,16 @@ The post-edit diff (with `+`/`-` markers and new `HASH│content` anchors) is ex
 
 ## Design Decisions
 
-- **Stale anchors fail.** A hash mismatch means the file has changed since the last `read`. The error tells the model to call `read()` to get fresh anchors, then copy the 4-character HASH from each line into the next replace call.
+- **Stale anchors fail.** A hash mismatch means the file has changed since the last `read`. The error tells the model to call `read()` to get fresh anchors, then copy the 3-character HASH from each line into the next replace call.
 - **No fallback relocation.** Mismatched anchors are never silently relocated to a "close enough" line. This trades convenience for correctness.
-- **Strict patch content.** If `lines` contains `+HASH│` display prefixes (or `-N   ` diff rows), the edit is rejected with `[E_INVALID_PATCH]`. Bare `HASH│` content (the first 5 chars of a `lines` entry looking like 4 base64 chars + `│`) is also rejected with `[E_BARE_HASH_PREFIX]`. When the suspect's prefix happens to match a real file-line anchor, the error message flags that as strong evidence the model copied an anchor from the read output.
+- **Strict patch content.** If `lines` contains `+HASH│` display prefixes (or `-N   ` diff rows), the edit is rejected with `[E_INVALID_PATCH]`. Bare `HASH│` content (the first 4 chars of a `lines` entry looking like 3 base64 chars + `│`) is also rejected with `[E_BARE_HASH_PREFIX]`. When the suspect's prefix happens to match a real file-line anchor, the error message flags that as strong evidence the model copied an anchor from the read output.
 - **Legacy dialect rejected.** The native top-level `oldText`/`newText` (and `old_text`/`new_text`) dialect is rejected with `[E_LEGACY_SHAPE]`. The error message tells the model to call `read` first and send `{start:"<HASH>", end:"<HASH>", lines:[...]}`.
 - **Atomic writes.** Files are written via temp-file-then-rename to avoid corruption from interrupted writes. Symlink chains are resolved so the target file is updated without replacing the symlink. Hard-linked files are updated in place to preserve the shared inode. File permissions are preserved across atomic renames.
 - **Per-file mutation queue.** Edits queue by the canonical write target, so concurrent edits through different symlink paths still serialize onto the same underlying file.
 
 ## Hashing
 
-Hashes are computed with [xxhash-wasm](https://github.com/jungomi/xxhash-wasm) (xxHash32 via WebAssembly), then mapped to a 4-character string from the URL-safe base64 alphabet `A-Za-z0-9-_`. That's 64 distinct characters, 6 bits per position, 24 bits of entropy per anchor.
+Hashes are computed with [xxhash-wasm](https://github.com/jungomi/xxhash-wasm) (xxHash32 via WebAssembly), then mapped to a 3-character string from the URL-safe base64 alphabet `A-Za-z0-9-_`. That's 64 distinct characters, 6 bits per position, 18 bits of entropy per anchor.
 
 The alphabet is sized for an LLM consumer. The model tokenizes, it doesn't squint at pixel glyphs, so the human-readability heuristics used by smaller hand-curated alphabets (no G/L/I/O because they look like digits, no vowels so the hash doesn't accidentally spell a word, no hex digits so it can't be confused with `0xFF`) don't apply. The full 64 chars give maximum entropy per character, with case and digits included.
 
@@ -118,13 +120,15 @@ Hashes are occurrence-aware: a discriminator prefix is mixed into the xxHash inp
 - `}` on line 5 and `}` on line 17 hash differently (1st vs 2nd occurrence of `}`).
 - `import { foo } from 'bar';` on line 3 and the same string on line 47 hash differently (1st vs 2nd occurrence).
 
+**Perfect hashing (collision resolution):** When computing hashes for a file, if a line's base hash collides with an already-assigned hash, the hash is incremented (using a retry counter in the discriminator: `C{occurrence}:R{retry}`) until a unique hash is found. This ensures every line in a file gets a unique anchor, even with the shorter 3-character hash space.
+
 The runtime always precomputes the full per-line hash array for a file via `computeLineHashes(content)`, then looks up by line number during validation and during `read` / `replace` response formatting. There is no per-line recomputation that could disagree with what the model saw in its last read.
 
-`HASH_LENGTH` and `HASH_ALPHABET` are constants at the top of `src/hashline/hash.ts`; bump the length to 5 if you ever need even more entropy.
+`HASH_LENGTH` and `HASH_ALPHABET` are constants at the top of `src/hashline/hash.ts`; bump the length to 4 if you need even more entropy without collision resolution.
 
 ### Bare-prefix detector
 
-With the `│` delimiter format, the bare-prefix detector regex `^\s*[A-Za-z0-9_\-]{4}│` is highly specific. It only matches lines starting with exactly 4 base64 chars and `│`. This eliminates false positives from common code patterns like `init:`, `data:`, `else:`, etc. The detector rejects edit lines matching this pattern with `[E_BARE_HASH_PREFIX]` to prevent the model from accidentally pasting hash anchors into file content.
+With the `│` delimiter format, the bare-prefix detector regex `^\s*[A-Za-z0-9_\-]{3}│` is highly specific. It only matches lines starting with exactly 3 base64 chars and `│`. This eliminates false positives from common code patterns like `init:`, `data:`, `else:`, etc. The detector rejects edit lines matching this pattern with `[E_BARE_HASH_PREFIX]` to prevent the model from accidentally pasting hash anchors into file content.
 
 ## Development
 

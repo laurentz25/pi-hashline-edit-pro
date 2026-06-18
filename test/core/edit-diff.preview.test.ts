@@ -6,15 +6,14 @@ describe("generateDiffString", () => {
 		const result = generateDiffString("alpha\nbeta\ngamma", "alpha\nBETA\ngamma");
 		const diff = result.diff;
 		// Marker + (optional hash) + "│" + content. The marker is 1 char; the
-		// hash (when present) is 4 chars, so the "│" sits in column 5 (0-indexed)
-		// hash (when present) is 4 chars, so the ":" sits in column 5 (0-indexed)
+		// hash (when present) is 3 chars, so the "│" sits in column 4 (0-indexed)
 		// for context and addition lines. Removed lines have no hash, so they are
-		// padded with 4 spaces of "ghost hash" so the "│" stays in the same column
+		// padded with 3 spaces of "ghost hash" so the "│" stays in the same column
 		// and removed-line content lines up with the surrounding context.
-		expect(diff).toMatch(/^ [A-Za-z0-9_\-]{4}│alpha$/m);
-		expect(diff).toMatch(/^\+[A-Za-z0-9_\-]{4}│BETA$/m);
-		expect(diff).toMatch(/^- {4}│beta$/m);
-		expect(diff).toMatch(/^ [A-Za-z0-9_\-]{4}│gamma$/m);
+		expect(diff).toMatch(/^ [A-Za-z0-9_\-]{3}│alpha$/m);
+		expect(diff).toMatch(/^\+[A-Za-z0-9_\-]{3}│BETA$/m);
+		expect(diff).toMatch(/^- {3}│beta$/m);
+		expect(diff).toMatch(/^ [A-Za-z0-9_\-]{3}│gamma$/m);
 	});
 
 	it("keeps the '│' column aligned across context, addition, and deletion lines", () => {
@@ -39,20 +38,20 @@ describe("generateDiffString", () => {
 		// eslint-disable-next-line no-console
 		console.log("\n--- generateDiffString output ---\n" + diff + "\n----------------------------------");
 
-		// Every line should be: 1-char marker + 4-char hash-or-padding + '│' + content.
-		// The "│" therefore lives at index 5 on every line.
+		// Every line should be: 1-char marker + 3-char hash-or-padding + '│' + content.
+		// The "│" therefore lives at index 4 on every line.
 		const lines = diff.split("\n");
 		const colonColumns = lines.map((line) => line.indexOf("│"));
-		expect(colonColumns).toEqual(lines.map(() => 5));
+		expect(colonColumns).toEqual(lines.map(() => 4));
 
 		// Spot-check the shape of each line type.
-		expect(lines).toContainEqual(expect.stringMatching(/^ [A-Za-z0-9_\-]{4}│function greet\(name\) \{$/));
-		expect(lines).toContainEqual(expect.stringMatching(/^- {4}│ {2}console\.log\('old'\)$/));
-		expect(lines).toContainEqual(expect.stringMatching(/^\+[A-Za-z0-9_\-]{4}│ {2}return `Hello, \$\{name\}`$/));
-		expect(lines).toContainEqual(expect.stringMatching(/^ [A-Za-z0-9_\-]{4}│\}$/));
-		expect(lines).toContainEqual(expect.stringMatching(/^- {4}│ {2}console\.log\('old'\)$/));
-		expect(lines).toContainEqual(expect.stringMatching(/^\+[A-Za-z0-9_\-]{4}│ {2}return `Hello, \$\{name\}`$/));
-		expect(lines).toContainEqual(expect.stringMatching(/^ [A-Za-z0-9_\-]{4}│\}$/));
+		expect(lines).toContainEqual(expect.stringMatching(/^ [A-Za-z0-9_\-]{3}│function greet\(name\) \{$/));
+		expect(lines).toContainEqual(expect.stringMatching(/^- {3}│ {2}console\.log\('old'\)$/));
+		expect(lines).toContainEqual(expect.stringMatching(/^\+[A-Za-z0-9_\-]{3}│ {2}return `Hello, \$\{name\}`$/));
+		expect(lines).toContainEqual(expect.stringMatching(/^ [A-Za-z0-9_\-]{3}│\}$/));
+		expect(lines).toContainEqual(expect.stringMatching(/^- {3}│ {2}console\.log\('old'\)$/));
+		expect(lines).toContainEqual(expect.stringMatching(/^\+[A-Za-z0-9_\-]{3}│ {2}return `Hello, \$\{name\}`$/));
+		expect(lines).toContainEqual(expect.stringMatching(/^ [A-Za-z0-9_\-]{3}│\}$/));
 	});
 });
 

@@ -7,10 +7,10 @@ import {
 } from "../../src/hashline";
 
 describe("computeLineHash", () => {
-	it("returns a 4-character string from the URL-safe base64 alphabet", () => {
+	it("returns a 3-character string from the URL-safe base64 alphabet", () => {
 		const hash = computeLineHash(1, "hello");
-		expect(hash).toHaveLength(4);
-		expect(hash).toMatch(/^[A-Za-z0-9_\-]{4}$/);
+		expect(hash).toHaveLength(3);
+		expect(hash).toMatch(/^[A-Za-z0-9_\-]{3}$/);
 	});
 
 	it("trims trailing whitespace without collapsing internal spaces", () => {
@@ -25,7 +25,7 @@ describe("computeLineHash", () => {
 	it("treats all lines uniformly via occurrence-based discrimination", () => {
 		const h1 = computeLineHash(1, "}");
 		const h10 = computeLineHash(10, "}");
-		expect(h1).toMatch(/^[A-Za-z0-9_\-]{4}$/);
+		expect(h1).toMatch(/^[A-Za-z0-9_\-]{3}$/);
 		// computeLineHash treats every input as 1st occurrence, so same content → same hash
 		expect(h1).toBe(h10);
 	});
@@ -68,9 +68,9 @@ describe("occurrence-aware hashline", () => {
 	it("returns one hash per line, indexed 0-based by line number", () => {
 		const hashes = computeLineHashes("alpha\nbeta\ngamma");
 		expect(hashes).toHaveLength(3);
-		expect(hashes[0]).toMatch(/^[A-Za-z0-9_\-]{4}$/);
-		expect(hashes[1]).toMatch(/^[A-Za-z0-9_\-]{4}$/);
-		expect(hashes[2]).toMatch(/^[A-Za-z0-9_\-]{4}$/);
+		expect(hashes[0]).toMatch(/^[A-Za-z0-9_\-]{3}$/);
+		expect(hashes[1]).toMatch(/^[A-Za-z0-9_\-]{3}$/);
+		expect(hashes[2]).toMatch(/^[A-Za-z0-9_\-]{3}$/);
 	});
 
 	it("assigns different hashes to identical content at different positions", () => {

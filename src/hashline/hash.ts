@@ -2,7 +2,7 @@
 import xxhash from "xxhash-wasm";
 
 
-export const HASH_LENGTH = 4;
+export const HASH_LENGTH = 3;
 
 export const HASH_PREFIX = "";
 
@@ -81,11 +81,19 @@ export function computeLineHashes(content: string): string[] {
 	const lines = content.split("\n");
 	const hashes = new Array<string>(lines.length);
 	const counts = new Map<string, number>();
+	const assigned = new Set<string>();
 	for (let i = 0; i < lines.length; i++) {
 		const canonical = canonicalizeLine(lines[i]!);
 		const occurrence = (counts.get(canonical) ?? 0) + 1;
 		counts.set(canonical, occurrence);
-		hashes[i] = hashToString(xxh32(`${DISCRIMINATOR(occurrence)}:${canonical}`));
+		let hash = hashToString(xxh32(`${DISCRIMINATOR(occurrence)}:${canonical}`));
+		let retry = 0;
+		while (assigned.has(hash)) {
+			retry++;
+			hash = hashToString(xxh32(`${DISCRIMINATOR(occurrence)}:${canonical}:R${retry}`));
+		}
+		assigned.add(hash);
+		hashes[i] = hash;
 	}
 	return hashes;
 }
