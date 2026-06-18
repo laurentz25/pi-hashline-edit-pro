@@ -76,16 +76,16 @@ export function formatMismatchError(
 	const notFound = mismatches.filter((m) => m.kind === "not_found");
 	const ambiguous = mismatches.filter((m) => m.kind === "ambiguous");
 
+	const refList = notFound.map((m) => `"${m.ref.hash}"`).join(", ");
 	if (notFound.length > 0) {
-		const refList = notFound.map((m) => `"${m.ref.hash}"`).join(", ");
 	out.push(
-		`[E_STALE_ANCHOR] ${notFound.length} stale anchor${notFound.length > 1 ? "s" : ""}: ${refList}. Call read() to get fresh anchors, then copy the 4-character HASH from each line into your next replace call.`
+		`[E_STALE_ANCHOR] ${notFound.length} stale anchor${notFound.length > 1 ? "s" : ""}: ${refList}. Call read() to get fresh anchors, then copy the 3-character HASH from each line into your next replace call.`
 	);
 	}
 	if (ambiguous.length > 0) {
 		if (out.length > 0) out.push("");
 	out.push(
-		`[E_AMBIGUOUS_ANCHOR] ${ambiguous.length} ambiguous anchor${ambiguous.length > 1 ? "s" : ""}. Call read() to get fresh anchors, then copy the 4-character HASH from each line into your next replace call.`
+		`[E_AMBIGUOUS_ANCHOR] ${ambiguous.length} ambiguous anchor${ambiguous.length > 1 ? "s" : ""}. Call read() to get fresh anchors, then copy the 3-character HASH from each line into your next replace call.`
 	);
 		for (const m of ambiguous) {
 			const sample = (m.candidates ?? []).slice(0, 5);
