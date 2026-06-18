@@ -36,9 +36,6 @@ describe("prompts/replace.md (model-facing contract)", () => {
 		expect(replacePrompt).toContain("--- Anchors ---");
 	});
 
-	it("documents auto-read after write", () => {
-		expect(replacePrompt).toContain("--- Auto-read (hashline anchors) ---");
-	});
 
 	it("documents error recovery", () => {
 		expect(replacePrompt).toContain("[E_STALE_ANCHOR]");

@@ -65,17 +65,14 @@ The design intent of this fork is identical to the original. If a change starts 
 
 ## Hash format — non-negotiable
 
-The hash length, alphabet, occurrence-aware discriminator, and perfect hashing are the divergence from the upstream fork, and they're the *point* of this fork. Treat them as a contract.
+The hash length, alphabet, and perfect hashing are the divergence from the upstream fork, and they're the *point* of this fork. Treat them as a contract.
 
 - `HASH_LENGTH` in `src/hashline/hash.ts` is the single source of truth for the hash body length (3 chars). `ANCHOR_LENGTH` (3) is the total wire-format length.
 - `HASH_ALPHABET` is the URL-safe base64 alphabet: `A-Za-z0-9-_`. 64 distinct chars, 6 bits per position. The `-` is escaped when interpolated into a regex character class (`HASH_ALPHABET_REGEX_SAFE`) so it doesn't form an unintended range with the preceding digit.
-- **Occurrence-aware discriminator.** Every hash mixes a discriminator into the xxHash input: `C${occurrence}:` is prepended, where `occurrence` is the running count of that canonical content earlier in the file. The first `import {...}` line and the second hash to different values. Symbol-only lines (lone `}`, etc.) are no longer treated differently — they use the same occurrence-based discrimination as content lines.
-  - The discriminator goes into the *input* to xxHash32, not into the seed.
-- **Perfect hashing (collision resolution).** When computing hashes for a file, if a line's base hash collides with an already-assigned hash, the hash is incremented (using a retry counter in the discriminator: `C${occurrence}:R${retry}`) until a unique hash is found. This ensures every line in a file gets a unique anchor, even with the shorter 3-character hash space.
+- **Perfect hashing (collision resolution).** When computing hashes for a file, if a line's base hash collides with an already-assigned hash, the hash is incremented (using a retry counter: `R{retry}`) until a unique hash is found. This ensures every line in a file gets a unique anchor, even with the shorter 3-character hash space. Two byte-identical lines (e.g. repeated `}` or repeated `import` statements) get different hashes automatically.
 - `computeLineHashes(content)` is the single source of truth for the hash array. It returns `string[]` indexed 0-based (so line N is at index N-1). Every other entry point (read preview, edit validation, mismatch retry block, diff preview, response builders) goes through this array. Never re-hash per line at a call site — that would produce a different answer than what the model saw in its last read.
-- `computeLineHash(idx, line)` is a backward-compat single-line helper that treats the input as a 1st-occurrence content line. It is used only by `replace-diff.ts` for diff-preview formatting where the surrounding file context is not available. Production validation never calls it.
+- `computeLineHash(idx, line)` is a backward-compat single-line helper. It is used only by `replace-diff.ts` for diff-preview formatting where the surrounding file context is not available. Production validation never calls it.
 - If you bump `HASH_LENGTH`, update every test that constructs a fixture hash (grep for `toHaveLength(3)`, `[A-Za-z0-9_\\-]{3}`, and the test bodies in `test/core/hashline.parse.test.ts` and `test/core/hashline.resolve.test.ts`). The test suite is the contract for the wire format.
-- If you change the discriminator scheme, you also need to update the test for "occurrence-aware hashline" in `test/core/hashline.hash.test.ts`, which exercises the per-occurrence uniqueness property.
 - If you change the alphabet (e.g. to drop the `-` for some reason), grep for the literal alphabet in regex contexts: any test that does `expect(hash).toMatch(/^[A-Za-z0-9_\\-]{3}$/)` needs to be updated.
 
 ### Trade-off: the bare-prefix detector
@@ -102,4 +99,4 @@ This fork is not a strict improvement for every workload. The original 2-char, c
 - You would rather see the model re-read a few times than pay the per-line token tax.
 - You need wire compatibility with another tool that expects the upstream hash values.
 
-If that matches your workflow, install [pi-hashline-edit](https://github.com/RimuruW/pi-hashline-edit) instead. The protocol shapes are identical; only the hash length and the occurrence-aware discriminator differ. The prompts and tests in this repo are written for the 3-char + occurrence-aware + perfect-hashing format.
+If that matches your workflow, install [pi-hashline-edit](https://github.com/RimuruW/pi-hashline-edit) instead. The protocol shapes are identical; only the hash length and perfect hashing differ. The prompts and tests in this repo are written for the 3-char + perfect-hashing format.

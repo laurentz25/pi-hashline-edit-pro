@@ -22,19 +22,13 @@ describe("computeLineHash", () => {
 		expect(computeLineHash(1, "hello\r")).toBe(computeLineHash(1, "hello"));
 	});
 
-	it("treats all lines uniformly via occurrence-based discrimination", () => {
+	it("same content produces same hash", () => {
 		const h1 = computeLineHash(1, "}");
 		const h10 = computeLineHash(10, "}");
 		expect(h1).toMatch(/^[A-Za-z0-9_\-]{3}$/);
-		// computeLineHash treats every input as 1st occurrence, so same content → same hash
 		expect(h1).toBe(h10);
 	});
 
-	it("does NOT mix line index for lines with alphanumeric content", () => {
-		expect(computeLineHash(1, "function foo()")).toBe(
-			computeLineHash(99, "function foo()"),
-		);
-	});
 });
 
 describe("strict hashline contract", () => {
@@ -64,7 +58,7 @@ describe("strict hashline contract", () => {
 	});
 });
 
-describe("occurrence-aware hashline", () => {
+describe("perfect hashing", () => {
 	it("returns one hash per line, indexed 0-based by line number", () => {
 		const hashes = computeLineHashes("alpha\nbeta\ngamma");
 		expect(hashes).toHaveLength(3);

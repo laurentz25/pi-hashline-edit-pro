@@ -71,7 +71,6 @@ function xxh32(input: string, seed = 0): number {
 	return getHasher().h32(input, seed) >>> 0;
 }
 
-const DISCRIMINATOR = (occurrence: number): string => `C${occurrence}`;
 
 function canonicalizeLine(line: string): string {
 	return line.replace(/\r/g, "").trimEnd();
@@ -80,17 +79,14 @@ function canonicalizeLine(line: string): string {
 export function computeLineHashes(content: string): string[] {
 	const lines = content.split("\n");
 	const hashes = new Array<string>(lines.length);
-	const counts = new Map<string, number>();
 	const assigned = new Set<string>();
 	for (let i = 0; i < lines.length; i++) {
 		const canonical = canonicalizeLine(lines[i]!);
-		const occurrence = (counts.get(canonical) ?? 0) + 1;
-		counts.set(canonical, occurrence);
-		let hash = hashToString(xxh32(`${DISCRIMINATOR(occurrence)}:${canonical}`));
+		let hash = hashToString(xxh32(canonical));
 		let retry = 0;
 		while (assigned.has(hash)) {
 			retry++;
-			hash = hashToString(xxh32(`${DISCRIMINATOR(occurrence)}:${canonical}:R${retry}`));
+			hash = hashToString(xxh32(`${canonical}:R${retry}`));
 		}
 		assigned.add(hash);
 		hashes[i] = hash;
@@ -100,7 +96,7 @@ export function computeLineHashes(content: string): string[] {
 
 export function computeLineHash(idx: number, line: string): string {
 	const canonical = canonicalizeLine(line);
-	return hashToString(xxh32(`${DISCRIMINATOR(1)}:${canonical}`));
+	return hashToString(xxh32(canonical));
 }
 
 export const HASH_FORMAT = {

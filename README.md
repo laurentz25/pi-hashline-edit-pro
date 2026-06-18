@@ -2,7 +2,7 @@
 
 A [pi-coding-agent](https://github.com/badlogic/pi-mono/tree/main/packages/coding-agent) extension that replaces the built-in `read` and `edit` tools with a hash-anchored line-replacing workflow. Strict semantics, no silent relocation, no autocorrection, no fuzzy fallback. 3-character content hashes over a 64-character URL-safe base64 alphabet give 18 bits of entropy per anchor, with perfect hashing (collision resolution) ensuring every line gets a unique anchor.
 
-Fork of [pi-hashline-edit](https://github.com/RimuruW/pi-hashline-edit) by RimuruW. The strict-semantics policy is unchanged. This fork extends the upstream design in three ways: a 3-character hash length with perfect hashing, an occurrence-aware discriminator that makes identical content at different positions hash to different values, and collision resolution that ensures unique anchors for every line in a file.
+Fork of [pi-hashline-edit](https://github.com/RimuruW/pi-hashline-edit) by RimuruW. The strict-semantics policy is unchanged. This fork extends the upstream design in two ways: a 3-character hash length with a 64-character alphabet for more entropy, and perfect hashing (collision resolution) that ensures every line in a file gets a unique anchor.
 
 Every line returned by `read` carries a short content hash. Edits reference those hashes instead of raw text, so the tool can detect stale context and reject outdated changes before they reach the file.
 
@@ -10,11 +10,10 @@ Every line returned by `read` carries a short content hash. Edits reference thos
 
 The original uses 2-character hashes of a 16-character alphabet, with the hash being a pure function of line content. That's 8 bits / 256 buckets, and two byte-identical lines (e.g. repeated `import` statements, repeated `}`) always share a hash because the hash is `xxHash32(content)`.
 
-This fork makes three changes that compound:
+This fork makes two changes that compound:
 
-1. **Bump hash length to 3 characters** of the 64-char URL-safe base64 alphabet. That gives 18 bits / 262,144 buckets. With perfect hashing (collision resolution), every line in a file gets a unique anchor.
-2. **Make the hash occurrence-aware.** The hash for line N is `xxHash32("C{occurrence}:{content}")` where `occurrence` is the running count of that content string earlier in the file. Two `import {...}` statements at different positions now hash to different values, so the model can target a specific occurrence without resorting to `offset` + a small `limit` window. All lines — including symbol-only lines like `}` — use the same occurrence-based discrimination.
-3. **Perfect hashing (collision resolution).** When computing hashes for a file, if a line's base hash collides with an already-assigned hash, the hash is incremented (using a retry counter in the discriminator: `C{occurrence}:R{retry}`) until a unique hash is found. This ensures every line in a file gets a unique anchor, even with the shorter 3-character hash space.
+1. **Bump hash length to 3 characters** of the 64-char URL-safe base64 alphabet. That gives 18 bits / 262,144 buckets, up from 8 bits / 256 in the upstream.
+2. **Perfect hashing (collision resolution).** When computing hashes for a file, if a line's base hash collides with an already-assigned hash, the hash is incremented (using a retry counter: `R{retry}`) until a unique hash is found. This ensures every line in a file gets a unique anchor, even with the shorter 3-character hash space. Two byte-identical lines (e.g. repeated `import` statements, repeated `}`) get different hashes automatically.
 
 ## Installation
 
@@ -117,12 +116,7 @@ Hashes are computed with [xxhash-wasm](https://github.com/jungomi/xxhash-wasm) (
 
 The alphabet is sized for an LLM consumer. The model tokenizes, it doesn't squint at pixel glyphs, so the human-readability heuristics used by smaller hand-curated alphabets (no G/L/I/O because they look like digits, no vowels so the hash doesn't accidentally spell a word, no hex digits so it can't be confused with `0xFF`) don't apply. The full 64 chars give maximum entropy per character, with case and digits included.
 
-Hashes are occurrence-aware: a discriminator prefix is mixed into the xxHash input before the line content. All lines (including symbol-only lines like `}`) use `C{occurrence}` as the discriminator, where `occurrence` is the running count of that canonical content earlier in the file. This way:
-
-- `}` on line 5 and `}` on line 17 hash differently (1st vs 2nd occurrence of `}`).
-- `import { foo } from 'bar';` on line 3 and the same string on line 47 hash differently (1st vs 2nd occurrence).
-
-**Perfect hashing (collision resolution):** When computing hashes for a file, if a line's base hash collides with an already-assigned hash, the hash is incremented (using a retry counter in the discriminator: `C{occurrence}:R{retry}`) until a unique hash is found. This ensures every line in a file gets a unique anchor, even with the shorter 3-character hash space.
+**Perfect hashing (collision resolution):** When computing hashes for a file, if a line's base hash collides with an already-assigned hash, the hash is incremented (using a retry counter: `R{retry}`) until a unique hash is found. This ensures every line in a file gets a unique anchor, even with the shorter 3-character hash space. Two byte-identical lines (e.g. repeated `}` or repeated `import` statements) get different hashes automatically.
 
 The runtime always precomputes the full per-line hash array for a file via `computeLineHashes(content)`, then looks up by line number during validation and during `read` / `replace` response formatting. There is no per-line recomputation that could disagree with what the model saw in its last read.
 
