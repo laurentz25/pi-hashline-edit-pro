@@ -16,8 +16,8 @@ describe("extension registration", () => {
 
     register(pi);
 
-    expect(toolNames.sort()).toEqual(["read", "replace"]);
-		// tool_result is registered for auto-read-after-write behavior only when enabled
-		expect(eventNames).toEqual(["session_start"]);
+		expect(toolNames.sort()).toEqual(["read", "replace", "toggle-auto-read"]);
+		// tool_result is always registered (handler checks flag internally)
+		expect(eventNames).toEqual(["session_start", "tool_result"]);
 });
 });

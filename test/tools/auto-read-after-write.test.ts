@@ -78,10 +78,33 @@ describe("auto-read after write", () => {
     }
   });
 
-  it("does not register handler by default (disabled)", async () => {
-    const { getToolResultHandler } = createTestPi();
-    const handler = getToolResultHandler();
-    expect(handler).toBeUndefined();
+  it("handler returns undefined by default (disabled)", async () => {
+    const tempRoot = await getWritableTempRoot();
+    const cwd = await mkdir(join(tempRoot, "auto-read-test-disabled-"), { recursive: true });
+    await writeFile(join(cwd, "test.txt"), "hello\nworld\n", "utf-8");
+    try {
+      const { getToolResultHandler } = createTestPi();
+      const handler = getToolResultHandler();
+      // Handler is always registered now, but returns undefined when disabled
+      expect(handler).toBeDefined();
+
+      const writeResult = await handler!(
+        {
+          toolName: "write",
+          toolCallId: "write-1",
+          input: { path: "test.txt", content: "hello\nworld\n" },
+          content: [{ type: "text", text: "Successfully wrote 12 bytes" }],
+          details: undefined,
+          isError: false,
+        },
+        { cwd },
+      );
+
+      // Should return undefined because auto-read is disabled
+      expect(writeResult).toBeUndefined();
+    } finally {
+      await rm(cwd, { recursive: true, force: true });
+    }
   });
 
   it("registers handler when PI_HASHLINE_AUTO_READ=1", async () => {
