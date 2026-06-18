@@ -61,8 +61,9 @@ Rules:
 
 On success, the response contains an `--- Anchors ---` block with fresh HASH anchors for the changed region. Use those for nearby follow-up replaces instead of re-reading.
 
-Auto-read after write:
-- After a successful `write`, the result includes a `--- Auto-read (hashline anchors) ---` block.
+Auto-read after write (disabled by default):
+- Set `PI_HASHLINE_AUTO_READ=1` to enable auto-read after write.
+- When enabled, after a successful `write`, the result includes a `--- Auto-read (hashline anchors) ---` block.
 - Use those anchors directly for `replace` calls without a separate `read`.
 
 Error recovery:

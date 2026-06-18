@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, beforeEach, afterEach } from "vitest";
 import { mkdir, rm, writeFile } from "fs/promises";
 import { join } from "path";
 import register from "../../index";
@@ -32,7 +32,7 @@ type ToolResultHandler = (
   | void
 >;
 
-function createTestPi() {
+function createTestPi(options?: { enableAutoRead?: boolean }) {
   let toolResultHandler: ToolResultHandler | undefined;
   const pi = {
     registerTool() {},
@@ -43,7 +43,22 @@ function createTestPi() {
     },
   } as any;
 
+  // Set env var before registering if auto-read should be enabled
+  const prevValue = process.env.PI_HASHLINE_AUTO_READ;
+  if (options?.enableAutoRead) {
+    process.env.PI_HASHLINE_AUTO_READ = "1";
+  }
+
   register(pi);
+
+  // Restore previous env value
+  if (options?.enableAutoRead) {
+    if (prevValue === undefined) {
+      delete process.env.PI_HASHLINE_AUTO_READ;
+    } else {
+      process.env.PI_HASHLINE_AUTO_READ = prevValue;
+    }
+  }
 
   return {
     pi,
@@ -52,12 +67,35 @@ function createTestPi() {
 }
 
 describe("auto-read after write", () => {
-  it("appends hashline read output after successful write", async () => {
+  const savedEnv = process.env.PI_HASHLINE_AUTO_READ;
+
+  afterEach(() => {
+    // Restore env after each test
+    if (savedEnv === undefined) {
+      delete process.env.PI_HASHLINE_AUTO_READ;
+    } else {
+      process.env.PI_HASHLINE_AUTO_READ = savedEnv;
+    }
+  });
+
+  it("does not register handler by default (disabled)", async () => {
+    const { getToolResultHandler } = createTestPi();
+    const handler = getToolResultHandler();
+    expect(handler).toBeUndefined();
+  });
+
+  it("registers handler when PI_HASHLINE_AUTO_READ=1", async () => {
+    const { getToolResultHandler } = createTestPi({ enableAutoRead: true });
+    const handler = getToolResultHandler();
+    expect(handler).toBeDefined();
+  });
+
+  it("appends hashline read output after successful write when enabled", async () => {
     const tempRoot = await getWritableTempRoot();
     const cwd = await mkdir(join(tempRoot, "auto-read-test-"), { recursive: true });
     await writeFile(join(cwd, "test.txt"), "hello\nworld\n", "utf-8");
     try {
-      const { getToolResultHandler } = createTestPi();
+      const { getToolResultHandler } = createTestPi({ enableAutoRead: true });
       const handler = getToolResultHandler();
       expect(handler).toBeDefined();
 
@@ -87,8 +125,8 @@ describe("auto-read after write", () => {
       // Second element contains the auto-read with hashline anchors
       const autoReadText = writeResult!.content![1]!.text!;
       expect(autoReadText).toContain("--- Auto-read (hashline anchors) ---");
-	      expect(autoReadText).toMatch(/[A-Za-z0-9_-]{3}│hello/);
-	      expect(autoReadText).toMatch(/[A-Za-z0-9_-]{3}│world/);
+      expect(autoReadText).toMatch(/[A-Za-z0-9_-]{3}│hello/);
+      expect(autoReadText).toMatch(/[A-Za-z0-9_-]{3}│world/);
     } finally {
       await rm(cwd, { recursive: true, force: true });
     }
@@ -99,7 +137,7 @@ describe("auto-read after write", () => {
     const cwd = await mkdir(join(tempRoot, "auto-read-test-fail-"), { recursive: true });
 
     try {
-      const { getToolResultHandler } = createTestPi();
+      const { getToolResultHandler } = createTestPi({ enableAutoRead: true });
       const handler = getToolResultHandler();
 
       // Simulate a failed write
@@ -127,7 +165,7 @@ describe("auto-read after write", () => {
     const cwd = await mkdir(join(tempRoot, "auto-read-test-nonwrite-"), { recursive: true });
 
     try {
-      const { getToolResultHandler } = createTestPi();
+      const { getToolResultHandler } = createTestPi({ enableAutoRead: true });
       const handler = getToolResultHandler();
 
       // Simulate a read tool result
@@ -136,7 +174,7 @@ describe("auto-read after write", () => {
           toolName: "read",
           toolCallId: "read-1",
           input: { path: "test.txt" },
-	          content: [{ type: "text", text: "abc1│hello" }],
+          content: [{ type: "text", text: "abc1│hello" }],
           details: undefined,
           isError: false,
         },
@@ -155,7 +193,7 @@ describe("auto-read after write", () => {
     const cwd = await mkdir(join(tempRoot, "auto-read-test-nopath-"), { recursive: true });
 
     try {
-      const { getToolResultHandler } = createTestPi();
+      const { getToolResultHandler } = createTestPi({ enableAutoRead: true });
       const handler = getToolResultHandler();
 
       // Simulate write with missing path
@@ -183,7 +221,7 @@ describe("auto-read after write", () => {
     const cwd = await mkdir(join(tempRoot, "auto-read-test-autoreadfail-"), { recursive: true });
 
     try {
-      const { getToolResultHandler } = createTestPi();
+      const { getToolResultHandler } = createTestPi({ enableAutoRead: true });
       const handler = getToolResultHandler();
 
       // Simulate write to a path that doesn't exist yet (auto-read will fail)
@@ -212,7 +250,7 @@ describe("auto-read after write", () => {
     const cwd = await mkdir(join(tempRoot, "auto-read-test-format-"), { recursive: true });
 
     try {
-      const { getToolResultHandler } = createTestPi();
+      const { getToolResultHandler } = createTestPi({ enableAutoRead: true });
       const handler = getToolResultHandler();
 
       const content = "function hello() {\n  return 'world';\n}\n";
@@ -232,9 +270,9 @@ describe("auto-read after write", () => {
       expect(writeResult).toBeDefined();
       const autoReadText = writeResult!.content![1]!.text!;
 
-      // Verify hashline format: each line should be HASH:content
+      // Verify hashline format: each line should be HASH│content
       const lines = autoReadText.split("\n");
-	      const hashlinePattern = /^[A-Za-z0-9_-]{3}│/;
+      const hashlinePattern = /^[A-Za-z0-9_-]{3}│/;
 
       // Find lines after the header
       const headerIndex = lines.findIndex((l) =>
@@ -261,7 +299,7 @@ describe("auto-read after write", () => {
     const cwd = await mkdir(join(tempRoot, "auto-read-test-large-"), { recursive: true });
 
     try {
-      const { getToolResultHandler } = createTestPi();
+      const { getToolResultHandler } = createTestPi({ enableAutoRead: true });
       const handler = getToolResultHandler();
 
       // Create a large content (2500 lines to exceed DEFAULT_MAX_LINES=2000)
