@@ -36,6 +36,7 @@ function createTestPi(options?: { enableAutoRead?: boolean }) {
   let toolResultHandler: ToolResultHandler | undefined;
   const pi = {
     registerTool() {},
+    registerCommand() {},
     on(event: string, handler: unknown) {
       if (event === "tool_result") {
         toolResultHandler = handler as ToolResultHandler;

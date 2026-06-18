@@ -6,7 +6,6 @@ import { registerReplaceTool } from "./src/replace";
 import { registerReadTool } from "./src/read";
 import { normalizeToLF } from "./src/replace-diff";
 import { getVisibleLines } from "./src/utils";
-import { Type } from "typebox";
 
 export default function (pi: ExtensionAPI): void {
   registerReadTool(pi);
@@ -19,34 +18,17 @@ export default function (pi: ExtensionAPI): void {
   });
 
   // Auto-read after write state - controlled by PI_HASHLINE_AUTO_READ env var (default: disabled).
-  // Can be toggled at runtime via the toggle-auto-read tool.
+  // Can be toggled at runtime via /toggle-auto-read command.
   const autoReadValue = process.env.PI_HASHLINE_AUTO_READ;
   let autoReadEnabled = autoReadValue === "1" || autoReadValue === "true";
 
-  // Register toggle-auto-read tool
-  pi.registerTool({
-    name: "toggle-auto-read",
-    label: "Toggle Auto-Read",
-    description: "Toggle automatic hashline anchors after write operations. When enabled, successful writes include hashline anchors for the written file.",
-    parameters: Type.Object({
-      enabled: Type.Optional(Type.Boolean({
-        description: "Explicitly set the state (true to enable, false to disable). If omitted, toggles the current state.",
-      })),
-    }),
-    async execute(_toolCallId, params) {
-      if (typeof params.enabled === "boolean") {
-        autoReadEnabled = params.enabled;
-      } else {
-        autoReadEnabled = !autoReadEnabled;
-      }
-
+  // Register toggle-auto-read command
+  pi.registerCommand("toggle-auto-read", {
+    description: "Toggle automatic hashline anchors after write operations",
+    handler: async (_args, ctx) => {
+      autoReadEnabled = !autoReadEnabled;
       const state = autoReadEnabled ? "enabled" : "disabled";
-      return {
-        content: [{
-          type: "text",
-          text: `Auto-read after write is now ${state}.\n\nWhen enabled, successful write operations automatically include hashline anchors for the written file, so you can use those anchors directly in subsequent replace calls without a separate read.`,
-        }],
-      };
+      ctx.ui.notify(`Auto-read after write: ${state}`, "info");
     },
   });
 

@@ -30,6 +30,7 @@ export function makeFakePiRegistry() {
       registerTool(tool: any) {
         tools.set(tool.name, tool);
       },
+      registerCommand() {},
       on() {},
     } as any,
     getTool(name: string) {
