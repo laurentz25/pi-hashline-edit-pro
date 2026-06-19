@@ -32,6 +32,7 @@ import {
 	buildChangedResponse,
 	buildNoopResponse,
 	type ReplaceMeta,
+	type ReplaceMetrics,
 } from "./replace-response";
 import {
 	buildAppliedChangedResultText,
@@ -82,15 +83,6 @@ export type ReplaceRequestParams = {
 	edits?: HashlineToolEdit[];
 };
 
-type ReplaceMetrics = {
-	edits_attempted: number;
-	edits_noop: number;
-	warnings: number;
-	classification: "applied" | "noop";
-	changed_lines?: { first: number; last: number };
-	added_lines?: number;
-	removed_lines?: number;
-};
 
 export type HashlineReplaceToolDetails = {
 	diff: string;
