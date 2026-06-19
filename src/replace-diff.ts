@@ -85,16 +85,19 @@ export function generateDiffString(
       let linesToShow = raw;
       let skipStart = 0;
       let skipEnd = 0;
+      let skipMiddle = 0; // lines skipped between head and tail context
 
       if (!lastWasChange) {
         // Before a change: show last contextLines only.
         skipStart = Math.max(0, raw.length - contextLines);
         linesToShow = raw.slice(skipStart);
+      } else if (nextPartIsChange && raw.length > contextLines * 2) {
+        // Between two changes: show first contextLines + last contextLines with ellipsis in between.
+        const tail = raw.slice(-contextLines);
+        linesToShow = [...raw.slice(0, contextLines), "__ELLIPSIS__", ...tail];
+        skipMiddle = raw.length - contextLines * 2;
       } else if (linesToShow.length > contextLines) {
-        // After a change: show first contextLines only.
-        // This also handles the case where we're between two changes
-        // (lastWasChange=true, nextPartIsChange=true) — without this,
-        // all lines between the changes would be shown untruncated.
+        // After a change with no next change nearby: show first contextLines only.
         skipEnd = linesToShow.length - contextLines;
         linesToShow = linesToShow.slice(0, contextLines);
       }
@@ -105,16 +108,17 @@ export function generateDiffString(
         newLineNum += skipStart;
       }
       for (const line of linesToShow) {
+        if (line === "__ELLIPSIS__") {
+          output.push(` ...`);
+          oldLineNum += skipMiddle;
+          newLineNum += skipMiddle;
+          continue;
+        }
         const hash = effectiveNewHashes[newLineNum - 1];
         output.push(formatDiffPreviewLine(" ", line, hash));
 
         oldLineNum++;
         newLineNum++;
-      }
-      if (skipEnd > 0) {
-        output.push(` ...`);
-        oldLineNum += skipEnd;
-        newLineNum += skipEnd;
       }
     } else {
       oldLineNum += raw.length;

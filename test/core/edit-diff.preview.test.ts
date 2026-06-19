@@ -66,9 +66,20 @@ describe("generateDiffString", () => {
 		// Should NOT contain all 1000 lines between the changes
 		expect(diffLines.length).toBeLessThan(50);
 
-		// Should have ellipsis markers for the skipped context
+		// Should have exactly one ellipsis marker
 		const ellipsisCount = diffLines.filter((l: string) => l.trim() === "...").length;
-		expect(ellipsisCount).toBeGreaterThanOrEqual(1);
+		expect(ellipsisCount).toBe(1);
+
+		// Ellipsis should be between context lines, not right next to a change
+		const ellipsisIdx = diffLines.findIndex((l: string) => l.trim() === "...");
+		expect(ellipsisIdx).toBeGreaterThan(0);
+		expect(ellipsisIdx).toBeLessThan(diffLines.length - 1);
+
+		// Context lines should appear on both sides of the ellipsis
+		// Lines before ellipsis: change + context (line 1, line 2, line 3, line 4)
+		expect(diffLines[ellipsisIdx - 1]).toContain("line 4");
+		// Lines after ellipsis: context + change (line 997, line 998, line 999, line 1000)
+		expect(diffLines[ellipsisIdx + 1]).toContain("line 997");
 
 		// Should still contain the actual changes
 		expect(diff).toContain("BEFORE_CHANGED");
