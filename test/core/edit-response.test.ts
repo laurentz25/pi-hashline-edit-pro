@@ -1,8 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
 	buildNoopResponse,
-	buildFullResponse,
-	buildRangesResponse,
 	buildChangedResponse,
 	type NoopResponseInput,
 	type SuccessResponseInput,
@@ -16,13 +14,10 @@ const baseReplaceMeta: ReplaceMeta = {
 };
 
 describe("buildNoopResponse", () => {
-	it("returns noop classification in text for changed mode", () => {
+	it("returns noop classification in text", () => {
 		const input: NoopResponseInput = {
 			path: "src/main.ts",
-			returnMode: "changed",
-			requestedReturnRanges: undefined,
 			noopEdits: undefined,
-			originalNormalized: "line1\nline2\n",
 			snapshotId: "v1|test|123|456",
 			editMeta: baseReplaceMeta,
 			warnings: undefined,
@@ -33,28 +28,9 @@ describe("buildNoopResponse", () => {
 		expect(result.details.classification).toBe("noop");
 	});
 
-	it("returns noop with full content preview for full mode", () => {
-		const input: NoopResponseInput = {
-			path: "src/main.ts",
-			returnMode: "full",
-			requestedReturnRanges: undefined,
-			noopEdits: undefined,
-			originalNormalized: "line1\nline2\n",
-			snapshotId: "v1|test|123|456",
-			editMeta: baseReplaceMeta,
-			warnings: undefined,
-		};
-		const result = buildNoopResponse(input);
-		expect(result.content[0].text).toContain("No changes made");
-		expect(result.details.fullContent).toBeDefined();
-		expect(result.details.fullContent.text).toContain("line1");
-	});
-
 	it("includes noop edit details when present", () => {
 		const input: NoopResponseInput = {
 			path: "src/main.ts",
-			returnMode: "changed",
-			requestedReturnRanges: undefined,
 			noopEdits: [
 				{
 					editIndex: 0,
@@ -62,7 +38,6 @@ describe("buildNoopResponse", () => {
 					currentContent: "line1",
 				},
 			],
-			originalNormalized: "line1\nline2\n",
 			snapshotId: "v1|test|123|456",
 			editMeta: { ...baseReplaceMeta, noopEditsCount: 1 },
 			warnings: undefined,
@@ -75,10 +50,7 @@ describe("buildNoopResponse", () => {
 	it("includes warnings in details when present", () => {
 		const input: NoopResponseInput = {
 			path: "src/main.ts",
-			returnMode: "changed",
-			requestedReturnRanges: undefined,
 			noopEdits: undefined,
-			originalNormalized: "line1\n",
 			snapshotId: "v1|test|123|456",
 			editMeta: baseReplaceMeta,
 			warnings: ["Test warning"],
@@ -91,10 +63,7 @@ describe("buildNoopResponse", () => {
 	it("includes metrics in details", () => {
 		const input: NoopResponseInput = {
 			path: "src/main.ts",
-			returnMode: "changed",
-			requestedReturnRanges: undefined,
 			noopEdits: undefined,
-			originalNormalized: "line1\n",
 			snapshotId: "v1|test|123|456",
 			editMeta: baseReplaceMeta,
 			warnings: undefined,
@@ -110,8 +79,6 @@ describe("buildChangedResponse", () => {
 	it("returns anchors block in text", () => {
 		const input: SuccessResponseInput = {
 			path: "src/main.ts",
-			returnMode: "changed",
-			requestedReturnRanges: undefined,
 			originalNormalized: "line1\nline2\nline3\n",
 			result: "line1\nmodified\nline3\n",
 			warnings: undefined,
@@ -130,8 +97,6 @@ describe("buildChangedResponse", () => {
 	it("returns diff in details but not in text", () => {
 		const input: SuccessResponseInput = {
 			path: "src/main.ts",
-			returnMode: "changed",
-			requestedReturnRanges: undefined,
 			originalNormalized: "line1\nline2\n",
 			result: "line1\nmodified\n",
 			warnings: undefined,
@@ -152,8 +117,6 @@ describe("buildChangedResponse", () => {
 	it("includes metrics with line counts", () => {
 		const input: SuccessResponseInput = {
 			path: "src/main.ts",
-			returnMode: "changed",
-			requestedReturnRanges: undefined,
 			originalNormalized: "line1\nline2\nline3\n",
 			result: "line1\nmodified\nline3\n",
 			warnings: undefined,
@@ -166,7 +129,6 @@ describe("buildChangedResponse", () => {
 		};
 		const result = buildChangedResponse(input);
 		expect(result.details.metrics.classification).toBe("applied");
-		expect(result.details.metrics.return_mode).toBe("changed");
 		expect(result.details.metrics.added_lines).toBeGreaterThanOrEqual(1);
 	});
 
@@ -177,8 +139,6 @@ describe("buildChangedResponse", () => {
 		const modified = [...lines.slice(0, 50), "changed", ...lines.slice(51)].join("\n") + "\n";
 		const input: SuccessResponseInput = {
 			path: "src/main.ts",
-			returnMode: "changed",
-			requestedReturnRanges: undefined,
 			originalNormalized: original,
 			result: modified,
 			warnings: undefined,
@@ -193,129 +153,5 @@ describe("buildChangedResponse", () => {
 		// With 2 lines of context, the range would be 49-53 (5 lines)
 		// which is within limits, so anchors should be present
 		expect(result.content[0].text).toContain("--- Anchors ---");
-	});
-});
-
-describe("buildFullResponse", () => {
-	it("returns full content in details", () => {
-		const input: SuccessResponseInput = {
-			path: "src/main.ts",
-			returnMode: "full",
-			requestedReturnRanges: undefined,
-			originalNormalized: "line1\nline2\n",
-			result: "line1\nmodified\n",
-			warnings: undefined,
-			snapshotId: "v1|test|123|456",
-			editMeta: {
-				...baseReplaceMeta,
-				firstChangedLine: 2,
-				lastChangedLine: 2,
-			},
-		};
-		const result = buildFullResponse(input);
-		expect(result.details.fullContent).toBeDefined();
-		expect(result.details.fullContent.text).toContain("modified");
-		expect(result.content[0].text).toContain("Updated");
-	});
-
-	it("includes structure outline when available", () => {
-		const input: SuccessResponseInput = {
-			path: "src/main.ts",
-			returnMode: "full",
-			requestedReturnRanges: undefined,
-			originalNormalized: "function foo() {\n  return 1;\n}\n",
-			result: "function bar() {\n  return 2;\n}\n",
-			warnings: undefined,
-			snapshotId: "v1|test|123|456",
-			editMeta: {
-				...baseReplaceMeta,
-				firstChangedLine: 1,
-				lastChangedLine: 3,
-			},
-		};
-		const result = buildFullResponse(input);
-		expect(result.details.structureOutline).toBeDefined();
-	});
-
-	it("includes metrics", () => {
-		const input: SuccessResponseInput = {
-			path: "src/main.ts",
-			returnMode: "full",
-			requestedReturnRanges: undefined,
-			originalNormalized: "line1\n",
-			result: "modified\n",
-			warnings: undefined,
-			snapshotId: "v1|test|123|456",
-			editMeta: {
-				...baseReplaceMeta,
-				firstChangedLine: 1,
-				lastChangedLine: 1,
-			},
-		};
-		const result = buildFullResponse(input);
-		expect(result.details.metrics.classification).toBe("applied");
-		expect(result.details.metrics.return_mode).toBe("full");
-	});
-});
-
-describe("buildRangesResponse", () => {
-	it("returns requested ranges in details", () => {
-		const input: SuccessResponseInput = {
-			path: "src/main.ts",
-			returnMode: "ranges",
-			requestedReturnRanges: [{ start: 1, end: 2 }],
-			originalNormalized: "line1\nline2\nline3\n",
-			result: "modified\nline2\nline3\n",
-			warnings: undefined,
-			snapshotId: "v1|test|123|456",
-			editMeta: {
-				...baseReplaceMeta,
-				firstChangedLine: 1,
-				lastChangedLine: 1,
-			},
-		};
-		const result = buildRangesResponse(input);
-		expect(result.details.returnedRanges).toBeDefined();
-		expect(result.details.returnedRanges.length).toBe(1);
-		expect(result.content[0].text).toContain("Updated");
-	});
-
-	it("includes structure outline for ranges", () => {
-		const input: SuccessResponseInput = {
-			path: "src/main.ts",
-			returnMode: "ranges",
-			requestedReturnRanges: [{ start: 1, end: 3 }],
-			originalNormalized: "function foo() {\n  return 1;\n}\n",
-			result: "function bar() {\n  return 2;\n}\n",
-			warnings: undefined,
-			snapshotId: "v1|test|123|456",
-			editMeta: {
-				...baseReplaceMeta,
-				firstChangedLine: 1,
-				lastChangedLine: 3,
-			},
-		};
-		const result = buildRangesResponse(input);
-		expect(result.details.structureOutline).toBeDefined();
-	});
-
-	it("includes metrics", () => {
-		const input: SuccessResponseInput = {
-			path: "src/main.ts",
-			returnMode: "ranges",
-			requestedReturnRanges: [{ start: 1, end: 1 }],
-			originalNormalized: "line1\n",
-			result: "modified\n",
-			warnings: undefined,
-			snapshotId: "v1|test|123|456",
-			editMeta: {
-				...baseReplaceMeta,
-				firstChangedLine: 1,
-				lastChangedLine: 1,
-			},
-		};
-		const result = buildRangesResponse(input);
-		expect(result.details.metrics.classification).toBe("applied");
-		expect(result.details.metrics.return_mode).toBe("ranges");
 	});
 });

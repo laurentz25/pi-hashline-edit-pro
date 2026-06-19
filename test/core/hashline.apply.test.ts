@@ -25,7 +25,7 @@ describe("applyHashlineEdits — basic operations", () => {
 	it("replaces a single line", () => {
 		const content = "aaa\nbbb\nccc";
 		const edits: HashlineEdit[] = [
-			{ start: makeTag(content, 2), end: makeTag(content, 2), lines: ["BBB"] },
+			{ old_range: [makeTag(content, 2), makeTag(content, 2)], new_lines: ["BBB"] },
 		];
 		const result = applyHashlineEdits(content, edits);
 		expect(result.content).toBe("aaa\nBBB\nccc");
@@ -35,7 +35,7 @@ describe("applyHashlineEdits — basic operations", () => {
 	it("replaces a single line with multiple lines", () => {
 		const content = "aaa\nbbb\nccc";
 		const edits: HashlineEdit[] = [
-			{ start: makeTag(content, 2), end: makeTag(content, 2), lines: ["BBB", "B2"] },
+			{ old_range: [makeTag(content, 2), makeTag(content, 2)], new_lines: ["BBB", "B2"] },
 		];
 		const result = applyHashlineEdits(content, edits);
 		expect(result.content).toBe("aaa\nBBB\nB2\nccc");
@@ -44,7 +44,7 @@ describe("applyHashlineEdits — basic operations", () => {
 	it("deletes a single line (empty lines array)", () => {
 		const content = "aaa\nbbb\nccc";
 		const edits: HashlineEdit[] = [
-			{ start: makeTag(content, 2), end: makeTag(content, 2), lines: [] },
+			{ old_range: [makeTag(content, 2), makeTag(content, 2)], new_lines: [] },
 		];
 		const result = applyHashlineEdits(content, edits);
 		expect(result.content).toBe("aaa\nccc");
@@ -57,7 +57,7 @@ describe("applyHashlineEdits — basic operations", () => {
 		// being left behind as an extra blank line.
 		const content = "aaa\nbbb\nccc\n";
 		const edits: HashlineEdit[] = [
-			{ start: makeTag(content, 2), end: makeTag(content, 2), lines: [""] },
+			{ old_range: [makeTag(content, 2), makeTag(content, 2)], new_lines: [""] },
 		];
 		const result = applyHashlineEdits(content, edits);
 		expect(result.content).toBe("aaa\nccc\n");
@@ -67,8 +67,8 @@ describe("applyHashlineEdits — basic operations", () => {
 		const content = "aaa\nbbb\nccc\nddd\n";
 		const edits: HashlineEdit[] = [
 			{
-				start: makeTag(content, 2), end: makeTag(content, 3),
-				lines: [""],
+				old_range: [makeTag(content, 2), makeTag(content, 3)],
+				new_lines: [""],
 			},
 		];
 		const result = applyHashlineEdits(content, edits);
@@ -81,7 +81,7 @@ describe("applyHashlineEdits — basic operations", () => {
 		// `[""]` form is normalized.
 		const content = "aaa\nbbb\n";
 		const edits: HashlineEdit[] = [
-			{ start: makeTag(content, 2), end: makeTag(content, 2), lines: ["", ""] },
+			{ old_range: [makeTag(content, 2), makeTag(content, 2)], new_lines: ["", ""] },
 		];
 		const result = applyHashlineEdits(content, edits);
 		// Two blank lines inserted in place of "bbb", preserving the trailing
@@ -95,8 +95,8 @@ describe("applyHashlineEdits — basic operations", () => {
 		const content = "aaa\nbbb\nccc\nddd";
 		const edits: HashlineEdit[] = [
 			{
-				start: makeTag(content, 2), end: makeTag(content, 3),
-				lines: ["BBB", "CCC"],
+				old_range: [makeTag(content, 2), makeTag(content, 3)],
+				new_lines: ["BBB", "CCC"],
 			},
 		];
 		const result = applyHashlineEdits(content, edits);
@@ -107,8 +107,8 @@ describe("applyHashlineEdits — basic operations", () => {
 		const content = "aaa\nbbb\nccc\nddd";
 		const edits: HashlineEdit[] = [
 			{
-				start: makeTag(content, 2), end: makeTag(content, 3),
-				lines: [],
+				old_range: [makeTag(content, 2), makeTag(content, 3)],
+				new_lines: [],
 			},
 		];
 		const result = applyHashlineEdits(content, edits);
@@ -120,8 +120,8 @@ describe("applyHashlineEdits — multi-edit ordering", () => {
 	it("applies multiple edits bottom-up correctly", () => {
 		const content = "aaa\nbbb\nccc";
 		const edits: HashlineEdit[] = [
-			{ start: makeTag(content, 1), end: makeTag(content, 1), lines: ["AAA"] },
-			{ start: makeTag(content, 3), end: makeTag(content, 3), lines: ["CCC"] },
+			{ old_range: [makeTag(content, 1), makeTag(content, 1)], new_lines: ["AAA"] },
+			{ old_range: [makeTag(content, 3), makeTag(content, 3)], new_lines: ["CCC"] },
 		];
 		const result = applyHashlineEdits(content, edits);
 		expect(result.content).toBe("AAA\nbbb\nCCC");
@@ -131,8 +131,8 @@ describe("applyHashlineEdits — multi-edit ordering", () => {
 		const content = "aaa\nbbb\nccc";
 		const pos = makeTag(content, 2);
 		const edits: HashlineEdit[] = [
-			{ start: { ...pos }, end: { ...pos }, lines: ["BBB"] },
-			{ start: { ...pos }, end: { ...pos }, lines: ["BBB"] },
+			{ old_range: [{ ...pos }, { ...pos }], new_lines: ["BBB"] },
+			{ old_range: [{ ...pos }, { ...pos }], new_lines: ["BBB"] },
 		];
 		const result = applyHashlineEdits(content, edits);
 		expect(result.content).toBe("aaa\nBBB\nccc");
@@ -142,15 +142,15 @@ describe("applyHashlineEdits — multi-edit ordering", () => {
 		const content = "aaa\nbbb\nccc";
 		const pos = makeTag(content, 2);
 		const edits: HashlineEdit[] = [
-			{ start: { ...pos }, end: { ...pos }, lines: ["BBB"] },
-			{ start: { ...pos }, end: { ...pos }, lines: ["BBB"] },
+			{ old_range: [{ ...pos }, { ...pos }], new_lines: ["BBB"] },
+			{ old_range: [{ ...pos }, { ...pos }], new_lines: ["BBB"] },
 		];
 
 		applyHashlineEdits(content, edits);
 
 		expect(edits).toHaveLength(2);
-		expect(edits[0]).toEqual({ start: { ...pos }, end: { ...pos }, lines: ["BBB"] });
-		expect(edits[1]).toEqual({ start: { ...pos }, end: { ...pos }, lines: ["BBB"] });
+		expect(edits[0]).toEqual({ old_range: [{ ...pos }, { ...pos }], new_lines: ["BBB"] });
+		expect(edits[1]).toEqual({ old_range: [{ ...pos }, { ...pos }], new_lines: ["BBB"] });
 	});
 });
 
@@ -158,7 +158,7 @@ describe("applyHashlineEdits — noop detection", () => {
 	it("detects single-line noop", () => {
 		const content = "aaa\nbbb\nccc";
 		const edits: HashlineEdit[] = [
-			{ start: makeTag(content, 2), end: makeTag(content, 2), lines: ["bbb"] },
+			{ old_range: [makeTag(content, 2), makeTag(content, 2)], new_lines: ["bbb"] },
 		];
 		const result = applyHashlineEdits(content, edits);
 		expect(result.noopEdits).toHaveLength(1);
@@ -169,8 +169,8 @@ describe("applyHashlineEdits — noop detection", () => {
 		const content = "aaa\nbbb\nccc\nddd";
 		const edits: HashlineEdit[] = [
 			{
-				start: makeTag(content, 2), end: makeTag(content, 3),
-				lines: ["bbb", "ccc"],
+				old_range: [makeTag(content, 2), makeTag(content, 3)],
+				new_lines: ["bbb", "ccc"],
 			},
 		];
 		const result = applyHashlineEdits(content, edits);
@@ -181,8 +181,8 @@ describe("applyHashlineEdits — noop detection", () => {
 		const content = "aaa\nbbb";
 		const edits: HashlineEdit[] = [
 			{
-				start: makeTag(content, 1), end: makeTag(content, 2),
-				lines: [],
+				old_range: [makeTag(content, 1), makeTag(content, 2)],
+				new_lines: [],
 			},
 		];
 		expect(() => applyHashlineEdits(content, edits)).toThrow(
@@ -194,8 +194,8 @@ describe("applyHashlineEdits — noop detection", () => {
 		const content = "aaa\nbbb";
 		const edits: HashlineEdit[] = [
 			{
-				start: makeTag(content, 1), end: makeTag(content, 2),
-				lines: ["ccc"],
+				old_range: [makeTag(content, 1), makeTag(content, 2)],
+				new_lines: ["ccc"],
 			},
 		];
 
@@ -207,7 +207,7 @@ describe("applyHashlineEdits — noop detection", () => {
 	it("allows replacing content with whitespace", () => {
 		const content = "aaa";
 		const edits: HashlineEdit[] = [
-			{ start: makeTag(content, 1), end: makeTag(content, 1), lines: ["\n"] },
+			{ old_range: [makeTag(content, 1), makeTag(content, 1)], new_lines: ["\n"] },
 		];
 
 		const result = applyHashlineEdits(content, edits);
@@ -221,8 +221,8 @@ describe("applyHashlineEdits — warning heuristics", () => {
 		const content = "before\nold one\nold two\nafter";
 		const edits: HashlineEdit[] = [
 			{
-				start: makeTag(content, 2), end: makeTag(content, 3),
-				lines: ["before", "new one", "new two"],
+				old_range: [makeTag(content, 2), makeTag(content, 3)],
+				new_lines: ["before", "new one", "new two"],
 			},
 		];
 
@@ -242,7 +242,7 @@ describe("applyHashlineEdits — lastChangedLine tracking", () => {
 		const content = "aaa\nbbb\nccc";
 		const edits: HashlineEdit[] = [
 			{
-				start: makeTag(content, 2), end: makeTag(content, 2), lines: ["B1", "B2", "B3", "B4", "B5"],
+				old_range: [makeTag(content, 2), makeTag(content, 2)], new_lines: ["B1", "B2", "B3", "B4", "B5"],
 			},
 		];
 
@@ -255,7 +255,7 @@ describe("applyHashlineEdits — lastChangedLine tracking", () => {
 	it("tracks lastChangedLine correctly for single-line delete", () => {
 		const content = "aaa\nbbb\nccc";
 		const edits: HashlineEdit[] = [
-			{ start: makeTag(content, 2), end: makeTag(content, 2), lines: [] },
+			{ old_range: [makeTag(content, 2), makeTag(content, 2)], new_lines: [] },
 		];
 
 		const result = applyHashlineEdits(content, edits);
@@ -268,8 +268,8 @@ describe("applyHashlineEdits — lastChangedLine tracking", () => {
 		const content = "aaa\nbbb\nccc\nddd\neee\nfff\nggg";
 		const edits: HashlineEdit[] = [
 			{
-				start: makeTag(content, 2), end: makeTag(content, 4),
-				lines: [],
+				old_range: [makeTag(content, 2), makeTag(content, 4)],
+				new_lines: [],
 			},
 		];
 

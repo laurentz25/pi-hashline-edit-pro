@@ -6,107 +6,79 @@ import {
 } from "../../src/hashline";
 
 describe("resolveEditAnchors", () => {
-	it("resolves replace with start + end", () => {
+	it("resolves replace with old_range", () => {
 		const edits: HashlineToolEdit[] = [
-			{ start: "ZZP", end: "PPW", lines: ["a", "b"] },
+			{ old_range: ["ZZP", "PPW"], new_lines: ["a", "b"] },
 		];
 		const resolved = resolveEditAnchors(edits);
 		expect(resolved).toHaveLength(1);
-		expect(resolved[0]).toHaveProperty("start");
-		expect(resolved[0]).toHaveProperty("end");
+		expect(resolved[0]).toHaveProperty("old_range");
+		expect(resolved[0]).toHaveProperty("new_lines");
 	});
 
-	it("resolves a 1-line replace (start == end)", () => {
+	it("resolves a 1-line replace (same anchor)", () => {
 		const edits: HashlineToolEdit[] = [
-			{ start: "MQX", end: "MQX", lines: ["new"] },
+			{ old_range: ["MQX", "MQX"], new_lines: ["new"] },
 		];
 		const resolved = resolveEditAnchors(edits);
 		expect(resolved).toHaveLength(1);
 		const r = resolved[0] as {
-			start: Anchor;
-			end: Anchor;
-			lines: string[];
+			old_range: [Anchor, Anchor];
+			new_lines: string[];
 		};
-		expect(r.start.hash).toBe("MQX");
-		expect(r.end.hash).toBe("MQX");
+		expect(r.old_range[0].hash).toBe("MQX");
+		expect(r.old_range[1].hash).toBe("MQX");
 	});
 
-	it("rejects replace with end but no start", () => {
-		const edits: HashlineToolEdit[] = [
-			{ end: "MQX", lines: ["new"] },
-		];
+	it("throws on replace with no old_range", () => {
+		const edits: HashlineToolEdit[] = [{ new_lines: ["new"] }];
 		expect(() => resolveEditAnchors(edits)).toThrow(
-			/requires a "start" anchor/i,
+			/requires an "old_range" pair/i,
 		);
 	});
 
-	it("throws on replace with no anchors", () => {
-		const edits: HashlineToolEdit[] = [{ lines: ["new"] }];
-		expect(() => resolveEditAnchors(edits)).toThrow(
-			/requires a "start" anchor/i,
-		);
-	});
-
-	it("rejects replace with start but no end", () => {
+	it("throws on malformed old_range", () => {
 		const edits: HashlineToolEdit[] = [
-			{ start: "MQX", lines: ["new"] },
-		];
-		expect(() => resolveEditAnchors(edits)).toThrow(
-			/requires an "end" anchor/i,
-		);
-	});
-
-	it("throws on malformed start for replace", () => {
-		const edits: HashlineToolEdit[] = [
-			{ start: "not-valid", end: "not-valid", lines: ["x"] },
+			{ old_range: ["not-valid", "not-valid"], new_lines: ["x"] },
 		];
 		expect(() => resolveEditAnchors(edits)).toThrow(/Invalid anchor/);
 	});
 
-	it("throws on malformed end for replace with valid start", () => {
-		const edits: HashlineToolEdit[] = [
-			{ start: "MQX", end: "garbage", lines: ["x"] },
-		];
-		expect(() => resolveEditAnchors(edits)).toThrow(/Invalid anchor/);
-	});
-
-	it("rejects string lines input", () => {
+	it("rejects string new_lines input", () => {
 		const edits: HashlineToolEdit[] = [
 			{
-				start: "ZZP",
-				end: "ZZP",
-				lines: "hello\nworld\n",
+				old_range: ["ZZP", "ZZP"],
+				new_lines: "hello\nworld\n",
 			} as unknown as HashlineToolEdit,
 		];
 		expect(() => resolveEditAnchors(edits)).toThrow(
-			/lines" must be a string array/i,
+			/new_lines" must be a string array/i,
 		);
 	});
 
-	it("rejects null lines input", () => {
+	it("rejects null new_lines input", () => {
 		const edits: HashlineToolEdit[] = [
 			{
-				start: "ZZP",
-				end: "ZZP",
-				lines: null,
+				old_range: ["ZZP", "ZZP"],
+				new_lines: null,
 			} as unknown as HashlineToolEdit,
 		];
 		expect(() => resolveEditAnchors(edits)).toThrow(
-			/lines" must be a string array/i,
+			/new_lines" must be a string array/i,
 		);
 	});
 
 	it("rejects unknown fields", () => {
-		const edits = [{ start: "ZZP", end: "ZZP", lines: ["x"], extra: true }] as any;
+		const edits = [{ old_range: ["ZZP", "ZZP"], new_lines: ["x"], extra: true }] as any;
 		expect(() => resolveEditAnchors(edits)).toThrow(
 			/unknown or unsupported fields/i,
 		);
 	});
 
-	it("rejects missing lines", () => {
-		const edits = [{ start: "ZZP", end: "ZZP" }] as any;
+	it("rejects missing new_lines", () => {
+		const edits = [{ old_range: ["ZZP", "ZZP"] }] as any;
 		expect(() => resolveEditAnchors(edits)).toThrow(
-			/requires a "lines" field/i,
+			/requires a "new_lines" field/i,
 		);
 	});
 });

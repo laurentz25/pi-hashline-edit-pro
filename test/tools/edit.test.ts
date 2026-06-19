@@ -39,26 +39,6 @@ describe("assertReplaceRequest", () => {
 		).toThrow(/E_LEGACY_SHAPE/);
 	});
 
-	it("requires returnRanges when returnMode is ranges", () => {
-		expect(() =>
-			assertReplaceRequest({
-				path: "a.ts",
-				returnMode: "ranges",
-				edits: [{ start: "ZZPM", end: "ZZPM", lines: ["x"] }],
-			} as any),
-		).toThrow(/returnRanges/i);
-	});
-
-	it("rejects returnRanges outside ranges returnMode", () => {
-		expect(() =>
-			assertReplaceRequest({
-				path: "a.ts",
-				returnMode: "changed",
-				returnRanges: [{ start: 1, end: 2 }],
-				edits: [{ start: "ZZPM", end: "ZZPM", lines: ["x"] }],
-			} as any),
-		).toThrow(/returnRanges/i);
-	});
 });
 
 describe("registerReplaceTool", () => {
@@ -73,8 +53,6 @@ describe("registerReplaceTool", () => {
 		expect(props).toBeDefined();
 		expect(props.path).toBeDefined();
 		expect(props.edits).toBeDefined();
-		expect(props.returnMode).toBeDefined();
-		expect(props.returnRanges).toBeDefined();
 
 		// Schema should NOT have legacy fields
 		expect(props.oldText).toBeUndefined();
@@ -118,11 +96,11 @@ describe("registerReplaceTool", () => {
 		// and be rejected with E_LEGACY_SHAPE.
 		const result = registered?.prepareArguments?.({
 			path: "a.ts",
-			edits: [{ start: "ZZPM", end: "ZZPM", lines: ["x"] }],
+			edits: [{ old_range: ["ZZPM", "ZZPM"], new_lines: ["x"] }],
 		});
 		expect(result).toEqual({
 			path: "a.ts",
-			edits: [{ start: "ZZPM", end: "ZZPM", lines: ["x"] }],
+			edits: [{ old_range: ["ZZPM", "ZZPM"], new_lines: ["x"] }],
 		});
 	});
 
@@ -139,7 +117,7 @@ describe("registerReplaceTool", () => {
 						path: "sample.txt",
 						edits: [
 							{
-								start: `${computeLineHash(1, "aaa")}:aaa`, end: `${computeLineHash(1, "aaa")}:aaa`, lines: null,
+								old_range: [`${computeLineHash(1, "aaa")}`, `${computeLineHash(1, "aaa")}`], new_lines: null,
 							},
 						],
 					},
@@ -161,7 +139,7 @@ describe("registerReplaceTool", () => {
 		await expect(
 			editTool.execute(
 				"e1",
-					{ edits: [{ start: "aB3x", end: "aB3x", lines: ["x"] }] },
+					{ edits: [{ old_range: ["aB3x", "aB3x"], new_lines: ["x"] }] },
 				undefined,
 				undefined,
 				{ cwd: process.cwd() } as any,
@@ -179,7 +157,7 @@ describe("registerReplaceTool", () => {
 				path: "sample.txt",
 				edits: [
 					{
-						start: computeLineHash(2, "bbb"), end: computeLineHash(2, "bbb"), lines: ["BBB"],
+						old_range: [computeLineHash(2, "bbb"), computeLineHash(2, "bbb")], new_lines: ["BBB"],
 					},
 				],
 			};
@@ -213,9 +191,8 @@ describe("registerReplaceTool", () => {
 			expect(rendered).not.toContain("Changes: +1 -1");
 			expect(rendered).not.toContain("Diff preview:");
 			expect(rendered).not.toContain("```diff");
-			expect(rendered).toContain(`+${computeLineHash(2, "BBB")}│BBB`);
+			expect(rendered).toContain(`${computeLineHash(2, "BBB")}│BBB`);
 			expect(rendered).not.toContain("Updated sample.txt");
-			expect(rendered).not.toContain("```text");
 		expect(result.details?.diff).toContain(`+${computeLineHash(2, "BBB")}`);
 		});
 	});

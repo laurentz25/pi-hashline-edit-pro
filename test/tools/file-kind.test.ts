@@ -419,7 +419,7 @@ describe("file kind guards in tools", () => {
 						path: "sample.c",
 						edits: [
 							{
-								start: `${computeLineHash(2, "int")}`, end: `${computeLineHash(2, "int")}`, lines: ["long"],
+								old_range: [`${computeLineHash(2, "int")}`, `${computeLineHash(2, "int")}`], new_lines: ["long"],
 							},
 						],
 					},
@@ -451,7 +451,7 @@ describe("file kind guards in tools", () => {
 							path: "sample.bin",
 							edits: [
 								{
-									start: `${computeLineHash(1, "int")}`, end: `${computeLineHash(1, "int")}`, lines: ["long"],
+									old_range: [`${computeLineHash(1, "int")}`, `${computeLineHash(1, "int")}`], new_lines: ["long"],
 								},
 							],
 						},
@@ -480,7 +480,7 @@ describe("file kind guards in tools", () => {
 							path: "sample.bin",
 							edits: [
 								{
-									start: `${computeLineHash(1, "a")}`, end: `${computeLineHash(1, "a")}`, lines: ["A"],
+									old_range: [`${computeLineHash(1, "a")}`, `${computeLineHash(1, "a")}`], new_lines: ["A"],
 								},
 							],
 						},

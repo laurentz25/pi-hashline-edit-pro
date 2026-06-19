@@ -79,31 +79,31 @@ function resolveEditToSpan(
 ): ResolvedEditSpan | null {
 	const { fileLines, lineStarts, hasTerminalNewline } = lineIndex;
 
-	const startLine = edit.start.line;
-	const endLine = edit.end.line;
+	const startLine = edit.old_range[0].line;
+	const endLine = edit.old_range[1].line;
 	const originalLines = fileLines.slice(startLine - 1, endLine);
 	if (
-		originalLines.length === edit.lines.length &&
+		originalLines.length === edit.new_lines.length &&
 		originalLines.every(
-			(line, lineIndex) => line === edit.lines[lineIndex],
+			(line, lineIndex) => line === edit.new_lines[lineIndex],
 		)
 	) {
 		noopEdits.push({
 			editIndex: index,
-			loc: edit.start.hash,
+			loc: edit.old_range[0].hash,
 			currentContent: originalLines.join("\n"),
 		});
 		return null;
 	}
 
-	if (edit.lines.length > 0) {
+	if (edit.new_lines.length > 0) {
 		return {
 			kind: "replace",
 			index,
 			label: describeEdit(edit),
 			start: lineStarts[startLine - 1]!,
 			end: lineStarts[endLine - 1]! + fileLines[endLine - 1]!.length,
-			replacement: edit.lines.join("\n"),
+			replacement: edit.new_lines.join("\n"),
 		};
 	}
 
@@ -235,11 +235,11 @@ export function applyHashlineEdits(
 			lastChangedLine: undefined,
 		};
 
-	// Normalize lines: [""] to lines: [] for deletion.
+	// Normalize new_lines: [""] to new_lines: [] for deletion.
 	edits = edits.map((edit) =>
-		edit.lines.length === 1 &&
-		edit.lines[0] === ""
-			? { ...edit, lines: [] }
+		edit.new_lines.length === 1 &&
+		edit.new_lines[0] === ""
+			? { ...edit, new_lines: [] }
 			: edit,
 	);
 

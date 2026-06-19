@@ -10,11 +10,10 @@ export type ResolvedAnchor = {
 	hashMatched: boolean;
 };
 
-export type HashlineEdit = { start: Anchor; end: Anchor; lines: string[] };
+export type HashlineEdit = { old_range: [Anchor, Anchor]; new_lines: string[] };
 export type ResolvedHashlineEdit = {
-	start: ResolvedAnchor;
-	end: ResolvedAnchor;
-	lines: string[];
+	old_range: [ResolvedAnchor, ResolvedAnchor];
+	new_lines: string[];
 };
 interface HashMismatch {
 	ref: Anchor;
@@ -29,9 +28,8 @@ export interface NoopEdit {
 }
 
 export type HashlineToolEdit = {
-	start?: string;
-	end?: string;
-	lines?: string[];
+	old_range?: [string, string];
+	new_lines?: string[];
 	/** @deprecated Legacy field — rejected with [E_LEGACY_SHAPE] at validation time. */
 	oldText?: string;
 	/** @deprecated Legacy field — rejected with [E_LEGACY_SHAPE] at validation time. */
@@ -110,10 +108,18 @@ export function formatMismatchError(
 }
 
 
-const ITEM_KEYS = new Set(["start", "end", "lines"]);
+const ITEM_KEYS = new Set(["old_range", "new_lines"]);
 function isStringArray(value: unknown): value is string[] {
 	return (
 		Array.isArray(value) && value.every((item) => typeof item === "string")
+	);
+}
+
+function isStringPair(value: unknown): value is [string, string] {
+	return (
+		Array.isArray(value) &&
+		value.length === 2 &&
+		value.every((item) => typeof item === "string")
 	);
 }
 
@@ -125,28 +131,20 @@ function assertEditItem(edit: Record<string, unknown>, index: number): void {
 		);
 	}
 
-	if ("start" in edit && typeof edit.start !== "string") {
+	if ("old_range" in edit && !isStringPair(edit.old_range)) {
 		throw new Error(
-			`[E_BAD_SHAPE] Edit ${index} field "start" must be a string when provided.`,
+			`[E_BAD_SHAPE] Edit ${index} field "old_range" must be a pair of anchor strings [start, end].`,
 		);
 	}
-	if ("end" in edit && typeof edit.end !== "string") {
-		throw new Error(`[E_BAD_SHAPE] Edit ${index} field "end" must be a string when provided.`);
+	if (!("new_lines" in edit)) {
+		throw new Error(`[E_BAD_SHAPE] Edit ${index} requires a "new_lines" field.`);
 	}
-	if (!("lines" in edit)) {
-		throw new Error(`[E_BAD_SHAPE] Edit ${index} requires a "lines" field.`);
+	if ("new_lines" in edit && !isStringArray(edit.new_lines)) {
+		throw new Error(`[E_BAD_SHAPE] Edit ${index} field "new_lines" must be a string array.`);
 	}
-	if ("lines" in edit && !isStringArray(edit.lines)) {
-		throw new Error(`[E_BAD_SHAPE] Edit ${index} field "lines" must be a string array.`);
-	}
-	if (typeof edit.start !== "string") {
+	if (!isStringPair(edit.old_range)) {
 		throw new Error(
-			`[E_BAD_OP] Edit ${index} requires a "start" anchor string.`,
-		);
-	}
-	if (typeof edit.end !== "string") {
-		throw new Error(
-			`[E_BAD_OP] Edit ${index} requires an "end" anchor string.`,
+			`[E_BAD_OP] Edit ${index} requires an "old_range" pair of anchor strings [start, end].`,
 		);
 	}
 
@@ -157,16 +155,15 @@ export function resolveEditAnchors(edits: HashlineToolEdit[]): HashlineEdit[] {
 	for (const [index, edit] of edits.entries()) {
 		assertEditItem(edit as Record<string, unknown>, index);
 
-		// Normalize lines: [""] to lines: [] for deletion.
-		const replaceLines = hashlineParseText(edit.lines ?? null);
+		// Normalize new_lines: [""] to new_lines: [] for deletion.
+		const replaceLines = hashlineParseText(edit.new_lines ?? null);
 		const normalizedLines =
 			replaceLines.length === 1 && replaceLines[0] === ""
 				? []
 				: replaceLines;
 		result.push({
-			start: parseHashRef(edit.start!),
-			end: parseHashRef(edit.end!),
-			lines: normalizedLines,
+			old_range: [parseHashRef(edit.old_range![0]), parseHashRef(edit.old_range![1])],
+			new_lines: normalizedLines,
 		});
 	}
 	return result;
@@ -177,7 +174,7 @@ function maybeWarnSuspiciousUnicodeEscapePlaceholder(
 	warnings: string[],
 ): void {
 	for (const edit of edits) {
-		if (edit.lines.some((line) => /\\uDDDD/i.test(line))) {
+		if (edit.new_lines.some((line) => /\\uDDDD/i.test(line))) {
 			warnings.push(
 				"Detected literal \\uDDDD in edit content; no autocorrection applied. Verify whether this should be a real Unicode escape or plain text.",
 			);
@@ -198,8 +195,8 @@ export function assertNoBareHashPrefixLines(
 	const suspects: { line: string; hash: string; editIndex: number; lineIndex: number }[] = [];
 	for (let editIndex = 0; editIndex < edits.length; editIndex++) {
 		const edit = edits[editIndex]!;
-		for (let lineIndex = 0; lineIndex < edit.lines.length; lineIndex++) {
-			const line = edit.lines[lineIndex]!;
+		for (let lineIndex = 0; lineIndex < edit.new_lines.length; lineIndex++) {
+			const line = edit.new_lines[lineIndex]!;
 			const match = line.match(HASHLINE_BARE_PREFIX_RE);
 			if (match) suspects.push({ line, hash: match[1]!, editIndex, lineIndex });
 		}
@@ -227,7 +224,7 @@ export function assertNoBareHashPrefixLines(
  * Human-readable label for a resolved edit (used in warnings and conflict errors).
  */
 export function describeEdit(edit: ResolvedHashlineEdit): string {
-	return `replace ${edit.start.hash}-${edit.end.hash}`;
+	return `replace ${edit.old_range[0].hash}-${edit.old_range[1].hash}`;
 }
 
 export function validateAnchorEdits(
@@ -257,19 +254,19 @@ export function validateAnchorEdits(
 
 	for (const edit of edits) {
 		throwIfAborted(signal);
-		const startResolved = tryResolve(edit.start);
-		const endResolved = tryResolve(edit.end);
+		const startResolved = tryResolve(edit.old_range[0]);
+		const endResolved = tryResolve(edit.old_range[1]);
 		if (!startResolved || !endResolved) {
 			continue;
 		}
 		if (startResolved.line > endResolved.line) {
 			throw new Error(
-				`[E_BAD_OP] Range start line ${startResolved.line} must be <= end line ${endResolved.line} (anchors ${edit.start.hash} and ${edit.end.hash}).`,
+				`[E_BAD_OP] Range start line ${startResolved.line} must be <= end line ${endResolved.line} (anchors ${edit.old_range[0].hash} and ${edit.old_range[1].hash}).`,
 			);
 		}
 		const endLine = endResolved.line;
 		const nextLine = fileLines[endLine];
-		const replacementLastLine = edit.lines.at(-1)?.trim();
+		const replacementLastLine = edit.new_lines.at(-1)?.trim();
 		if (
 			nextLine !== undefined &&
 			replacementLastLine &&
@@ -277,16 +274,15 @@ export function validateAnchorEdits(
 			replacementLastLine === nextLine.trim()
 		) {
 			const resolvedEdit: ResolvedHashlineEdit = {
-				start: startResolved,
-				end: endResolved,
-				lines: edit.lines,
+				old_range: [startResolved, endResolved],
+				new_lines: edit.new_lines,
 			};
 			warnings.push(
 				`Potential boundary duplication after ${describeEdit(resolvedEdit)}: the replacement ends with a line that matches the next surviving line after trim.`,
 			);
 		}
 		const prevLine = fileLines[startResolved.line - 2];
-		const replacementFirstLine = edit.lines[0]?.trim();
+		const replacementFirstLine = edit.new_lines[0]?.trim();
 		if (
 			prevLine !== undefined &&
 			replacementFirstLine &&
@@ -294,18 +290,16 @@ export function validateAnchorEdits(
 			replacementFirstLine === prevLine.trim()
 		) {
 			const resolvedEdit: ResolvedHashlineEdit = {
-				start: startResolved,
-				end: endResolved,
-				lines: edit.lines,
+				old_range: [startResolved, endResolved],
+				new_lines: edit.new_lines,
 			};
 			warnings.push(
 				`Potential boundary duplication before ${describeEdit(resolvedEdit)}: the replacement starts with a line that matches the preceding surviving line after trim.`,
 			);
 		}
 		resolved.push({
-			start: startResolved,
-			end: endResolved,
-			lines: edit.lines,
+			old_range: [startResolved, endResolved],
+			new_lines: edit.new_lines,
 		});
 	}
 

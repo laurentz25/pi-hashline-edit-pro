@@ -17,7 +17,7 @@ describe("applyHashlineEdits — error handling", () => {
 	it("throws on hash mismatch", () => {
 		const content = "aaa\nbbb\nccc";
 		const edits: HashlineEdit[] = [
-			{ start: { hash: "#XXPM" }, end: { hash: "#XXPM" }, lines: ["BBB"] },
+			{ old_range: [{ hash: "#XXPM" }, { hash: "#XXPM" }], new_lines: ["BBB"] },
 		];
 		expect(() => applyHashlineEdits(content, edits)).toThrow(/E_STALE_ANCHOR/);
 	});
@@ -25,7 +25,7 @@ describe("applyHashlineEdits — error handling", () => {
 	it("throws when the hash matches no line in the file", () => {
 		const content = "aaa\nbbb";
 		const edits: HashlineEdit[] = [
-			{ start: { hash: "ZZPM" }, end: { hash: "ZZPM" }, lines: ["x"] },
+			{ old_range: [{ hash: "ZZPM" }, { hash: "ZZPM" }], new_lines: ["x"] },
 		];
 		expect(() => applyHashlineEdits(content, edits)).toThrow(
 			/2 stale anchors: "ZZPM", "ZZPM"/,
@@ -36,8 +36,8 @@ describe("applyHashlineEdits — error handling", () => {
 		const content = "aaa\nbbb\nccc";
 		const edits: HashlineEdit[] = [
 			{
-				start: makeTag(content, 3), end: makeTag(content, 1),
-				lines: ["x"],
+				old_range: [makeTag(content, 3), makeTag(content, 1)],
+				new_lines: ["x"],
 			},
 		];
 		expect(() => applyHashlineEdits(content, edits)).toThrow(
@@ -48,8 +48,8 @@ describe("applyHashlineEdits — error handling", () => {
 	it("reports multiple mismatches at once", () => {
 		const content = "aaa\nbbb\nccc";
 		const edits: HashlineEdit[] = [
-			{ start: { hash: "#XXPM" }, end: { hash: "#XXPM" }, lines: ["A"] },
-			{ start: { hash: "#YYWV" }, end: { hash: "#YYWV" }, lines: ["C"] },
+			{ old_range: [{ hash: "#XXPM" }, { hash: "#XXPM" }], new_lines: ["A"] },
+			{ old_range: [{ hash: "#YYWV" }, { hash: "#YYWV" }], new_lines: ["C"] },
 		];
 		expect(() => applyHashlineEdits(content, edits)).toThrow(
 			/4 stale anchors/,
@@ -59,8 +59,8 @@ describe("applyHashlineEdits — error handling", () => {
 	it("lists stale anchor hashes in mismatch errors", () => {
 		const content = "aaa\nbbb\nccc";
 		const edits: HashlineEdit[] = [
-			{ start: { hash: "#XXPM" }, end: { hash: "#XXPM" }, lines: ["A"] },
-			{ start: { hash: "#YYWV" }, end: { hash: "#YYWV" }, lines: ["C"] },
+			{ old_range: [{ hash: "#XXPM" }, { hash: "#XXPM" }], new_lines: ["A"] },
+			{ old_range: [{ hash: "#YYWV" }, { hash: "#YYWV" }], new_lines: ["C"] },
 		];
 		expect(() => applyHashlineEdits(content, edits)).toThrow(
 			/4 stale anchors: "#XXPM", "#XXPM", "#YYWV", "#YYWV"/,
@@ -71,7 +71,7 @@ describe("applyHashlineEdits — error handling", () => {
 		expect(() =>
 			applyHashlineEdits("aaa", [
 				{
-					start: { hash: "ZZPM" }, end: { hash: "ZZPM" }, lines: ["bbb"],
+					old_range: [{ hash: "ZZPM" }, { hash: "ZZPM" }], new_lines: ["bbb"],
 				} as any,
 			]),
 		).toThrow(/Call read\(\) to get fresh anchors/);
@@ -82,11 +82,11 @@ describe("applyHashlineEdits — error handling", () => {
 		expect(() =>
 			applyHashlineEdits(content, [
 				{
-					start: makeTag(content, 2), end: makeTag(content, 3),
-					lines: ["X"],
+					old_range: [makeTag(content, 2), makeTag(content, 3)],
+				new_lines: ["X"],
 				},
 				{
-					start: makeTag(content, 3), end: makeTag(content, 3), lines: ["Y"],
+					old_range: [makeTag(content, 3), makeTag(content, 3)], new_lines: ["Y"],
 				},
 			]),
 		).toThrow(/E_EDIT_CONFLICT.*overlap.*same original line range/i);
@@ -98,8 +98,8 @@ describe("applyHashlineEdits — heuristics", () => {
 		const content = "if (ok) {\n  run();\n}\nafter();";
 		const edits: HashlineEdit[] = [
 			{
-				start: makeTag(content, 1), end: makeTag(content, 2),
-				lines: ["if (ok) {", "  runSafe();", "}"],
+				old_range: [makeTag(content, 1), makeTag(content, 2)],
+				new_lines: ["if (ok) {", "  runSafe();", "}"],
 			},
 		];
 		const result = applyHashlineEdits(content, edits);
@@ -111,8 +111,8 @@ describe("applyHashlineEdits — heuristics", () => {
 		const content = "before();\nif (ok) {\n  run();\n}\nafter();";
 		const edits: HashlineEdit[] = [
 			{
-				start: makeTag(content, 2), end: makeTag(content, 3),
-				lines: ["before();", "if (ok) {", "  runSafe();"],
+				old_range: [makeTag(content, 2), makeTag(content, 3)],
+				new_lines: ["before();", "if (ok) {", "  runSafe();"],
 			},
 		];
 		const result = applyHashlineEdits(content, edits);
@@ -132,14 +132,14 @@ describe("applyHashlineEdits — heuristics", () => {
 		const content = "root\n\tchild\n\t\tvalue\nend";
 		const edits: HashlineEdit[] = [
 			{
-				start: makeTag(content, 3), end: makeTag(content, 3), lines: ["\\t\\treplaced"],
+				old_range: [makeTag(content, 3), makeTag(content, 3)], new_lines: ["\\t\\treplaced"],
 			},
 		];
 		const result = applyHashlineEdits(content, edits);
 		expect(result.content).toBe("root\n\tchild\n\\t\\treplaced\nend");
 		expect(result.warnings).toBeUndefined();
 		expect(edits[0]).toEqual({
-			start: makeTag(content, 3), end: makeTag(content, 3), lines: ["\\t\\treplaced"],
+			old_range: [makeTag(content, 3), makeTag(content, 3)], new_lines: ["\\t\\treplaced"],
 		});
 	});
 
@@ -147,7 +147,7 @@ describe("applyHashlineEdits — heuristics", () => {
 		const content = "aaa\nbbb\nccc";
 		const edits: HashlineEdit[] = [
 			{
-				start: makeTag(content, 2), end: makeTag(content, 2), lines: ["\\uDDDD"],
+				old_range: [makeTag(content, 2), makeTag(content, 2)], new_lines: ["\\uDDDD"],
 			},
 		];
 		const result = applyHashlineEdits(content, edits);
@@ -159,7 +159,7 @@ describe("applyHashlineEdits — heuristics", () => {
 		const content = "aaa\nbbb\nccc\nddd";
 		const edits: HashlineEdit[] = [
 			{
-				start: makeTag(content, 2), end: makeTag(content, 2), lines: ["x1", "x2", "x3"],
+				old_range: [makeTag(content, 2), makeTag(content, 2)], new_lines: ["x1", "x2", "x3"],
 			},
 		];
 		const result = applyHashlineEdits(content, edits);
@@ -172,7 +172,7 @@ describe("applyHashlineEdits — heuristics", () => {
 		const content = "aaa\nbbb\nccc";
 		const edits: HashlineEdit[] = [
 			{
-				start: makeTag(content, 2), end: makeTag(content, 2), lines: ["BBB"],
+				old_range: [makeTag(content, 2), makeTag(content, 2)], new_lines: ["BBB"],
 			},
 		];
 		const result = applyHashlineEdits(content, edits);
@@ -184,8 +184,8 @@ describe("applyHashlineEdits — heuristics", () => {
 		const content = "aaa\nbbb\nccc\nddd";
 		const edits: HashlineEdit[] = [
 			{
-				start: makeTag(content, 2), end: makeTag(content, 3),
-				lines: ["x1", "x2", "x3"],
+				old_range: [makeTag(content, 2), makeTag(content, 3)],
+				new_lines: ["x1", "x2", "x3"],
 			},
 		];
 		const result = applyHashlineEdits(content, edits);
@@ -202,45 +202,45 @@ describe("integration: resolveEditAnchors → applyHashlineEdits", () => {
 		const content = "aaa\nbbb\nccc";
 		const hash = computeLineHashes(content)[1]!;
 		const toolEdits: HashlineToolEdit[] = [
-			{ start: hash, end: hash, lines: ["BBB"] },
+			{ old_range: [hash, hash], new_lines: ["BBB"] },
 		];
 		const resolved = resolveEditAnchors(toolEdits);
 		const result = applyHashlineEdits(content, resolved);
 		expect(result.content).toBe("aaa\nBBB\nccc");
 	});
 
-	it("full pipeline: string lines are rejected", () => {
+	it("full pipeline: string new_lines are rejected", () => {
 		const content = "aaa\nbbb\nccc";
 		const hash = computeLineHashes(content)[1]!;
 		const toolEdits: HashlineToolEdit[] = [
-			{ start: hash, end: hash, lines: "BBB" } as unknown as HashlineToolEdit,
+			{ old_range: [hash, hash], new_lines: "BBB" } as unknown as HashlineToolEdit,
 		];
 		expect(() => resolveEditAnchors(toolEdits)).toThrow(
-			/lines" must be a string array/i,
+			/new_lines" must be a string array/i,
 		);
 	});
 
-	it("full pipeline: null lines are rejected instead of deleting", () => {
+	it("full pipeline: null new_lines are rejected instead of deleting", () => {
 		const content = "aaa\nbbb\nccc";
 		const hash = computeLineHashes(content)[1]!;
 		const toolEdits: HashlineToolEdit[] = [
-			{ start: hash, end: hash, lines: null } as unknown as HashlineToolEdit,
+			{ old_range: [hash, hash], new_lines: null } as unknown as HashlineToolEdit,
 		];
 		expect(() => resolveEditAnchors(toolEdits)).toThrow(
-			/lines" must be a string array/i,
+			/new_lines" must be a string array/i,
 		);
 	});
 
-	it("full pipeline: hashline-prefixed array lines are rejected (no autocorrection)", () => {
+	it("full pipeline: hashline-prefixed array new_lines are rejected (no autocorrection)", () => {
 		const content = "aaa\nbbb\nccc";
 		const hash = computeLineHashes(content)[1]!;
 		// In the new format, the line number is gone from the wire protocol,
-		// so a "2#HHHH:" prefix inside `lines` would never be produced by
+		// so a "2#HHHH:" prefix inside `new_lines` would never be produced by
 		// read output — it can only come from a confused model. The
 		// `+HHHH:` form (diff-style addition) is what assertNoDisplayPrefixes
 		// catches on shape alone, and it remains rejected.
 		const toolEdits: HashlineToolEdit[] = [
-			{ start: hash, end: hash, lines: [`+${hash}│BBB`] },
+			{ old_range: [hash, hash], new_lines: [`+${hash}│BBB`] },
 		];
 		expect(() => resolveEditAnchors(toolEdits)).toThrow(/^\[E_INVALID_PATCH\]/);
 	});
@@ -257,21 +257,21 @@ describe("integration: resolveEditAnchors → applyHashlineEdits", () => {
 			` ${hashes[2]!}:ccc`,
 		];
 		const toolEdits: HashlineToolEdit[] = [
-			{ start: start, end, lines: replacement },
+			{ old_range: [start, end], new_lines: replacement },
 		];
 		expect(() => resolveEditAnchors(toolEdits)).toThrow(/^\[E_INVALID_PATCH\]/);
 	});
 
-	it("full pipeline: tool-level lines:[\"\"] is normalized to a delete (no extra blank line)", () => {
-		// Models commonly emit `lines: [""]` to mean "delete this line". The
-		// tool-level pipeline must collapse that to `lines: []` so the apply
+	it("full pipeline: tool-level new_lines:[\"\"] is normalized to a delete (no extra blank line)", () => {
+		// Models commonly emit `new_lines: [""]` to mean "delete this line". The
+		// tool-level pipeline must collapse that to `new_lines: []` so the apply
 		// layer's deletion branch (which correctly handles trailing newlines)
 		// runs. Otherwise the original trailing newline of the last replaced
 		// line is left behind as an extra blank line.
 		const content = "aaa\nbbb\nccc\n";
 		const hash = computeLineHashes(content)[1]!;
 		const toolEdits: HashlineToolEdit[] = [
-			{ start: hash, end: hash, lines: [""] },
+			{ old_range: [hash, hash], new_lines: [""] },
 		];
 		const resolved = resolveEditAnchors(toolEdits);
 		const result = applyHashlineEdits(content, resolved);

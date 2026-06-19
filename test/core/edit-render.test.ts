@@ -174,15 +174,14 @@ describe("isAppliedChangedResult", () => {
 		expect(isAppliedChangedResult(details)).toBe(false);
 	});
 
-	it("returns false for full mode result", () => {
+	it("returns false for noop result", () => {
 		const details: HashlineReplaceToolDetails = {
 			diff: "+added",
 			metrics: {
 				edits_attempted: 1,
 				edits_noop: 0,
 				warnings: 0,
-				return_mode: "full",
-				classification: "applied",
+				classification: "noop",
 			},
 		};
 		expect(isAppliedChangedResult(details)).toBe(false);

@@ -22,7 +22,7 @@ describe("stale-position compound edits", () => {
 
 		const line5Hash = makeTag(content, 5).hash;
 		const edits: HashlineEdit[] = [
-			{ start: { hash: line5Hash }, end: { hash: line5Hash }, lines: ["NEW_LINE_5"] },
+			{ old_range: [{ hash: line5Hash }, { hash: line5Hash }], new_lines: ["NEW_LINE_5"] },
 		];
 
 		const result = applyHashlineEdits(content, edits);
@@ -32,7 +32,7 @@ describe("stale-position compound edits", () => {
 		// result should fail because the line at that hash no longer exists.
 		expect(() => {
 			applyHashlineEdits(result.content, [
-				{ start: { hash: line5Hash }, end: { hash: line5Hash }, lines: ["ANOTHER"] },
+				{ old_range: [{ hash: line5Hash }, { hash: line5Hash }], new_lines: ["ANOTHER"] },
 			]);
 		}).toThrow(/stale anchor/);
 
@@ -40,7 +40,7 @@ describe("stale-position compound edits", () => {
 		// file.
 		const freshHash = computeLineHashes(result.content)[4]!;
 		const result2 = applyHashlineEdits(result.content, [
-			{ start: { hash: freshHash }, end: { hash: freshHash }, lines: ["UPDATED_LINE_5"] },
+			{ old_range: [{ hash: freshHash }, { hash: freshHash }], new_lines: ["UPDATED_LINE_5"] },
 		]);
 		expect(result2.content.split("\n")[4]).toBe("UPDATED_LINE_5");
 	});
@@ -55,7 +55,7 @@ describe("stale-position compound edits", () => {
 		const line4Hash = makeTag(content, 4).hash;
 		const toolEdits: HashlineToolEdit[] = [
 			{
-				start: line2Hash, end: line4Hash, lines: ["NEW_2", "NEW_3", "NEW_4"],
+				old_range: [line2Hash, line4Hash], new_lines: ["NEW_2", "NEW_3", "NEW_4"],
 			},
 		];
 
@@ -108,7 +108,7 @@ describe("stale-position compound edits", () => {
 		// Replace 2 lines with 1 (shrink).
 		const content = "a\nb\nc\nd\ne";
 		const edits: HashlineEdit[] = [
-			{ start: makeTag(content, 3), end: makeTag(content, 4), lines: ["C_D"] },
+			{ old_range: [makeTag(content, 3), makeTag(content, 4)], new_lines: ["C_D"] },
 		];
 		const result = applyHashlineEdits(content, edits);
 

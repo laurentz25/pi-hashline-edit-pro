@@ -44,7 +44,7 @@ describe("snapshotId surface (details-only after W2)", () => {
             snapshotId: "v1|fake|0|0",
             edits: [
               {
-                start: `${computeLineHash(2, "beta")}`, end: `${computeLineHash(2, "beta")}`, lines: ["BETA"],
+                old_range: [`${computeLineHash(2, "beta")}`, `${computeLineHash(2, "beta")}`], new_lines: ["BETA"],
               },
             ],
           },
@@ -80,7 +80,7 @@ describe("snapshotId surface (details-only after W2)", () => {
             path: "sample.txt",
             edits: [
               {
-                start: `${computeLineHash(4, "four")}`, end: `${computeLineHash(4, "four")}`, lines: ["FOUR"],
+                old_range: [`${computeLineHash(4, "four")}`, `${computeLineHash(4, "four")}`], new_lines: ["FOUR"],
               },
             ],
           },
@@ -109,7 +109,7 @@ describe("snapshotId surface (details-only after W2)", () => {
           path: "sample.txt",
           edits: [
             {
-              start: `${computeLineHash(2, "beta")}`, end: `${computeLineHash(2, "beta")}`, lines: ["BETA"],
+              old_range: [`${computeLineHash(2, "beta")}`, `${computeLineHash(2, "beta")}`], new_lines: ["BETA"],
             },
           ],
         },
@@ -144,7 +144,7 @@ describe("snapshotId surface (details-only after W2)", () => {
               path: "sample.txt",
               edits: [
                 {
-                  start: `${computeLineHash(2, "two")}`, end: `${computeLineHash(2, "two")}`, lines: ["TWO"],
+                  old_range: [`${computeLineHash(2, "two")}`, `${computeLineHash(2, "two")}`], new_lines: ["TWO"],
                 },
               ],
             },

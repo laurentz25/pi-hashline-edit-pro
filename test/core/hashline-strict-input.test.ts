@@ -11,7 +11,7 @@ describe("strict edit input (no autocorrection)", () => {
 		const file = "foo\nbar";
 		const hashes = computeLineHashes(file);
 		const toolEdits: HashlineToolEdit[] = [
-			{ start: hashes[0]!, end: hashes[0]!, lines: [`${hashes[0]!}│foo`] },
+			{ old_range: [hashes[0]!, hashes[0]!], new_lines: [`${hashes[0]!}│foo`] },
 		];
 		let caught: Error | undefined;
 		try {
@@ -24,16 +24,16 @@ describe("strict edit input (no autocorrection)", () => {
 		expect(caught!.message).toMatch(/match file line hashes/);
 	});
 
-	it("rejects string lines before patch-prefix validation", () => {
+	it("rejects string new_lines before patch-prefix validation", () => {
 		const file = "foo\nbar";
 		const hashes = computeLineHashes(file);
 		const toolEdits: HashlineToolEdit[] = [
 			{
-				start: hashes[0]!, end: hashes[0]!, lines: `+${hashes[0]!}:foo`,
+				old_range: [hashes[0]!, hashes[0]!], new_lines: `+${hashes[0]!}:foo`,
 			} as unknown as HashlineToolEdit,
 		];
 		expect(() => resolveEditAnchors(toolEdits)).toThrow(
-			/lines" must be a string array/i,
+			/new_lines" must be a string array/i,
 		);
 	});
 
@@ -41,7 +41,7 @@ describe("strict edit input (no autocorrection)", () => {
 		const file = "foo\nbar";
 		const hashes = computeLineHashes(file);
 		const toolEdits: HashlineToolEdit[] = [
-			{ start: hashes[0]!, end: hashes[0]!, lines: ["-1    foo"] },
+			{ old_range: [hashes[0]!, hashes[0]!], new_lines: ["-1    foo"] },
 		];
 		expect(() => resolveEditAnchors(toolEdits)).toThrow(/^\[E_INVALID_PATCH\]/);
 	});
@@ -50,21 +50,21 @@ describe("strict edit input (no autocorrection)", () => {
 		const file = "foo\nbar";
 		const hashes = computeLineHashes(file);
 		const toolEdits: HashlineToolEdit[] = [
-			{ start: hashes[0]!, end: hashes[0]!, lines: ["bar"] },
+			{ old_range: [hashes[0]!, hashes[0]!], new_lines: ["bar"] },
 		];
 		const resolved = resolveEditAnchors(toolEdits);
 		expect(resolved).toHaveLength(1);
-		expect(resolved[0]!.lines).toEqual(["bar"]);
+		expect(resolved[0]!.new_lines).toEqual(["bar"]);
 	});
 
 	it("preserves '#' comment lines that do not match the strict prefix", () => {
 		const file = "foo\nbar";
 		const hashes = computeLineHashes(file);
 		const toolEdits: HashlineToolEdit[] = [
-			{ start: hashes[0]!, end: hashes[0]!, lines: ["# keep me"] },
+			{ old_range: [hashes[0]!, hashes[0]!], new_lines: ["# keep me"] },
 		];
 		const resolved = resolveEditAnchors(toolEdits);
-		expect(resolved[0]!.lines).toEqual(["# keep me"]);
+		expect(resolved[0]!.new_lines).toEqual(["# keep me"]);
 	});
 });
 
@@ -83,7 +83,7 @@ describe("partial hash prefixes copied into content (issue #24)", () => {
 		let caught: Error | undefined;
 		try {
 			applyTool([
-				{ start: anchor, end: anchor, lines: [`${betaHash}│### heading`, "real content"] },
+				{ old_range: [anchor, anchor], new_lines: [`${betaHash}│### heading`, "real content"] },
 			]);
 		} catch (e) {
 			caught = e as Error;
@@ -98,7 +98,7 @@ describe("partial hash prefixes copied into content (issue #24)", () => {
 		let caught: Error | undefined;
 		try {
 			applyTool([
-				{ start: anchor, end: anchor, lines: [`${gammaHash}│text`] },
+				{ old_range: [anchor, anchor], new_lines: [`${gammaHash}│text`] },
 			]);
 		} catch (e) {
 			caught = e as Error;
@@ -112,7 +112,7 @@ describe("partial hash prefixes copied into content (issue #24)", () => {
 		let caught: Error | undefined;
 		try {
 			applyTool([
-			{ start: anchor, end: anchor, lines: ["ZZZ│one", "ZZP│two"] },
+			{ old_range: [anchor, anchor], new_lines: ["ZZZ│one", "ZZP│two"] },
 			]);
 		} catch (e) {
 			caught = e as Error;
@@ -124,7 +124,7 @@ describe("partial hash prefixes copied into content (issue #24)", () => {
 
 	it("accepts a single legit 'TS: TypeScript' line without warning", () => {
 		const result = applyTool([
-			{ start: anchor, end: anchor, lines: ["TS: TypeScript"] },
+			{ old_range: [anchor, anchor], new_lines: ["TS: TypeScript"] },
 		]);
 		expect(result.warnings ?? []).toEqual([]);
 		expect(result.content).toContain("TS: TypeScript");
@@ -132,7 +132,7 @@ describe("partial hash prefixes copied into content (issue #24)", () => {
 
 	it("does not false-positive on shorter valid-content prefixes like '#' or '+'", () => {
 		const result = applyTool([
-			{ start: anchor, end: anchor, lines: ["# heading"] },
+			{ old_range: [anchor, anchor], new_lines: ["# heading"] },
 		]);
 		expect(result.warnings ?? []).toEqual([]);
 	});

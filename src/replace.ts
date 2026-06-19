@@ -30,11 +30,8 @@ import { throwIfAborted } from "./runtime";
 import { getFileSnapshot } from "./snapshot";
 import {
 	buildChangedResponse,
-	buildFullResponse,
 	buildNoopResponse,
-	buildRangesResponse,
 	type ReplaceMeta,
-	type ReturnMode,
 } from "./replace-response";
 import {
 	buildAppliedChangedResultText,
@@ -48,69 +45,30 @@ import {
 	type ReplaceRenderState,
 } from "./replace-render";
 
-function stringEnumSchema<const Values extends readonly string[]>(
-	values: Values,
-	options: { description: string },
-) {
-	return Type.Unsafe<Values[number]>({
-		type: "string",
-		enum: [...values],
-		description: options.description,
-	});
-}
 
-const hashlineEditLinesSchema = Type.Array(Type.String(), {
+const hashlineEditNewLinesSchema = Type.Array(Type.String(), {
 	description:
 		"replacement content, one array entry per line, no HASH| prefix",
 });
 
-const returnRangeSchema = Type.Object(
-	{
-		start: Type.Integer({
-			minimum: 1,
-			description: "first post-edit line to return",
-		}),
-		end: Type.Optional(
-			Type.Integer({
-				minimum: 1,
-				description: "last post-edit line to return",
-			}),
-		),
-	},
-	{ additionalProperties: false },
+const hasheditOldRangeSchema = Type.Tuple(
+	[
+		Type.String({ description: "range-start anchor (3-char HASH)" }),
+		Type.String({ description: "range-end anchor (3-char HASH)" }),
+	],
+	{ description: "inclusive line range to replace [start, end]" },
 );
 
 const hashlineEditItemSchema = Type.Object(
 	{
-		start: Type.Optional(
-			Type.String({
-				description:
-					"required range-start anchor (hash anchor like \"aB3x\" copied from read output); no content may follow the anchor",
-			}),
-		),
-		end: Type.Optional(
-			Type.String({
-				description:
-					"required range-end anchor (hash anchor like \"aB3x\"). To replace a single line, set start = end = the line's anchor",
-			}),
-		),
-		lines: Type.Optional(hashlineEditLinesSchema),
+		old_range: Type.Optional(hasheditOldRangeSchema),
+		new_lines: Type.Optional(hashlineEditNewLinesSchema),
 	},
 	{ additionalProperties: false },
 );
 export const hashlineEditToolSchema = Type.Object(
 	{
 		path: Type.String({ description: "path" }),
-		returnMode: Type.Optional(
-			stringEnumSchema(["changed", "full", "ranges"] as const, {
-				description: 'response mode: "changed", "full", or "ranges"',
-			}),
-		),
-		returnRanges: Type.Optional(
-			Type.Array(returnRangeSchema, {
-				description: "post-edit line ranges when returnMode is ranges",
-			}),
-		),
 		edits: Type.Optional(
 			Type.Array(hashlineEditItemSchema, { description: "edits over $path" }),
 		),
@@ -118,28 +76,8 @@ export const hashlineEditToolSchema = Type.Object(
 	{ additionalProperties: false },
 );
 
-type ReturnRange = {
-	start: number;
-	end?: number;
-};
-
-type ReturnedRangePreview = {
-	start: number;
-	end: number;
-	text: string;
-	nextOffset?: number;
-	empty?: true;
-};
-
-type FullContentPreview = {
-	text: string;
-	nextOffset?: number;
-};
-
 export type ReplaceRequestParams = {
 	path: string;
-	returnMode?: "changed" | "full" | "ranges";
-	returnRanges?: ReturnRange[];
 	edits?: HashlineToolEdit[];
 };
 
@@ -147,7 +85,6 @@ type ReplaceMetrics = {
 	edits_attempted: number;
 	edits_noop: number;
 	warnings: number;
-	return_mode: "changed" | "full" | "ranges";
 	classification: "applied" | "noop";
 	changed_lines?: { first: number; last: number };
 	added_lines?: number;
@@ -164,9 +101,6 @@ export type HashlineReplaceToolDetails = {
 	 */
 	snapshotId?: string;
 	classification?: "noop";
-	nextOffset?: number;
-	fullContent?: FullContentPreview;
-	returnedRanges?: ReturnedRangePreview[];
 	structureOutline?: string[];
 	/**
 	 * Phase 2 C — opt-in observability surface for hosts. Never echoed in text.
@@ -194,7 +128,7 @@ const EDIT_PROMPT_GUIDELINES = readFileSync(
 	.map((line) => line.trim())
 	.filter((line) => line.startsWith("- "))
 	.map((line) => line.slice(2));
-const ROOT_KEYS = new Set(["path", "returnMode", "returnRanges", "edits"]);
+const ROOT_KEYS = new Set(["path", "edits"]);
 
 export function assertReplaceRequest(
 	request: unknown,
@@ -203,10 +137,10 @@ export function assertReplaceRequest(
 		throw new Error("[E_BAD_SHAPE] Edit request must be an object.");
 	}
 
-	for (const legacyKey of ["oldText", "newText", "old_text", "new_text"]) {
+	for (const legacyKey of ["oldText", "newText", "old_text", "new_text", "start", "end", "lines"]) {
 		if (hasOwn(request, legacyKey)) {
 			throw new Error(
-				`[E_LEGACY_SHAPE] "${legacyKey}" is not supported. Use {start:"<HASH>", end:"<HASH>", lines:[...]}.`
+				`[E_LEGACY_SHAPE] "${legacyKey}" is not supported. Use {old_range: ["<START>", "<END>"], new_lines: [...]}.`
 			);
 		}
 	}
@@ -228,66 +162,7 @@ export function assertReplaceRequest(
 		throw new Error('[E_BAD_SHAPE] Edit request requires an "edits" array when provided.');
 	}
 
-	if (hasOwn(request, "returnMode")) {
-		if (
-			request.returnMode !== "changed" &&
-			request.returnMode !== "full" &&
-			request.returnMode !== "ranges"
-		) {
-			throw new Error(
-				'[E_BAD_SHAPE] Edit request field "returnMode" must be "changed", "full", or "ranges" when provided.',
-			);
-		}
-	}
-
-	if (hasOwn(request, "returnRanges")) {
-		if (
-			!Array.isArray(request.returnRanges) ||
-			request.returnRanges.length === 0
-		) {
-			throw new Error(
-				'[E_BAD_SHAPE] Edit request field "returnRanges" must be a non-empty array when provided.',
-			);
-		}
-		for (const [index, range] of request.returnRanges.entries()) {
-			if (!isRecord(range)) {
-				throw new Error(`[E_BAD_SHAPE] returnRanges[${index}] must be an object.`);
-			}
-			if (!Number.isInteger(range.start) || (range.start as number) < 1) {
-				throw new Error(
-					`[E_BAD_SHAPE] returnRanges[${index}].start must be a positive integer.`,
-				);
-			}
-			if (hasOwn(range, "end")) {
-				if (!Number.isInteger(range.end) || (range.end as number) < 1) {
-					throw new Error(
-						`[E_BAD_SHAPE] returnRanges[${index}].end must be a positive integer when provided.`,
-					);
-				}
-				if ((range.end as number) < (range.start as number)) {
-					throw new Error(`[E_BAD_SHAPE] returnRanges[${index}].end must be >= start.`);
-				}
-			}
-		}
-	}
-
-	if (request.returnMode === "ranges") {
-		if (
-			!Array.isArray(request.returnRanges) ||
-			request.returnRanges.length === 0
-		) {
-			throw new Error(
-				'[E_BAD_SHAPE] Edit request with returnMode "ranges" requires a non-empty "returnRanges" array.',
-			);
-		}
-	} else if (hasOwn(request, "returnRanges")) {
-		throw new Error(
-			'[E_BAD_SHAPE] Edit request field "returnRanges" is only supported when returnMode is "ranges".',
-		);
-	}
-
 }
-
 async function executeEditPipeline(
 	request: unknown,
 	cwd: string,
@@ -549,9 +424,6 @@ const editToolDefinition: EditToolDefinition = {
 		const normalizedParams = normalized;
 		const path = normalizedParams.path;
 		const absolutePath = resolveToCwd(path, ctx.cwd);
-		const returnMode = normalizedParams.returnMode ?? "changed";
-		const requestedReturnRanges = normalizedParams.returnRanges;
-
 		const mutationTargetPath = await resolveMutationTargetPath(absolutePath);
 		return withFileMutationQueue(mutationTargetPath, async () => {
 			throwIfAborted(signal);
@@ -581,8 +453,6 @@ const editToolDefinition: EditToolDefinition = {
 				const noopSnapshotId = (await getFileSnapshot(absolutePath)).snapshotId;
 				return buildNoopResponse({
 					path,
-					returnMode: returnMode as ReturnMode,
-					requestedReturnRanges,
 					noopEdits,
 					originalNormalized,
 					snapshotId: noopSnapshotId,
@@ -617,8 +487,6 @@ const editToolDefinition: EditToolDefinition = {
 
 			const successInput = {
 				path,
-				returnMode: returnMode as ReturnMode,
-				requestedReturnRanges,
 				originalNormalized,
 				result,
 				resultHashes: computeLineHashes(result),
@@ -627,8 +495,6 @@ const editToolDefinition: EditToolDefinition = {
 				editMeta,
 			};
 
-			if (returnMode === "full") return buildFullResponse(successInput);
-			if (returnMode === "ranges") return buildRangesResponse(successInput);
 			return buildChangedResponse(successInput);
 		});
 	},

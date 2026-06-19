@@ -20,7 +20,7 @@ describe("edit tool text shape (token budget)", () => {
           path: "sample.ts",
           edits: [
             {
-              start: `${computeLineHash(2, "bbb")}`, end: `${computeLineHash(2, "bbb")}`, lines: ["BBB"],
+              old_range: [`${computeLineHash(2, "bbb")}`, `${computeLineHash(2, "bbb")}`], new_lines: ["BBB"],
             },
           ],
         },
@@ -36,7 +36,7 @@ describe("edit tool text shape (token budget)", () => {
       expect(text).not.toContain("Diff preview");
       expect(text).not.toContain("Updated anchors");
       expect(result.details?.diff).toContain(`+${computeLineHash(2, "BBB")}`);
-		expect(result.details?.diff).toContain("│BBB");
+      expect(result.details?.diff).toContain("│BBB");
       expect(result.details?.metrics).toMatchObject({
         added_lines: 1,
         removed_lines: 1,
@@ -56,7 +56,7 @@ describe("edit tool text shape (token budget)", () => {
           path: "sample.ts",
           edits: [
             {
-              start: `${computeLineHash(2, "bbb")}`, end: `${computeLineHash(2, "bbb")}`, lines: ["BBB"],
+              old_range: [`${computeLineHash(2, "bbb")}`, `${computeLineHash(2, "bbb")}`], new_lines: ["BBB"],
             },
           ],
         },
@@ -68,101 +68,6 @@ describe("edit tool text shape (token budget)", () => {
       const text = getText(result);
       expect(text).toMatch(/^--- Anchors ---$/m);
       expect(text).not.toMatch(/use these for subsequent edits/);
-    });
-  });
-
-  it("full mode omits Structure outline when no structural markers are found", async () => {
-    await withTempFile("sample.txt", "aaa\nbbb\nccc\n", async ({ cwd }) => {
-      const { pi, getTool } = makeFakePiRegistry();
-      register(pi);
-      const editTool = getTool("replace");
-
-      const result = await editTool.execute(
-        "e1",
-        {
-          path: "sample.txt",
-          returnMode: "full",
-          edits: [
-            {
-              start: `${computeLineHash(2, "bbb")}`, end: `${computeLineHash(2, "bbb")}`, lines: ["BBB"],
-            },
-          ],
-        },
-        undefined,
-        undefined,
-        { cwd } as any,
-      );
-
-      const text = getText(result);
-      expect(text).not.toContain("Structure outline:");
-      expect(text).toContain("details.fullContent");
-      expect(result.details?.structureOutline).toEqual([]);
-    });
-  });
-
-  it("full mode includes Structure outline when structural markers are found", async () => {
-    const source = [
-      "// header",
-      "export function alpha() {",
-      "  return 1;",
-      "}",
-      "export class Beta {}",
-      "",
-    ].join("\n");
-    await withTempFile("sample.ts", source, async ({ cwd }) => {
-      const { pi, getTool } = makeFakePiRegistry();
-      register(pi);
-      const editTool = getTool("replace");
-
-      const result = await editTool.execute(
-        "e1",
-        {
-          path: "sample.ts",
-          returnMode: "full",
-          edits: [
-            {
-              start: `${computeLineHash(3, "  return 1;")}`, end: `${computeLineHash(3, "  return 1;")}`, lines: ["  return 2;"],
-            },
-          ],
-        },
-        undefined,
-        undefined,
-        { cwd } as any,
-      );
-
-      const text = getText(result);
-      expect(text).toContain("Structure outline:");
-      expect(text).toMatch(/function alpha/);
-      expect(text).toMatch(/class Beta/);
-    });
-  });
-
-  it("noop in full mode omits outline when nothing structural shows up", async () => {
-    await withTempFile("sample.txt", "aaa\nbbb\nccc\n", async ({ cwd }) => {
-      const { pi, getTool } = makeFakePiRegistry();
-      register(pi);
-      const editTool = getTool("replace");
-
-      const result = await editTool.execute(
-        "e1",
-        {
-          path: "sample.txt",
-          returnMode: "full",
-          edits: [
-            {
-              start: `${computeLineHash(2, "bbb")}`, end: `${computeLineHash(2, "bbb")}`, lines: ["bbb"],
-            },
-          ],
-        },
-        undefined,
-        undefined,
-        { cwd } as any,
-      );
-
-      const text = getText(result);
-      expect(text).toContain("Classification: noop");
-      expect(text).not.toContain("Structure outline:");
-      expect(text).toContain("details.fullContent");
     });
   });
 
@@ -179,7 +84,7 @@ describe("edit tool text shape (token budget)", () => {
             path: "sample.txt",
             edits: [
               {
-                start: `${computeLineHash(1, "only")}`, end: `${computeLineHash(1, "only")}`, lines: [],
+                old_range: [`${computeLineHash(1, "only")}`, `${computeLineHash(1, "only")}`], new_lines: [],
               },
             ],
           },
@@ -190,6 +95,7 @@ describe("edit tool text shape (token budget)", () => {
       ).rejects.toThrow(/^\[E_WOULD_EMPTY\]/);
     });
   });
+
   it("changed mode omits oversized anchor payloads even when the changed span fits by line count", async () => {
     const longLine = "a".repeat(60_000);
     await withTempFile("sample.txt", `before\n${longLine}\nafter\n`, async ({ cwd }) => {
@@ -203,7 +109,7 @@ describe("edit tool text shape (token budget)", () => {
           path: "sample.txt",
           edits: [
             {
-              start: `${computeLineHash(2, longLine)}`, end: `${computeLineHash(2, longLine)}`, lines: [`b${longLine.slice(1)}`],
+              old_range: [`${computeLineHash(2, longLine)}`, `${computeLineHash(2, longLine)}`], new_lines: [`b${longLine.slice(1)}`],
             },
           ],
         },

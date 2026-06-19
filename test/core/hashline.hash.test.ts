@@ -47,7 +47,7 @@ describe("strict hashline contract", () => {
 	it("rejects stale anchors instead of relocating by hash", () => {
 		const content = ["a", "INSERTED", "b", "target", "c"].join("\n");
 		const stale = {
-			start: { hash: "ZZZZ" }, end: { hash: "ZZZZ" }, lines: ["updated"],
+			old_range: [{ hash: "ZZZZ" }, { hash: "ZZZZ" }], new_lines: ["updated"],
 		} as any;
 
 		expect(() => applyHashlineEdits(content, [stale])).toThrow(/stale anchor/);
@@ -98,7 +98,7 @@ describe("perfect hashing", () => {
 		const hashes = computeLineHashes(file);
 		// Edit only the second occurrence of "const x = 1;" (line 3, not line 1).
 		const result = applyHashlineEdits(file, [
-			{ start: { hash: hashes[2]! }, end: { hash: hashes[2]! }, lines: ["const x = 999;"] },
+			{ old_range: [{ hash: hashes[2]! }, { hash: hashes[2]! }], new_lines: ["const x = 999;"] },
 		]);
 		expect(result.content).toBe("const x = 1;\nconst y = 2;\nconst x = 999;");
 	});
@@ -109,7 +109,7 @@ describe("perfect hashing", () => {
 		let caught: Error | undefined;
 		try {
 			applyHashlineEdits(file, [
-				{ start: { hash: staleHash }, end: { hash: staleHash }, lines: ["X"] },
+				{ old_range: [{ hash: staleHash }, { hash: staleHash }], new_lines: ["X"] },
 			]);
 		} catch (e) {
 			caught = e as Error;
@@ -134,7 +134,7 @@ describe("perfect hashing", () => {
 			applyHashlineEdits(
 				file,
 				[
-					{ start: { hash: sharedHash }, end: { hash: sharedHash }, lines: ["X"] },
+					{ old_range: [{ hash: sharedHash }, { hash: sharedHash }], new_lines: ["X"] },
 				],
 				undefined,
 				forgedHashes,

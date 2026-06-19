@@ -111,14 +111,10 @@ describe("normalizeReplaceRequest", () => {
 	it("preserves other fields during normalization", () => {
 		const input = {
 			file_path: "src/main.ts",
-			returnMode: "full",
-			returnRanges: [{ start: 1, end: 5 }],
 			edits: [{ start: "aB3x", end: "aB3x", lines: ["x"] }],
 		};
 		const result = normalizeReplaceRequest(input) as Record<string, unknown>;
 		expect(result.path).toBe("src/main.ts");
-		expect(result.returnMode).toBe("full");
-		expect(result.returnRanges).toEqual([{ start: 1, end: 5 }]);
 	});
 
 	it("does not mutate the original input", () => {

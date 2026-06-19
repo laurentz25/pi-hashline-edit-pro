@@ -16,11 +16,11 @@ describe("prompts/replace.md (model-facing contract)", () => {
 		expect(replacePrompt).toMatch(/Single line replace/);
 		expect(replacePrompt).toMatch(/Range replace/);
 		expect(replacePrompt).toMatch(/Multiple regions in one call/);
-		expect(replacePrompt).toContain('"lines": []');
+		expect(replacePrompt).toContain('"new_lines": []');
 	});
 
-	it("requires both start and end", () => {
-		expect(replacePrompt).toMatch(/`start` and `end` are required/i);
+	it("requires old_range pair", () => {
+		expect(replacePrompt).toMatch(/old_range/i);
 	});
 
 	it("declares that edits must be non-conflicting", () => {

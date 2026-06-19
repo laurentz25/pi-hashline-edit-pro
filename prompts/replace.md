@@ -13,10 +13,10 @@ read({ path: "src/main.ts" })
 // VRW│const z = 3;
 ```
 
-2. Copy the 3-character HASH (before `│`) into `start`/`end`:
+2. Copy the 3-character HASH (before `│`) into `old_range`:
 ```json
 { "path": "src/main.ts", "edits": [
-  { "start": "MQX", "end": "MQX", "lines": ["const x = 99;"] }
+  { "old_range": ["MQX", "MQX"], "new_lines": ["const x = 99;"] }
 ] }
 ```
 
@@ -25,14 +25,14 @@ Examples:
 1. Single line replace:
 ```json
 { "path": "src/main.ts", "edits": [
-  { "start": "MQX", "end": "MQX", "lines": ["const x = 1;"] }
+  { "old_range": ["MQX", "MQX"], "new_lines": ["const x = 1;"] }
 ] }
 ```
 
 2. Range replace (3 lines → 3 new lines):
 ```json
 { "path": "src/main.ts", "edits": [
-  { "start": "ZPM", "end": "VRW", "lines": [
+  { "old_range": ["ZPM", "VRW"], "new_lines": [
     "function greet(name) {",
     "  return `Hello, ${name}`;",
     "}"
@@ -43,21 +43,21 @@ Examples:
 3. Multiple regions in one call (delete two non-adjacent ranges):
 ```json
 { "path": "src/server.ts", "edits": [
-  { "start": "aB3", "end": "xY7", "lines": [] },
-  { "start": "MQX", "end": "ZPM", "lines": [] }
+  { "old_range": ["aB3", "xY7"], "new_lines": [] },
+  { "old_range": ["MQX", "ZPM"], "new_lines": [] }
 ] }
 ```
 
 Rules:
-- `start` and `end` are required. A single-line replace is `start=X, end=X`.
-- To delete a range, use `lines: []`.
-- `start`, `end` are HASH anchors only (e.g. `aB3`). Do not include `│` or line content.
-- `lines` is literal file content — each string becomes exactly one line in the file. No `HASH│` prefix, no `+`/`-` diff markers.
+- `old_range` is a pair `[start, end]`. A single-line replace is `old_range: ["X", "X"]`.
+- To delete a range, use `new_lines: []`.
+- `old_range` elements are HASH anchors only (e.g. `aB3`). Do not include `│` or line content.
+- `new_lines` is literal file content — each string becomes exactly one line in the file. No `HASH│` prefix, no `+`/`-` diff markers.
 - Don't add `""` for spacing unless you actually want a new blank line.
 - Copy anchors from the most recent `read` of the file. Do not guess or construct them.
 - All edits in one call must be non-conflicting. The runtime rejects with `[E_EDIT_CONFLICT]` if two ranges overlap.
-- If `lines` matches current content, the replace is classified as `noop` (file unchanged).
-- The `start`/`end` range is inclusive — both anchors and every line between them are replaced. If your replacement content includes lines that already exist in the file (e.g. closing brackets), make sure those lines are within your range, otherwise they will appear twice.
+- If `new_lines` matches current content, the replace is classified as `noop` (file unchanged).
+- The `old_range` is inclusive — both anchors and every line between them are replaced. If your replacement content includes lines that already exist in the file (e.g. closing brackets), make sure those lines are within your range, otherwise they will appear twice.
 
 On success, the response contains an `--- Anchors ---` block with fresh HASH anchors for the changed region. Use those for nearby follow-up replaces instead of re-reading.
 

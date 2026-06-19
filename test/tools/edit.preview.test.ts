@@ -25,7 +25,7 @@ describe("computeReplacePreview", () => {
       const preview = await computeReplacePreview(
         {
           path: "sample.txt",
-          edits: [{ start: betaRef, end: betaRef, lines: ["BBB"] }],
+          edits: [{ old_range: [betaRef, betaRef], new_lines: ["BBB"] }],
         },
         cwd,
       );
@@ -50,7 +50,7 @@ describe("computeReplacePreview", () => {
       const preview = await computeReplacePreview(
         {
           path: "sample.txt",
-          edits: [{ start: betaRef, end: betaRef, lines: ["BETA"] }],
+          edits: [{ old_range: [betaRef, betaRef], new_lines: ["BETA"] }],
         },
         cwd,
       );
@@ -74,7 +74,7 @@ describe("computeReplacePreview", () => {
         const preview = await computeReplacePreview(
           {
             path: "sample.txt",
-            edits: [{ start: betaRef, end: betaRef, lines: ["BBB"] }],
+            edits: [{ old_range: [betaRef, betaRef], new_lines: ["BBB"] }],
           },
           cwd,
         );
@@ -101,7 +101,7 @@ describe("computeReplacePreview", () => {
       const preview = await computeReplacePreview(
         {
           path: "sample.txt",
-          edits: [{ start: betaRef, end: betaRef, lines: ["BBB"] }],
+          edits: [{ old_range: [betaRef, betaRef], new_lines: ["BBB"] }],
         },
         cwd,
       );
@@ -129,7 +129,7 @@ describe("computeReplacePreview", () => {
       const betaRef = computeLineHash(2, "bbb");
       const editArgs = {
         path: "sample.txt",
-        edits: [{ start: betaRef, end: betaRef, lines: ["BBB"] }],
+        edits: [{ old_range: [betaRef, betaRef], new_lines: ["BBB"] }],
       };
 
       // Import registerReplaceTool to set up the tool with its render methods

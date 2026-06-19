@@ -20,7 +20,7 @@ describe("chained edit anchors", () => {
 
       const editResult = await editTool.execute(
         "e1",
-        { path: "sample.ts", edits: [{ start: betaRef, end: betaRef, lines: ["BETA"] }] },
+        { path: "sample.ts", edits: [{ old_range: [betaRef, betaRef], new_lines: ["BETA"] }] },
         undefined,
         undefined,
         ctx,
@@ -38,7 +38,7 @@ describe("chained edit anchors", () => {
       // Second edit using the returned anchor (no intermediate read).
       const editResult2 = await editTool.execute(
         "e2",
-        { path: "sample.ts", edits: [{ start: freshRef, end: freshRef, lines: ["BETA-CHAINED"] }] },
+        { path: "sample.ts", edits: [{ old_range: [freshRef, freshRef], new_lines: ["BETA-CHAINED"] }] },
         undefined,
         undefined,
         ctx,
@@ -76,7 +76,7 @@ describe("chained edit anchors", () => {
         "e1",
         {
           path: "big.ts",
-          edits: [{ start: line1Ref, end: line15Ref, lines: newLines }],
+          edits: [{ old_range: [line1Ref, line15Ref], new_lines: newLines }],
         },
         undefined,
         undefined,
@@ -107,7 +107,7 @@ describe("chained edit anchors", () => {
       const newLines = Array.from({ length: 11 }, (_, i) => `EXPANDED ${i + 1}`);
       const editResult = await editTool.execute(
         "e1",
-        { path: "expand.ts", edits: [{ start: targetRef, end: targetRef, lines: newLines }] },
+        { path: "expand.ts", edits: [{ old_range: [targetRef, targetRef], new_lines: newLines }] },
         undefined,
         undefined,
         ctx,
@@ -141,7 +141,7 @@ describe("chained edit anchors", () => {
       // First edit changes beta.
       await editTool.execute(
         "e1",
-        { path: "stale.ts", edits: [{ start: betaRef, end: betaRef, lines: ["BETA"] }] },
+        { path: "stale.ts", edits: [{ old_range: [betaRef, betaRef], new_lines: ["BETA"] }] },
         undefined,
         undefined,
         ctx,
@@ -151,7 +151,7 @@ describe("chained edit anchors", () => {
       await expect(
         editTool.execute(
           "e2-stale",
-          { path: "stale.ts", edits: [{ start: betaRef, end: betaRef, lines: ["BETA-AGAIN"] }] },
+          { path: "stale.ts", edits: [{ old_range: [betaRef, betaRef], new_lines: ["BETA-AGAIN"] }] },
           undefined,
           undefined,
           ctx,
@@ -161,7 +161,7 @@ describe("chained edit anchors", () => {
       // But alphaRef (unchanged line) should still work.
       const alphaEdit = await editTool.execute(
         "e3",
-        { path: "stale.ts", edits: [{ start: alphaRef, end: alphaRef, lines: ["ALPHA"] }] },
+        { path: "stale.ts", edits: [{ old_range: [alphaRef, alphaRef], new_lines: ["ALPHA"] }] },
         undefined,
         undefined,
         ctx,
