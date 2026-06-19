@@ -87,10 +87,14 @@ export function generateDiffString(
       let skipEnd = 0;
 
       if (!lastWasChange) {
+        // Before a change: show last contextLines only.
         skipStart = Math.max(0, raw.length - contextLines);
         linesToShow = raw.slice(skipStart);
-      }
-      if (!nextPartIsChange && linesToShow.length > contextLines) {
+      } else if (linesToShow.length > contextLines) {
+        // After a change: show first contextLines only.
+        // This also handles the case where we're between two changes
+        // (lastWasChange=true, nextPartIsChange=true) — without this,
+        // all lines between the changes would be shown untruncated.
         skipEnd = linesToShow.length - contextLines;
         linesToShow = linesToShow.slice(0, contextLines);
       }

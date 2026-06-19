@@ -53,6 +53,27 @@ describe("generateDiffString", () => {
 		expect(lines).toContainEqual(expect.stringMatching(/^\+[A-Za-z0-9_\-]{3}│ {2}return `Hello, \$\{name\}`$/));
 		expect(lines).toContainEqual(expect.stringMatching(/^ [A-Za-z0-9_\-]{3}│\}$/));
 	});
+	it("truncates context between two distant changes", () => {
+		// Two changes separated by 1000 unchanged lines
+		const lines = [];
+		for (let i = 1; i <= 1000; i++) lines.push("line " + i);
+		const before = "BEFORE\n" + lines.join("\n") + "\nAFTER";
+		const after = "BEFORE_CHANGED\n" + lines.join("\n") + "\nAFTER_CHANGED";
+
+		const { diff } = generateDiffString(before, after, 4);
+		const diffLines = diff.split("\n");
+
+		// Should NOT contain all 1000 lines between the changes
+		expect(diffLines.length).toBeLessThan(50);
+
+		// Should have ellipsis markers for the skipped context
+		const ellipsisCount = diffLines.filter((l: string) => l.trim() === "...").length;
+		expect(ellipsisCount).toBeGreaterThanOrEqual(1);
+
+		// Should still contain the actual changes
+		expect(diff).toContain("BEFORE_CHANGED");
+		expect(diff).toContain("AFTER_CHANGED");
+	});
 });
 
 describe("buildCompactHashlineDiffPreview", () => {
