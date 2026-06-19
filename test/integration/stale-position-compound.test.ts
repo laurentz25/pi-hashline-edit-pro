@@ -87,21 +87,13 @@ describe("stale-position compound edits", () => {
 		// ── Verify line count ──
 		expect(result.content.split("\n").length).toBe(10);
 
-		// ── Verify computeAffectedLineRange works with the tracked bounds ──
+		// ── Verify computeAffectedLineRange returns null with default contextLines (0) ──
 		const anchorRange = computeAffectedLineRange({
 			firstChangedLine: result.firstChangedLine,
 			lastChangedLine: result.lastChangedLine,
 			resultLineCount: expectedLines.length,
 		});
-		expect(anchorRange).not.toBeNull();
-
-		// ── Verify formatHashlineRegion produces valid anchors ──
-		const resultLines = expectedLines.slice(anchorRange!.start - 1, anchorRange!.end);
-		const resultHashes = computeLineHashes(result.content);
-		const regionHashes = resultHashes.slice(anchorRange!.start - 1, anchorRange!.end);
-		const region = formatHashlineRegion(regionHashes, resultLines);
-		expect(region).toContain("line1");
-		expect(region).toContain("NEW_2");
+		expect(anchorRange).toBeNull();
 	});
 
 	it("tracks correct coordinates when replace shrinks lines", () => {

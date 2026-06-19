@@ -44,7 +44,7 @@ function formatDiffPreviewLine(
 export function generateDiffString(
   oldContent: string,
   newContent: string,
-  contextLines = 4,
+  contextLines = 2,
   newContentHashes?: string[],
 ): { diff: string; firstChangedLine: number | undefined } {
   const parts = Diff.diffLines(oldContent, newContent);

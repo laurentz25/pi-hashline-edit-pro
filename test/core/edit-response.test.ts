@@ -76,7 +76,9 @@ describe("buildNoopResponse", () => {
 });
 
 describe("buildChangedResponse", () => {
-	it("returns anchors block in text", () => {
+	it("returns nothing in text when no anchor context", () => {
+		// With contextLines=0 (default), no anchor block is shown
+		// Nothing is shown; LLM can call read for fresh anchors
 		const input: SuccessResponseInput = {
 			path: "src/main.ts",
 			originalNormalized: "line1\nline2\nline3\n",
@@ -90,8 +92,7 @@ describe("buildChangedResponse", () => {
 			},
 		};
 		const result = buildChangedResponse(input);
-		expect(result.content[0].text).toContain("--- Anchors ---");
-		expect(result.content[0].text).toContain("modified");
+		expect(result.content[0].text).toBe("");
 	});
 
 	it("returns diff in details but not in text", () => {
@@ -150,9 +151,8 @@ describe("buildChangedResponse", () => {
 			},
 		};
 		const result = buildChangedResponse(input);
-		// With 2 lines of context, the range would be 49-53 (5 lines)
-		// which is within limits, so anchors should be present
-	expect(result.content[0].text).toContain("--- Anchors ---");
+		// With contextLines=0 (default), no anchor block is shown
+		expect(result.content[0].text).toBe("");
 	});
 
 	it("shows compact diff preview when anchors omitted due to large edit", () => {
@@ -176,8 +176,7 @@ describe("buildChangedResponse", () => {
 		const result = buildChangedResponse(input);
 		// Should NOT contain full anchors block
 		expect(result.content[0].text).not.toContain("--- Anchors ---");
-		// Should contain a diff preview instead of anchors
-		expect(result.content[0].text).toMatch(/Diff preview/);
-		expect(result.content[0].text).toContain("NEW0");
+		// With contextLines=0, nothing is shown in text
+		expect(result.content[0].text).toBe("");
 	});
 });

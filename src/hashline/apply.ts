@@ -287,7 +287,7 @@ export function applyHashlineEdits(
 }
 
 
-const ANCHOR_CONTEXT_LINES = 2;
+const ANCHOR_CONTEXT_LINES = 0;
 const ANCHOR_MAX_OUTPUT_LINES = 12;
 
 export function computeAffectedLineRange(params: {
@@ -306,6 +306,12 @@ export function computeAffectedLineRange(params: {
 	} = params;
 
 	if (firstChangedLine === undefined || lastChangedLine === undefined) {
+		return null;
+	}
+
+	// When contextLines is 0, skip the anchor block entirely.
+	// The LLM already knows what it changed and can call read for fresh anchors.
+	if (contextLines === 0) {
 		return null;
 	}
 

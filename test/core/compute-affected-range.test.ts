@@ -22,41 +22,52 @@ describe("computeAffectedLineRange", () => {
     ).toBeNull();
   });
 
-  it("returns range with context for a single-line change", () => {
-    const result = computeAffectedLineRange({
-      firstChangedLine: 5,
-      lastChangedLine: 5,
-      resultLineCount: 20,
-    });
-    expect(result).toEqual({ start: 3, end: 7 });
-  });
+	it("returns null with default contextLines (0)", () => {
+		// With contextLines=0 (default), the anchor block is skipped entirely
+		const result = computeAffectedLineRange({
+			firstChangedLine: 5,
+			lastChangedLine: 5,
+			resultLineCount: 20,
+		});
+		expect(result).toBeNull();
+	});
 
-  it("returns range with context for a multi-line change", () => {
-    const result = computeAffectedLineRange({
-      firstChangedLine: 10,
-      lastChangedLine: 15,
-      resultLineCount: 30,
-    });
-    expect(result).toEqual({ start: 8, end: 17 });
-  });
+	it("returns range with explicit contextLines", () => {
+		const result = computeAffectedLineRange({
+			firstChangedLine: 5,
+			lastChangedLine: 5,
+			resultLineCount: 20,
+			contextLines: 2,
+		});
+		expect(result).toEqual({ start: 3, end: 7 });
+	});
 
-  it("clamps start to 1 for changes near BOF", () => {
-    const result = computeAffectedLineRange({
-      firstChangedLine: 1,
-      lastChangedLine: 2,
-      resultLineCount: 20,
-    });
-    expect(result).toEqual({ start: 1, end: 4 });
-  });
+	it("returns null for multi-line change with default contextLines", () => {
+		const result = computeAffectedLineRange({
+			firstChangedLine: 10,
+			lastChangedLine: 15,
+			resultLineCount: 30,
+		});
+		expect(result).toBeNull();
+	});
 
-  it("clamps end to resultLineCount for changes near EOF", () => {
-    const result = computeAffectedLineRange({
-      firstChangedLine: 19,
-      lastChangedLine: 20,
-      resultLineCount: 20,
-    });
-    expect(result).toEqual({ start: 17, end: 20 });
-  });
+	it("returns null for changes near BOF with default contextLines", () => {
+		const result = computeAffectedLineRange({
+			firstChangedLine: 1,
+			lastChangedLine: 2,
+			resultLineCount: 20,
+		});
+		expect(result).toBeNull();
+	});
+
+	it("returns null for changes near EOF with default contextLines", () => {
+		const result = computeAffectedLineRange({
+			firstChangedLine: 19,
+			lastChangedLine: 20,
+			resultLineCount: 20,
+		});
+		expect(result).toBeNull();
+	});
 
   it("returns null when range + context exceeds maxOutputLines", () => {
     const result = computeAffectedLineRange({

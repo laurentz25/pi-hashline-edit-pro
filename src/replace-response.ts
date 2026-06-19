@@ -190,18 +190,10 @@ export function buildChangedResponse(input: SuccessResponseInput): ToolResult {
 					CHANGED_ANCHOR_TEXT_BUDGET_BYTES
 					? block
 					: "Anchors omitted; use read for subsequent edits.";
-			})()
+		})()
 		: resultLines.length === 0
 			? "File is empty. Use edit to insert content."
-			: (() => {
-					const diffLines = diffResult.diff.split("\n");
-					const MAX_DIFF_LINES = 30;
-					if (diffLines.length <= MAX_DIFF_LINES) {
-						return `Diff preview:\n${diffResult.diff}`;
-					}
-					const truncated = diffLines.slice(0, MAX_DIFF_LINES).join("\n");
-					return `Diff preview (${diffLines.length} lines, showing first ${MAX_DIFF_LINES}):\n${truncated}\n...`;
-				})();
+			: ""; // No anchor context → show nothing; LLM can call read for fresh anchors
 	const text = [anchorsBlock, warningsBlock.trimStart()]
 		.filter((section) => section.length > 0)
 		.join("\n\n");

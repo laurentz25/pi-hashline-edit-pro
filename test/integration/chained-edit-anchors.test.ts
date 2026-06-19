@@ -26,16 +26,18 @@ describe("chained edit anchors", () => {
         ctx,
       );
 
-      expect(editResult.content[0].text).toContain("--- Anchors");
-	      expect(editResult.content[0].text).toContain("│BETA");
+      // With contextLines=0, no anchor block is shown
+      // The LLM would need to call read for fresh anchors
+      expect(editResult.content[0].text).toBe("");
 
-      // Extract an anchor from the returned block and use it for a second edit.
-      const freshRef = editResult.content[0].text
+      // For chained edits, the LLM must call read first to get fresh anchors
+      const secondRead = await readTool.execute("r2", { path: "sample.ts" }, undefined, undefined, ctx);
+      const freshRef = secondRead.content[0].text
         .split("\n")
-	        .find((line: string) => line.includes("│BETA"))!
-	        .split("│")[0]!;
+        .find((line: string) => line.includes("│BETA"))!
+        .split("│")[0]!;
 
-      // Second edit using the returned anchor (no intermediate read).
+      // Second edit using the fresh anchor from read
       const editResult2 = await editTool.execute(
         "e2",
         { path: "sample.ts", edits: [{ old_range: [freshRef, freshRef], new_lines: ["BETA-CHAINED"] }] },
@@ -44,8 +46,7 @@ describe("chained edit anchors", () => {
         ctx,
       );
 
-      expect(editResult2.content[0].text).toContain("--- Anchors");
-	      expect(editResult2.content[0].text).toContain("│BETA-CHAINED");
+      expect(editResult2.content[0].text).toBe("");
     });
   });
 
@@ -83,10 +84,8 @@ describe("chained edit anchors", () => {
         ctx,
       );
 
-      // Post-edit: 15 new lines + context > 12 budget → no anchors block, but diff shown.
-      expect(editResult.content[0].text).not.toContain("--- Anchors");
-      expect(editResult.content[0].text).toContain("Diff preview:");
-      expect(editResult.content[0].text).toContain("NEW 1");
+      // Post-edit: nothing is shown with contextLines=0
+      expect(editResult.content[0].text).toBe("");
     });
   });
   it("omits anchors when single-line replace expands beyond budget", async () => {
@@ -114,10 +113,8 @@ describe("chained edit anchors", () => {
         ctx,
       );
 
-      // 11 new lines span 2-12, +4 context = 15 > 12 → no anchors block, but diff shown.
-      expect(editResult.content[0].text).not.toContain("--- Anchors");
-      expect(editResult.content[0].text).toContain("Diff preview:");
-      expect(editResult.content[0].text).toContain("EXPANDED 1");
+    // 11 new lines span 2-12, no context = 11 ≤ 12 → but with contextLines=0, no anchor block.
+      expect(editResult.content[0].text).toBe("");
     });
   });
 
@@ -168,8 +165,7 @@ describe("chained edit anchors", () => {
         undefined,
         ctx,
       );
-      expect(alphaEdit.content[0].text).toContain("--- Anchors");
-	      expect(alphaEdit.content[0].text).toContain("│ALPHA");
+      expect(alphaEdit.content[0].text).toBe("");
     });
   });
 });

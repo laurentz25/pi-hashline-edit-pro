@@ -30,10 +30,10 @@ describe("edit tool text shape (token budget)", () => {
       );
 
       const text = getText(result);
-      expect(text).toContain("--- Anchors ");
+      // With contextLines=0, no anchor block is shown
+      expect(text).toBe("");
       expect(text).not.toContain("Updated sample.ts");
       expect(text).not.toContain("Changes: +1 -1");
-      expect(text).not.toContain("Diff preview");
       expect(text).not.toContain("Updated anchors");
       expect(result.details?.diff).toContain(`+${computeLineHash(2, "BBB")}`);
       expect(result.details?.diff).toContain("│BBB");
@@ -66,7 +66,8 @@ describe("edit tool text shape (token budget)", () => {
       );
 
       const text = getText(result);
-      expect(text).toMatch(/^--- Anchors ---$/m);
+      // With contextLines=0, no anchor block is shown
+      expect(text).toBe("");
       expect(text).not.toMatch(/use these for subsequent edits/);
     });
   });
@@ -119,7 +120,8 @@ describe("edit tool text shape (token budget)", () => {
       );
 
       const text = getText(result);
-      expect(text).toContain("Anchors omitted; use read");
+      // With contextLines=0, no anchor block is shown at all
+      expect(text).toBe("");
       expect(text).not.toContain("--- Anchors");
     });
   });

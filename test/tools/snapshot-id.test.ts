@@ -89,7 +89,7 @@ describe("snapshotId surface (details-only after W2)", () => {
           { cwd, hasUI: true, ui: { notify() {} } } as any,
         );
 
-        expect(getText(result)).toContain("--- Anchors");
+        expect(getText(result)).toBe("");
         expect(await readFile(path, "utf-8")).toBe(
           "one\nTWO!\nthree\nFOUR\nfive\n",
         );
