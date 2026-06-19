@@ -59,7 +59,7 @@ Rules:
 - If `new_lines` matches current content, the replace is classified as `noop` (file unchanged).
 - The `old_range` is inclusive — both anchors and every line between them are replaced. If your replacement content includes lines that already exist in the file (e.g. closing brackets), make sure those lines are within your range, otherwise they will appear twice.
 
-On success, the response contains an `--- Anchors ---` block with fresh HASH anchors for the changed region. Use those for nearby follow-up replaces instead of re-reading.
+On success, the response text is empty (or contains only warnings if present). Call `read` to get fresh anchors for follow-up edits.
 
 Error recovery:
 - `[E_STALE_ANCHOR]` — file changed since last read. Call `read` to get fresh anchors, then copy the HASH and retry.

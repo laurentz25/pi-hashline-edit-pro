@@ -85,7 +85,7 @@ The 3-character anchors are compact and efficient. Each anchor costs 3 character
 
 Rules:
 
-- `text` carries only what the model needs for its next step: the `--- Anchors ---` block (in `changed` mode), noop classification, warnings, error codes. Line counts (`added_lines`/`removed_lines`) go to `details.metrics`, not to `text`.
+- `text` carries only what the model needs for its next step: noop classification, warnings, error codes. After a successful edit, the response text is empty (or contains only warnings). The LLM can call `read` for fresh anchors. Line counts (`added_lines`/`removed_lines`) go to `details.metrics`, not to `text`.
 - Full diffs, structural outlines, range payloads, snapshot fingerprints, metrics — host UI only, route to `details`.
 - Never duplicate in `text` what anchors already express. No fallback outlines, no usage boilerplate, no verbose headers.
 - New output fields default to `details`; moving one into `text` needs a justification beyond "the LLM might want it".

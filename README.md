@@ -76,14 +76,14 @@ Replaces using the `HASH│content` anchors from `read` output to target lines p
 | `old_range` | Inclusive line range `[start_hash, end_hash]` (required). |
 | `new_lines` | Replacement content (one string per line). Use `[]` to delete. |
 
-- **Request structure validation.** The request envelope (`path`, `edits`) and individual edit items are validated before any file I/O. Unknown fields, missing required fields, invalid types, and malformed anchors are rejected with `[E_BAD_SHAPE]` or `[E_BAD_OP]`.
+- **Request structure validation.** The request envelope (`path`, `edits`) and individual edit items are validated before any file I/O. Unknown fields, missing required fields, invalid types, and malformed anchors are rejected with `[E_BAD_SHAPE]` or `[E_BAD_REF]`.
 - **Legacy dialect rejected.** The native top-level `oldText`/`newText` (and `old_text`/`new_text`) dialect is rejected with `[E_LEGACY_SHAPE]`. The error message tells the model to call `read` first and send `{old_range: ["<START>", "<END>"], new_lines: [...]}`.
 
 All edits in a single call validate against the same pre-edit snapshot and apply bottom-up, so line numbers stay consistent across operations.
 
 ### Chained edits
 
-After a successful replace, the result text contains an `--- Anchors ---` block with fresh `HASH│content` references for the changed region. These can be used directly in the next `replace` call on the same file without a full re-read, provided the next replace targets the same or nearby lines. For distant changes, use `read` first.
+After a successful replace, the response text is empty (warnings are still shown if present). To get fresh anchors for follow-up edits, call `read` on the file first. This avoids token overhead from re-displaying content the model already knows.
 
 ### Auto-read after write
 
@@ -98,7 +98,7 @@ For large files (>2000 lines), the auto-read output is truncated with a paginati
 
 ### Diff for the host
 
-The post-edit diff (with `+`/`-` markers and new `HASH│content` anchors) is exposed to the host UI via `details.diff`. It is intentionally not in the LLM-visible text. The model only needs the fresh anchors in `text` to chain follow-up edits, and re-emitting the diff would cost extra tokens.
+The post-edit diff (with `+`/`-` markers) is exposed to the host UI via `details.diff`. It is intentionally not in the LLM-visible text. The model already knows what it changed and can call `read` for fresh anchors when needed.
 
 ## Design Decisions
 

@@ -32,8 +32,8 @@ describe("prompts/replace.md (model-facing contract)", () => {
 		expect(replacePrompt).toMatch(/Do not include.*│.*line content/i);
 	});
 
-	it("documents the Anchors block for follow-up replaces", () => {
-		expect(replacePrompt).toContain("--- Anchors ---");
+	it("documents that response is empty after successful edit", () => {
+		expect(replacePrompt).toContain("response text is empty");
 	});
 
 
