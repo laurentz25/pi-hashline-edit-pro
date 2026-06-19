@@ -51,12 +51,13 @@ const hashlineEditNewLinesSchema = Type.Array(Type.String(), {
 		"replacement content, one array entry per line, no HASH| prefix",
 });
 
-const hasheditOldRangeSchema = Type.Tuple(
-	[
-		Type.String({ description: "range-start anchor (3-char HASH)" }),
-		Type.String({ description: "range-end anchor (3-char HASH)" }),
-	],
-	{ description: "inclusive line range to replace [start, end]" },
+const hasheditOldRangeSchema = Type.Array(
+	Type.String({ description: "anchor (3-char HASH)" }),
+	{
+		description: "inclusive line range to replace [start, end]",
+		minItems: 2,
+		maxItems: 2,
+	},
 );
 
 const hashlineEditItemSchema = Type.Object(
