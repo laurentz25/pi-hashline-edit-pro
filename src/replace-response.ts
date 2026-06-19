@@ -184,7 +184,7 @@ export function buildChangedResponse(input: SuccessResponseInput): ToolResult {
 					anchorRange.start - 1,
 					anchorRange.end,
 				);
-			const formatted = formatHashlineRegion(regionHashes, region);
+				const formatted = formatHashlineRegion(regionHashes, region);
 				const block = `--- Anchors ---\n${formatted}`;
 				return Buffer.byteLength(block, "utf8") <=
 					CHANGED_ANCHOR_TEXT_BUDGET_BYTES
@@ -193,8 +193,15 @@ export function buildChangedResponse(input: SuccessResponseInput): ToolResult {
 			})()
 		: resultLines.length === 0
 			? "File is empty. Use edit to insert content."
-			: "Anchors omitted; use read for subsequent edits.";
-
+			: (() => {
+					const diffLines = diffResult.diff.split("\n");
+					const MAX_DIFF_LINES = 30;
+					if (diffLines.length <= MAX_DIFF_LINES) {
+						return `Diff preview:\n${diffResult.diff}`;
+					}
+					const truncated = diffLines.slice(0, MAX_DIFF_LINES).join("\n");
+					return `Diff preview (${diffLines.length} lines, showing first ${MAX_DIFF_LINES}):\n${truncated}\n...`;
+				})();
 	const text = [anchorsBlock, warningsBlock.trimStart()]
 		.filter((section) => section.length > 0)
 		.join("\n\n");

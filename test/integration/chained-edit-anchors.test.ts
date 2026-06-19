@@ -83,9 +83,10 @@ describe("chained edit anchors", () => {
         ctx,
       );
 
-      // Post-edit: 15 new lines + context > 12 budget → no anchors.
+      // Post-edit: 15 new lines + context > 12 budget → no anchors block, but diff shown.
       expect(editResult.content[0].text).not.toContain("--- Anchors");
-      expect(editResult.content[0].text).toContain("Anchors omitted; use read");
+      expect(editResult.content[0].text).toContain("Diff preview:");
+      expect(editResult.content[0].text).toContain("NEW 1");
     });
   });
   it("omits anchors when single-line replace expands beyond budget", async () => {
@@ -113,9 +114,10 @@ describe("chained edit anchors", () => {
         ctx,
       );
 
-      // 11 new lines span 2-12, +4 context = 15 > 12 → no anchors block.
+      // 11 new lines span 2-12, +4 context = 15 > 12 → no anchors block, but diff shown.
       expect(editResult.content[0].text).not.toContain("--- Anchors");
-      expect(editResult.content[0].text).toContain("Anchors omitted; use read");
+      expect(editResult.content[0].text).toContain("Diff preview:");
+      expect(editResult.content[0].text).toContain("EXPANDED 1");
     });
   });
 

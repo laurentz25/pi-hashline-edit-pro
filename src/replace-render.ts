@@ -144,7 +144,6 @@ export function isAppliedChangedResult(
 	const metrics = details?.metrics;
 	return (
 		metrics?.classification === "applied" &&
-		metrics.return_mode === "changed" &&
 		metrics.added_lines !== undefined &&
 		metrics.removed_lines !== undefined
 	);
@@ -153,14 +152,11 @@ export function isAppliedChangedResult(
 export function buildAppliedChangedResultText(
 	text: string | undefined,
 	details: HashlineReplaceToolDetails | undefined,
-	preview: ReplacePreview | undefined,
 	theme: FgTheme,
 ): string | undefined {
-	const previewDiff =
-		preview && !("error" in preview) ? preview.diff : undefined;
 	const sections: string[] = [];
 
-	if (details?.diff && details.diff !== previewDiff) {
+	if (details?.diff) {
 		sections.push(formatResultDiff(details.diff, theme));
 	}
 
@@ -169,7 +165,6 @@ export function buildAppliedChangedResultText(
 
 	return sections.length > 0 ? sections.join("\n\n") : undefined;
 }
-
 // ─── Markdown rendering ─────────────────────────────────────────────────
 
 function trimEdgeEmptyLines(lines: string[]): string[] {

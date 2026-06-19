@@ -371,7 +371,6 @@ const editToolDefinition: EditToolDefinition = {
 		const renderedText = getRenderedEditTextContent(typedResult);
 
 		const renderState = context.state as ReplaceRenderState | undefined;
-		const previewBeforeResult = renderState?.preview;
 		if (renderState) {
 			renderState.preview = undefined;
 			renderState.previewGeneration = (renderState.previewGeneration ?? 0) + 1;
@@ -393,7 +392,6 @@ const editToolDefinition: EditToolDefinition = {
 			const appliedChangedText = buildAppliedChangedResultText(
 				renderedText,
 				typedResult.details,
-				previewBeforeResult,
 				theme,
 			);
 			if (!appliedChangedText) {

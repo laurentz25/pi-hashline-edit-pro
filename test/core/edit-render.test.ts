@@ -157,7 +157,6 @@ describe("isAppliedChangedResult", () => {
 				edits_attempted: 1,
 				edits_noop: 0,
 				warnings: 0,
-				return_mode: "changed",
 				classification: "applied",
 				added_lines: 1,
 				removed_lines: 0,
@@ -222,7 +221,7 @@ describe("formatRenderedEditResultMarkdown", () => {
 });
 
 describe("buildAppliedChangedResultText", () => {
-	it("builds text with diff when different from preview", () => {
+	it("builds text with diff when diff is present", () => {
 		const text = "--- Anchors ---\naB3x:line1";
 		const details: HashlineReplaceToolDetails = {
 			diff: "+new line\n-old line",
@@ -230,14 +229,12 @@ describe("buildAppliedChangedResultText", () => {
 				edits_attempted: 1,
 				edits_noop: 0,
 				warnings: 0,
-				return_mode: "changed",
 				classification: "applied",
 				added_lines: 1,
 				removed_lines: 1,
 			},
 		};
-		const preview: ReplacePreview = { diff: "different diff" };
-		const result = buildAppliedChangedResultText(text, details, preview, mockTheme);
+		const result = buildAppliedChangedResultText(text, details, mockTheme);
 		expect(result).toContain("+new line");
 		expect(result).toContain("-old line");
 	});
@@ -250,13 +247,12 @@ describe("buildAppliedChangedResultText", () => {
 				edits_attempted: 1,
 				edits_noop: 0,
 				warnings: 0,
-				return_mode: "changed",
 				classification: "applied",
 				added_lines: 0,
 				removed_lines: 0,
 			},
 		};
-		const result = buildAppliedChangedResultText(text, details, undefined, mockTheme);
+		const result = buildAppliedChangedResultText(text, details, mockTheme);
 		expect(result).toBeUndefined();
 	});
 
@@ -268,13 +264,12 @@ describe("buildAppliedChangedResultText", () => {
 				edits_attempted: 1,
 				edits_noop: 0,
 				warnings: 1,
-				return_mode: "changed",
 				classification: "applied",
 				added_lines: 0,
 				removed_lines: 0,
 			},
 		};
-		const result = buildAppliedChangedResultText(text, details, undefined, mockTheme);
+		const result = buildAppliedChangedResultText(text, details, mockTheme);
 		expect(result).toContain("Test warning");
 	});
 });

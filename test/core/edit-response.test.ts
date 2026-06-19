@@ -152,6 +152,32 @@ describe("buildChangedResponse", () => {
 		const result = buildChangedResponse(input);
 		// With 2 lines of context, the range would be 49-53 (5 lines)
 		// which is within limits, so anchors should be present
-		expect(result.content[0].text).toContain("--- Anchors ---");
+	expect(result.content[0].text).toContain("--- Anchors ---");
+	});
+
+	it("shows compact diff preview when anchors omitted due to large edit", () => {
+		// Replace 15 lines — with 2 context each side = 19 > 12 max
+		const lines = Array.from({ length: 30 }, (_, i) => `line${i}`);
+		const original = lines.join("\n") + "\n";
+		const newLines = Array.from({ length: 15 }, (_, i) => `NEW${i}`);
+		const modified = [...lines.slice(0, 10), ...newLines, ...lines.slice(25)].join("\n") + "\n";
+		const input: SuccessResponseInput = {
+			path: "src/main.ts",
+			originalNormalized: original,
+			result: modified,
+			warnings: undefined,
+			snapshotId: "v1|test|123|456",
+			editMeta: {
+				...baseReplaceMeta,
+				firstChangedLine: 11,
+				lastChangedLine: 25,
+			},
+		};
+		const result = buildChangedResponse(input);
+		// Should NOT contain full anchors block
+		expect(result.content[0].text).not.toContain("--- Anchors ---");
+		// Should contain a diff preview instead of anchors
+		expect(result.content[0].text).toMatch(/Diff preview/);
+		expect(result.content[0].text).toContain("NEW0");
 	});
 });
