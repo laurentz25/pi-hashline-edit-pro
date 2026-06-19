@@ -59,8 +59,8 @@ describe("prompts/read.md (model-facing contract)", () => {
 	});
 
 	it("documents pagination", () => {
-		expect(readPrompt).toContain("nextOffset");
-		expect(readPrompt).toContain("offset=nextOffset");
+		expect(readPrompt).toContain("pagination hint");
+		expect(readPrompt).toMatch(/offset=N/);
 	});
 
 	it("documents file-kind handling", () => {

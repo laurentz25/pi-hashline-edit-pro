@@ -62,5 +62,13 @@ Rules:
 On success, the response contains an `--- Anchors ---` block with fresh HASH anchors for the changed region. Use those for nearby follow-up replaces instead of re-reading.
 
 Error recovery:
-- `[E_STALE_ANCHOR]` — file changed since last read. The error includes fresh `>>> HASH│content` lines; copy the HASH and retry.
+- `[E_STALE_ANCHOR]` — file changed since last read. Call `read` to get fresh anchors, then copy the HASH and retry.
 - `[E_BAD_REF]` — malformed HASH. Re-read and try again.
+- `[E_BAD_OP]` — invalid operation (e.g. start line > end line).
+- `[E_BAD_SHAPE]` — malformed request or edit item (missing fields, wrong types, unknown fields).
+- `[E_LEGACY_SHAPE]` — old `oldText`/`newText` format detected. Use `{old_range, new_lines}` instead.
+- `[E_EDIT_CONFLICT]` — two edits overlap on the same line range. Make edits non-overlapping.
+- `[E_AMBIGUOUS_ANCHOR]` — hash collision. Call `read` to get fresh anchors.
+- `[E_BARE_HASH_PREFIX]` — edit line starts with `HASH│`. Use literal file content in `new_lines`, not read output.
+- `[E_INVALID_PATCH]` — diff prefixes (`+`/`-`) in `new_lines`. Use literal content only.
+- `[E_WOULD_EMPTY]` — edit would empty a non-empty file.

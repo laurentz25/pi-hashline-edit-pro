@@ -6,7 +6,7 @@ HASH format:
 - The line number is not part of the output. Use the HASH to reference lines.
 
 Pagination:
-- Large files return a truncated preview with a `nextOffset` line. Call `read` again with `offset=nextOffset` to continue.
+- Large files return a truncated preview with a pagination hint (e.g. `[Showing lines 1-100 of 500. Use offset=101 to continue.]`). Call `read` again with `offset=N` to continue.
 
 File kinds:
 - Text files are returned as `HASH│content` lines.
