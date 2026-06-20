@@ -13,6 +13,7 @@ describe("extension registration", () => {
 			registerCommand(name: string) {
 				commandNames.push(name);
 			},
+			registerMessageRenderer() {},
 			on(name: string) {
 				eventNames.push(name);
 			},
@@ -21,7 +22,7 @@ describe("extension registration", () => {
 		register(pi);
 
 		expect(toolNames.sort()).toEqual(["read", "replace"]);
-		expect(commandNames).toEqual(["toggle-auto-read"]);
+		expect(commandNames.sort()).toEqual(["read", "toggle-auto-read"]);
 		// tool_result is always registered (handler checks flag internally)
 		expect(eventNames).toEqual(["session_start", "tool_result"]);
 	});

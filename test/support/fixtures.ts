@@ -31,6 +31,7 @@ export function makeFakePiRegistry() {
         tools.set(tool.name, tool);
       },
       registerCommand() {},
+      registerMessageRenderer() {},
       on() {},
     } as any,
     getTool(name: string) {
